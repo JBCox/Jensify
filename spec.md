@@ -2,28 +2,30 @@
 
 ## Executive Summary
 
-Jensify is a modern expense management platform designed initially for Covaer Manufacturing to track gas receipts for traveling employees, with a roadmap to become a full-featured platform competing with Expensify, Ramp, and Brex.
+Jensify is a modern expense management platform designed for Covaer Manufacturing to track all business expenses for traveling employees (gas, hotels, flights, meals, etc.), with a roadmap to become a full-featured platform competing with Expensify, Ramp, and Brex.
 
 **Version**: 0.1.0
 **Last Updated**: 2025-11-13
 **Status**: Phase 0 - MVP Development
+**Initial Focus**: Gas receipts (primary use case)
+**Supports**: All expense categories from day one
 
 ---
 
 ## Product Vision
 
 ### Problem Statement
-Covaer Manufacturing employees travel frequently and incur gas expenses. Currently, there's no efficient system to:
-- Capture and process gas receipts
+Covaer Manufacturing employees travel frequently and incur various business expenses (gas, hotels, flights, meals). Currently, there's no efficient system to:
+- Capture and process expense receipts
 - Extract receipt data automatically
 - Track reimbursement status
 - Generate expense reports for accounting
 
 ### Solution
 A mobile-first web application that allows employees to:
-1. Snap photos of gas receipts
+1. Snap photos of expense receipts (gas, hotels, flights, meals, etc.)
 2. Automatically extract receipt data using OCR
-3. Submit expenses for reimbursement
+3. Submit expenses with proper categorization
 4. Track reimbursement status
 
 And allows finance team to:
@@ -38,9 +40,9 @@ And allows finance team to:
 
 ### 1. Employee (Primary User)
 **Name**: Mike the Driver
-**Role**: Delivery Driver
+**Role**: Delivery Driver / Traveling Employee
 **Goals**:
-- Quickly submit gas receipts
+- Quickly submit expense receipts (gas, hotels, meals)
 - Ensure accurate data extraction
 - Track reimbursement status
 

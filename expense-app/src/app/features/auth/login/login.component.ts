@@ -1,0 +1,131 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
+import { AuthService } from '../../../core/services/auth.service';
+
+/**
+ * Login Component
+ * Allows users to authenticate with email and password.
+ * Supports return URL redirection after successful login.
+ */
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    MatIconModule
+  ],
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss']
+})
+export class LoginComponent implements OnInit {
+  loginForm!: FormGroup;
+  loading = false;
+  errorMessage = '';
+  hidePassword = true;
+  returnUrl = '/expenses';
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private authService: AuthService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
+
+  ngOnInit(): void {
+    // Get return url from route parameters or default to '/expenses'
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/expenses';
+
+    // Initialize the login form with validation
+    this.loginForm = this.formBuilder.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]]
+    });
+  }
+
+  /**
+   * Getter for easy access to form controls in the template
+   */
+  get f() {
+    return this.loginForm.controls;
+  }
+
+  /**
+   * Handle form submission
+   */
+  async onSubmit(): Promise<void> {
+    // Reset error message
+    this.errorMessage = '';
+
+    // Validate form
+    if (this.loginForm.invalid) {
+      Object.keys(this.loginForm.controls).forEach(key => {
+        this.loginForm.controls[key].markAsTouched();
+      });
+      return;
+    }
+
+    this.loading = true;
+
+    const { email, password } = this.loginForm.value;
+
+    this.authService.signIn({ email, password }).subscribe({
+      next: async (result) => {
+        if (result.success) {
+          // Navigate to return URL on success
+          await this.router.navigate([this.returnUrl]);
+        } else {
+          this.errorMessage = this.getErrorMessage(result.error || 'Login failed');
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        // Handle authentication errors
+        if (error instanceof Error) {
+          this.errorMessage = this.getErrorMessage(error.message);
+        } else {
+          this.errorMessage = 'An unexpected error occurred. Please try again.';
+        }
+        console.error('Login error:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  /**
+   * Convert Supabase error messages to user-friendly messages
+   */
+  private getErrorMessage(error: string): string {
+    if (error.includes('Invalid login credentials')) {
+      return 'Invalid email or password. Please try again.';
+    }
+    if (error.includes('Email not confirmed')) {
+      return 'Please confirm your email address before logging in.';
+    }
+    if (error.includes('Network')) {
+      return 'Network error. Please check your connection and try again.';
+    }
+    return 'Login failed. Please try again.';
+  }
+
+  /**
+   * Toggle password visibility
+   */
+  togglePasswordVisibility(): void {
+    this.hidePassword = !this.hidePassword;
+  }
+}

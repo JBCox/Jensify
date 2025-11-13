@@ -1,0 +1,89 @@
+<div class="confirm-email-container">
+  <mat-card class="confirm-email-card">
+    <mat-card-header>
+      <div class="icon-wrapper">
+        <mat-icon class="email-icon">mail_outline</mat-icon>
+      </div>
+      <mat-card-title>
+        <h1>Check Your Email</h1>
+      </mat-card-title>
+      <mat-card-subtitle>We've sent you a confirmation link</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <!-- Main Message -->
+      <div class="message-section">
+        <p class="email-sent-to">
+          We sent a confirmation email to:
+        </p>
+        <p class="user-email">{{ email }}</p>
+
+        <div class="instructions">
+          <h3>Next Steps:</h3>
+          <ol>
+            <li>Check your inbox for an email from Jensify</li>
+            <li>Click the confirmation link in the email</li>
+            <li>Return here and sign in to start managing expenses</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Troubleshooting Tips -->
+      <div class="tips-section">
+        <h4>
+          <mat-icon>info</mat-icon>
+          Didn't receive the email?
+        </h4>
+        <ul>
+          <li>Check your spam or junk folder</li>
+          <li>Make sure {{ email }} is correct</li>
+          <li>Wait a few minutes - emails can take time to arrive</li>
+          <li>Click the button below to resend the confirmation</li>
+        </ul>
+      </div>
+
+      <!-- Success Message for Resend -->
+      <div *ngIf="resendSuccess" class="success-message" role="alert">
+        <mat-icon>check_circle</mat-icon>
+        <span>Confirmation email has been resent! Please check your inbox.</span>
+      </div>
+
+      <!-- Error Message for Resend -->
+      <div *ngIf="resendError" class="error-message" role="alert">
+        <mat-icon>error</mat-icon>
+        <span>{{ resendError }}</span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-group">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="resendConfirmation()"
+          [disabled]="resendLoading || resendSuccess"
+          class="resend-button"
+        >
+          <mat-icon *ngIf="!resendLoading">send</mat-icon>
+          <span *ngIf="!resendLoading">Resend Confirmation Email</span>
+          <span *ngIf="resendLoading">Sending...</span>
+        </button>
+
+        <button
+          mat-stroked-button
+          (click)="goToLogin()"
+          class="login-button"
+        >
+          Already confirmed? Sign In
+        </button>
+      </div>
+
+      <!-- Help Section -->
+      <div class="help-section">
+        <p>
+          <mat-icon>help_outline</mat-icon>
+          Still having issues? Contact your system administrator.
+        </p>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

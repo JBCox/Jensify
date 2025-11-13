@@ -44,3 +44,74 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* Fix Angular Material MDC form field label overlap with prefix icons */
+.mat-mdc-form-field {
+  /* When there's a prefix icon, add padding to the text field container */
+  &.mat-mdc-form-field-has-icon-prefix {
+
+    /* The text field container needs left padding for the icon */
+    .mat-mdc-text-field-wrapper {
+      padding-left: 0 !important;
+    }
+
+    /* The floating label in ALL states needs proper positioning */
+    .mdc-floating-label {
+      /* When NOT floating (resting state) - push right for icon */
+      left: 48px !important;
+
+      /* When floating above - reset to left edge */
+      &.mdc-floating-label--float-above {
+        left: 0 !important;
+      }
+    }
+
+    /* Ensure the input field itself has proper padding */
+    .mat-mdc-form-field-infix {
+      padding-left: 0 !important;
+
+      input {
+        padding-left: 4px !important;
+      }
+    }
+
+    /* Prefix icon positioning - STANDARDIZED for all icons */
+    .mat-mdc-form-field-icon-prefix {
+      padding-right: 12px !important;
+      padding-left: 12px !important;
+      margin-right: 0 !important;
+      margin-left: 0 !important;
+      display: flex;
+      align-items: center;
+      width: 48px !important; /* Fixed width for consistent alignment */
+      min-width: 48px !important;
+      max-width: 48px !important;
+      justify-content: center;
+
+      .mat-icon {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 24px;
+        height: 24px;
+        font-size: 24px;
+      }
+    }
+  }
+
+  /* Outline appearance specific fixes */
+  &.mat-mdc-form-field-type-mat-input.mat-form-field-appearance-outline {
+    &.mat-mdc-form-field-has-icon-prefix {
+
+      .mat-mdc-form-field-flex {
+        padding-left: 8px !important; /* Consistent padding */
+      }
+
+      /* Adjust the notched outline to accommodate the icon */
+      .mdc-notched-outline {
+        .mdc-notched-outline__leading {
+          width: 8px !important;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,139 @@
+// Application-wide styles
+
+// Toolbar styles
+.app-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+// Logo section
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: white;
+
+  .logo-icon {
+    font-size: 2rem;
+    height: 2rem;
+    width: 2rem;
+  }
+
+  .app-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  @media (max-width: 767px) {
+    .app-name {
+      display: none;
+    }
+  }
+}
+
+// Navigation links
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.9);
+    transition: all 0.2s;
+
+    mat-icon {
+      font-size: 1.25rem;
+      height: 1.25rem;
+      width: 1.25rem;
+    }
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    &.active-link {
+      background-color: rgba(255, 255, 255, 0.15);
+      color: white;
+      font-weight: 500;
+    }
+
+    @media (max-width: 767px) {
+      span {
+        display: none;
+      }
+    }
+  }
+}
+
+// User menu
+.user-menu {
+  button {
+    color: white;
+
+    mat-icon {
+      font-size: 2rem;
+      height: 2rem;
+      width: 2rem;
+    }
+  }
+}
+
+.user-info {
+  padding: 0.5rem 1rem !important;
+  cursor: default !important;
+
+  .user-name {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: #333;
+  }
+
+  .user-email {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.25rem;
+  }
+}
+
+// Main content area
+.app-content {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+
+  &.with-toolbar {
+    padding-top: 64px; // Height of the toolbar
+
+    @media (max-width: 599px) {
+      padding-top: 56px; // Shorter toolbar on mobile
+    }
+  }
+}
+
+// Global styles
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+}

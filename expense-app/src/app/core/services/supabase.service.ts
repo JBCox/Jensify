@@ -100,10 +100,8 @@ export class SupabaseService {
 
       if (error) throw error;
 
-      // Create user profile in users table
-      if (data.user) {
-        await this.createUserProfile(data.user.id, email, fullName);
-      }
+      // User profile is automatically created by database trigger
+      // See migration: 20251113215904_handle_new_user_signup.sql
 
       return { data, error: null };
     } catch (error: any) {
@@ -186,25 +184,10 @@ export class SupabaseService {
   }
 
   /**
-   * Create user profile in users table
+   * NOTE: createUserProfile() method removed
+   * User profile creation is now handled automatically by database trigger
+   * See migration: 20251113215904_handle_new_user_signup.sql
    */
-  private async createUserProfile(userId: string, email: string, fullName: string) {
-    try {
-      const { error } = await this.supabase
-        .from('users')
-        .insert({
-          id: userId,
-          email,
-          full_name: fullName,
-          role: 'employee'
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error creating user profile:', error);
-      throw error;
-    }
-  }
 
   /**
    * Upload file to storage

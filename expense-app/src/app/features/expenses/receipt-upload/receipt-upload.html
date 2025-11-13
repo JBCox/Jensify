@@ -1,0 +1,154 @@
+<div class="receipt-upload-container">
+  <mat-card class="upload-card">
+    <mat-card-header>
+      <mat-card-title>Upload Receipt</mat-card-title>
+      <mat-card-subtitle>Upload receipts for gas, hotels, flights, meals, and other business expenses</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <!-- Error Message -->
+      @if (errorMessage()) {
+        <div class="error-banner">
+          <mat-icon>error</mat-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <!-- Upload Area (shown when no file selected) -->
+      @if (!selectedFile()) {
+        <div
+          class="drop-zone"
+          [class.dragging]="isDragging()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)">
+
+          <mat-icon class="upload-icon">cloud_upload</mat-icon>
+          <p class="upload-text">Drag and drop your receipt here</p>
+          <p class="upload-subtext">or</p>
+
+          <!-- File Input Buttons -->
+          <div class="button-group">
+            <!-- File Picker -->
+            <input
+              #fileInput
+              type="file"
+              accept="{{ ALLOWED_EXTENSIONS.join(',') }}"
+              (change)="onFileSelected($event)"
+              hidden>
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="fileInput.click()">
+              <mat-icon>folder_open</mat-icon>
+              Choose File
+            </button>
+
+            <!-- Camera Capture (Mobile) -->
+            <input
+              #cameraInput
+              type="file"
+              accept="image/*"
+              capture="environment"
+              (change)="onCameraCapture($event)"
+              hidden>
+            <button
+              mat-raised-button
+              (click)="cameraInput.click()">
+              <mat-icon>photo_camera</mat-icon>
+              Take Photo
+            </button>
+          </div>
+
+          <p class="file-requirements">
+            Accepted: JPEG, PNG, PDF • Max size: 5MB
+          </p>
+        </div>
+      }
+
+      <!-- Preview Area (shown when file selected) -->
+      @if (selectedFile() && !isUploading()) {
+        <div class="preview-container">
+          <!-- Image Preview -->
+          @if (hasPreview()) {
+            <div class="image-preview">
+              <img [src]="previewUrl()" alt="Receipt preview">
+            </div>
+          }
+
+          <!-- PDF Preview -->
+          @if (isPdf()) {
+            <div class="pdf-preview">
+              <mat-icon class="pdf-icon">picture_as_pdf</mat-icon>
+              <p>PDF Document</p>
+            </div>
+          }
+
+          <!-- File Info -->
+          <div class="file-info">
+            <div class="file-details">
+              <mat-icon>description</mat-icon>
+              <div class="file-text">
+                <p class="file-name">{{ selectedFile()!.name }}</p>
+                <p class="file-size">{{ getFileSizeLabel() }}</p>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+              <button
+                mat-button
+                color="warn"
+                (click)="clearFile()">
+                <mat-icon>delete</mat-icon>
+                Remove
+              </button>
+              <button
+                mat-raised-button
+                color="primary"
+                [disabled]="!canUpload()"
+                (click)="uploadReceipt()">
+                <mat-icon>cloud_upload</mat-icon>
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Upload Progress -->
+      @if (showProgress()) {
+        <div class="upload-progress">
+          <mat-icon class="upload-spinner">cloud_upload</mat-icon>
+          <p class="upload-status">Uploading receipt...</p>
+          <mat-progress-bar
+            mode="determinate"
+            [value]="uploadProgress()">
+          </mat-progress-bar>
+          <p class="progress-text">{{ uploadProgress() }}%</p>
+        </div>
+      }
+
+      <!-- Success State -->
+      @if (uploadedReceipt() && !isUploading()) {
+        <div class="success-state">
+          <mat-icon class="success-icon">check_circle</mat-icon>
+          <p class="success-text">Receipt uploaded successfully!</p>
+          <p class="redirect-text">Redirecting to expense form...</p>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Help Section -->
+  <div class="help-section">
+    <h3>Tips for best results:</h3>
+    <ul>
+      <li>Ensure the entire receipt is visible and in focus</li>
+      <li>Avoid shadows and glare on the receipt</li>
+      <li>Capture in good lighting conditions</li>
+      <li>Keep the receipt flat and straight</li>
+      <li>Accepted: Gas receipts, hotel invoices, flight confirmations, meal receipts, and more</li>
+    </ul>
+  </div>
+</div>

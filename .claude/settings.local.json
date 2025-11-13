@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:code.claude.com)",
+      "Bash(dir /s /b *.service.ts 2)",
+      "Bash(nul)",
+      "Bash(ng generate:*)",
+      "Bash(curl:*)",
+      "Bash(npm start)"
+    ]
+  },
+  "outputStyle": "default"
+}

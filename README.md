@@ -9,25 +9,39 @@
 
 ## 🎯 Overview
 
-Jensify is a comprehensive expense management solution starting with gas receipt tracking and expanding to include:
+Jensify is a comprehensive expense management solution for tracking all business expenses (gas, hotels, flights, meals, and more), expanding to include:
 - 📸 Smart receipt capture with OCR
 - 💰 Multi-level approval workflows
 - 💳 Corporate card integration
 - 📊 Advanced analytics and budgeting
 - 🔄 Accounting system integrations
 
-## 🚀 Current Phase: Phase 0 - Gas Receipt MVP
+## 🚀 Current Phase: Phase 0 - Expense Receipt MVP
 
-**Timeline**: 2-3 weeks
-**Status**: 🛠️ In Development
+**Timeline**: 2-3 weeks (Started November 13, 2025)
+**Status**: 🛠️ In Development (80% Complete)
+**Initial Focus**: Gas receipts for traveling employees
+**Supports**: All expense categories (gas, hotels, flights, meals, office supplies, etc.)
 
 ### MVP Features
-- ✅ User authentication (email/password)
-- 🔄 Receipt photo capture (mobile & desktop)
-- 🔄 OCR with Google Vision API
-- 🔄 Expense submission and tracking
-- 🔄 Finance dashboard
-- 🔄 CSV export for accounting
+- ✅ **User authentication** (email/password) - Complete with full UI
+- ✅ **Database schema** with Row Level Security policies
+- ✅ **Navigation** with role-based access
+- ✅ **Receipt upload** (mobile camera & desktop drag-drop) - Complete
+- 🔄 **OCR** with Google Vision API - Next Up
+- 🔄 **Expense form** with category selection
+- 🔄 **Finance dashboard**
+- 🔄 **CSV export** for accounting
+
+### Recently Completed (November 13, 2025)
+- ✅ Login, Register, and Forgot Password components
+- ✅ Auth guards for route protection
+- ✅ Mobile-responsive navigation bar
+- ✅ User profile menu with logout
+- ✅ Lazy-loaded routes for optimal performance
+- ✅ Receipt upload component (drag-drop, camera, validation, preview)
+- ✅ ExpenseService with CRUD operations and file handling
+- ✅ Comprehensive test suite (50+ test cases)
 
 ## 🛠️ Tech Stack
 
@@ -210,19 +224,22 @@ netlify deploy --prod
 
 ## 🗺️ Roadmap
 
-### ✅ Phase 0: Gas Receipt MVP (Weeks 1-3)
-- User authentication
-- Receipt upload and OCR
-- Expense submission
-- Finance dashboard
-- CSV export
+### 🛠️ Phase 0: Expense Receipt MVP (Weeks 1-3) - 80% Complete
+- ✅ User authentication (complete)
+- ✅ Receipt upload for all expense types (complete)
+- 🔄 OCR extraction (in progress)
+- 🔄 Expense form with category selection
+- 🔄 Finance dashboard
+- 🔄 CSV export
 
-### 🔄 Phase 1: General Expenses + Approvals (Weeks 4-11)
-- Multiple expense categories
+**Supported Categories**: Fuel, Meals & Entertainment, Lodging, Airfare, Ground Transportation, Office Supplies, Software/Subscriptions, Miscellaneous
+
+### 🔄 Phase 1: Advanced Workflows (Weeks 4-11)
 - Multi-level approval workflows
-- Expense reports
-- Policy engine
+- Expense reports and batching
+- Enhanced policy engine
 - Email notifications
+- Advanced filtering and search
 
 ### 📅 Phase 2: Cards + Reimbursements (Weeks 12-20)
 - Corporate card integration

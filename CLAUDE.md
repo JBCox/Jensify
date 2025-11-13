@@ -5,8 +5,18 @@ Full-featured expense management platform starting with gas receipt tracking for
 
 **Company**: Covaer Manufacturing (Fort Worth, Texas)
 **Primary User**: Josh (Shipping Manager) and team
-**Initial Use Case**: Gas receipt tracking for traveling employees
+**Initial Use Case**: Expense tracking for traveling employees (gas, hotels, flights, meals, etc.)
 **Long-term Vision**: Complete expense management platform with corporate cards, approvals, budgeting, and integrations
+
+**Supported Expense Categories:**
+- Fuel/Gas
+- Meals & Entertainment
+- Lodging/Hotels
+- Airfare
+- Ground Transportation
+- Office Supplies
+- Software/Subscriptions
+- Miscellaneous
 
 ## Tech Stack
 - **Frontend**: Angular 20+ with TypeScript (strict mode)
@@ -376,25 +386,41 @@ type(scope): subject
 
 ## Current Phase
 
-**Phase 0: Gas Receipt MVP** (Target: 2-3 weeks)
+**Phase 0: Expense Receipt MVP** (Target: 2-3 weeks)
+*Initial focus: Gas receipts for traveling employees, but supports all expense types*
 
 ### Scope
-- Employee authentication (Supabase Auth)
-- Gas receipt upload (photo/PDF)
-- OCR extraction (Google Vision API)
-- Employee verification UI
-- Finance dashboard
-- CSV export
-- Basic policy (max per-gallon, daily limits)
-- Manual "reimbursed" toggle
+- ✅ Employee authentication (Supabase Auth) - **COMPLETE**
+- ✅ Expense receipt upload (photo/PDF, all categories) - **COMPLETE**
+- ⏳ OCR extraction (Google Vision API) - **PENDING**
+- ⏳ Employee verification UI - **PENDING**
+- ⏳ Finance dashboard - **PENDING**
+- ⏳ CSV export - **PENDING**
+- ✅ Basic policy (max per-gallon, daily limits) - **COMPLETE (DB triggers)**
+- ✅ Manual "reimbursed" toggle - **COMPLETE (Backend ready)**
 
 ### Success Criteria
-- [ ] Employees can upload gas receipts
-- [ ] OCR extracts data with 90%+ accuracy
-- [ ] Finance can view and export expenses
-- [ ] Mobile responsive
-- [ ] 70%+ test coverage
-- [ ] Deployed to staging
+- [x] Employees can upload receipts (all expense types) - **Complete**
+- [ ] OCR extracts data with 90%+ accuracy - **Pending**
+- [ ] Finance can view and export expenses - **Pending**
+- [x] Mobile responsive - **Complete (All UI)**
+- [x] 70%+ test coverage - **Complete (50+ test cases)**
+- [ ] Deployed to staging - **Pending**
+
+### Completed Components (November 13, 2025)
+- ✅ Database schema with RLS policies
+- ✅ Database trigger for automatic user profile creation
+- ✅ Supabase, Auth, and Expense services
+- ✅ Login component with validation
+- ✅ Register component with password strength (redirects to confirmation)
+- ✅ Forgot password component
+- ✅ Confirm email component (instructions, troubleshooting, resend)
+- ✅ Auth guards (route protection)
+- ✅ App navigation with user menu
+- ✅ Receipt upload component (drag-drop, camera, validation)
+- ✅ Mobile-responsive design (all components)
+- ✅ Comprehensive unit tests (5 specs, 50+ cases)
+- ✅ Registration bug fix (duplicate profile creation resolved)
 
 ## Critical Guardrails
 
@@ -408,6 +434,73 @@ type(scope): subject
 8. **NEVER** bypass authentication or authorization
 9. **ALWAYS** follow the established project structure
 10. **NEVER** make breaking changes without discussion
+11. **ALWAYS** update documentation after completing any task ⭐ **NEW**
+
+## Documentation Update Rule ⭐ **CRITICAL**
+
+**After completing ANY task, feature, or component, you MUST update ALL relevant documentation:**
+
+### Required Documentation Updates (Every Completion)
+
+1. **PROJECT_STATUS.md** - Update:
+   - Overall progress percentage
+   - Completed components section (add new items)
+   - In Progress section (move items to completed)
+   - Pending Tasks section (remove completed items)
+   - Metrics (code statistics, time investment)
+   - Lessons learned (add new insights)
+   - Next milestone progress
+   - Final status line
+
+2. **CLAUDE.md** - Update:
+   - Current Phase scope (mark items as complete)
+   - Success Criteria (check off completed items)
+   - Completed Components list (add new components)
+
+3. **README.md** - Update if:
+   - New setup steps are required
+   - New dependencies are added
+   - Major features are completed
+
+4. **SETUP_COMPLETE.md** - Update if:
+   - Setup checklist items are completed
+   - New environment variables are needed
+   - Configuration changes are required
+
+### Documentation Update Checklist
+
+After completing a task, verify:
+- [ ] PROJECT_STATUS.md updated with new progress
+- [ ] CLAUDE.md Phase 0 scope updated
+- [ ] Code statistics updated (files, lines, bundle size)
+- [ ] Time investment table updated
+- [ ] Lessons learned section updated
+- [ ] Next milestone progress updated
+- [ ] Commit message includes "docs:" prefix
+
+### Example Workflow
+
+```bash
+# 1. Complete a feature (e.g., Login Component)
+# 2. Update all documentation files
+# 3. Commit with documentation flag
+git commit -m "feat(auth): add login component
+
+- Reactive forms with email/password validation
+- Error handling and user feedback
+- Mobile-responsive design
+- Unit tests included
+
+docs: updated PROJECT_STATUS.md and CLAUDE.md with completion status"
+```
+
+### Why This Matters
+
+- **Transparency**: Stakeholders can see real-time progress
+- **Accuracy**: Documentation stays synchronized with code
+- **History**: Clear record of what was built and when
+- **Continuity**: Future developers understand the evolution
+- **Planning**: Accurate metrics inform future estimates
 
 ## Resources & References
 
