@@ -211,6 +211,9 @@ describe('ExpenseService', () => {
       const mockReceiptResponse = { data: mockReceipt, error: null };
       const mockPublicUrl = 'https://example.com/receipt.jpg';
 
+      // Spy on file validation to bypass magic number check in tests
+      spyOn(service as any, 'validateReceiptFileAsync').and.resolveTo(null);
+
       supabaseServiceSpy.uploadFile.and.resolveTo(mockUploadResponse);
       supabaseServiceSpy.getPublicUrl.and.returnValue(mockPublicUrl);
       supabaseServiceSpy.getSignedUrl.and.resolveTo({ signedUrl: mockPublicUrl, error: null });

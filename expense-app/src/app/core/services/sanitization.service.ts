@@ -85,7 +85,10 @@ export class SanitizationService {
     if (!input) return false;
 
     const str = input.toString();
-    return this.dangerousPatterns.some(pattern => pattern.test(str));
+    return this.dangerousPatterns.some(pattern => {
+      pattern.lastIndex = 0; // Reset regex state for global flag
+      return pattern.test(str);
+    });
   }
 
   /**
