@@ -16,6 +16,8 @@ import { SidebarNav } from './core/components/sidebar-nav/sidebar-nav';
 import { NotificationCenterComponent } from './shared/components/notification-center/notification-center';
 import { ShortcutsHelpDialog } from './shared/components/shortcuts-help-dialog/shortcuts-help-dialog';
 import { Breadcrumbs } from './shared/components/breadcrumbs/breadcrumbs';
+import { InstallPrompt } from './shared/components/install-prompt/install-prompt';
+import { OfflineIndicator } from './shared/components/offline-indicator/offline-indicator';
 
 interface ShellViewModel {
   profile: User | null;
@@ -39,7 +41,9 @@ interface ShellViewModel {
     MatDividerModule,
     SidebarNav,
     NotificationCenterComponent,
-    Breadcrumbs
+    Breadcrumbs,
+    InstallPrompt,
+    OfflineIndicator
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss'

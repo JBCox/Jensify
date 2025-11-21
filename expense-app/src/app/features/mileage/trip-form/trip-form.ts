@@ -12,9 +12,15 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTabsModule } from '@angular/material/tabs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, interval } from 'rxjs';
 import { MileageService } from '../../../core/services/mileage.service';
-import { MileageCategory, CreateMileageTripDto, UpdateMileageTripDto } from '../../../core/models/mileage.model';
+import { MileageCategory, CreateMileageTripDto, UpdateMileageTripDto, TripCoordinate } from '../../../core/models/mileage.model';
+import { GeolocationService, GeolocationPosition } from '../../../core/services/geolocation.service';
+import { GoogleMapsService } from '../../../core/services/google-maps.service';
+import { TripTrackingService } from '../../../core/services/trip-tracking.service';
 
 /**
  * Trip Form Component
@@ -34,7 +40,10 @@ import { MileageCategory, CreateMileageTripDto, UpdateMileageTripDto } from '../
     MatCheckboxModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
+    MatTabsModule
   ],
   templateUrl: './trip-form.html',
   styleUrl: './trip-form.scss',
@@ -50,6 +59,18 @@ export class TripForm implements OnInit, OnDestroy {
   currentRate = signal<number>(0);
   totalMiles = signal<number>(0);
   reimbursementAmount = signal<number>(0);
+
+  // GPS features
+  calculatingDistance = signal<boolean>(false);
+  gpsAvailable = signal<boolean>(false);
+  currentLocation = signal<GeolocationPosition | null>(null);
+
+  // Tracking mode
+  trackingMode = signal<'quick' | 'gps'>('quick'); // quick = point-to-point, gps = live tracking
+  isTracking = signal<boolean>(false);
+  trackingDistance = signal<number>(0);
+  trackingDuration = signal<number>(0);
+  trackedCoordinates: TripCoordinate[] = [];
 
   // Edit mode
   tripId: string | null = null;
@@ -69,6 +90,9 @@ export class TripForm implements OnInit, OnDestroy {
   private router = inject(Router);
   private mileageService = inject(MileageService);
   private snackBar = inject(MatSnackBar);
+  private geolocation = inject(GeolocationService);
+  private googleMaps = inject(GoogleMapsService);
+  private trackingService = inject(TripTrackingService);
 
   ngOnInit(): void {
     // Initialize form
@@ -94,6 +118,9 @@ export class TripForm implements OnInit, OnDestroy {
       // For new trip, fetch current rate immediately
       this.updateCalculation();
     }
+
+    // Check GPS availability
+    this.gpsAvailable.set(this.geolocation.isAvailable());
 
     // Watch for changes to recalculate reimbursement
     this.form.valueChanges
@@ -212,6 +239,8 @@ export class TripForm implements OnInit, OnDestroy {
   private createTrip(): void {
     const dto: CreateMileageTripDto = {
       ...this.form.value,
+      // Add tracking method
+      tracking_method: this.trackedCoordinates.length > 0 ? 'gps_tracked' : 'manual',
       // Remove empty optional fields
       department: this.form.value.department || undefined,
       project_code: this.form.value.project_code || undefined,
@@ -221,11 +250,27 @@ export class TripForm implements OnInit, OnDestroy {
     this.mileageService.createTrip(dto)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
-          this.successMessage.set('Trip created successfully.');
-          this.snackBar.open('Trip created successfully', 'Close', { duration: 3000 });
-          setTimeout(() => this.router.navigate(['/mileage']), 800);
-          this.loading.set(false);
+        next: (trip) => {
+          // Save GPS coordinates if we have them
+          if (this.trackedCoordinates.length > 0 && trip.id) {
+            this.trackingService.saveCoordinatesToDatabase(trip.id, this.trackedCoordinates)
+              .then(() => {
+                this.successMessage.set('Trip created successfully with GPS tracking data.');
+                this.snackBar.open('Trip created successfully', 'Close', { duration: 3000 });
+                setTimeout(() => this.router.navigate(['/mileage']), 800);
+                this.loading.set(false);
+              })
+              .catch(() => {
+                this.snackBar.open('Trip created but failed to save GPS data', 'Close', { duration: 4000 });
+                setTimeout(() => this.router.navigate(['/mileage']), 800);
+                this.loading.set(false);
+              });
+          } else {
+            this.successMessage.set('Trip created successfully.');
+            this.snackBar.open('Trip created successfully', 'Close', { duration: 3000 });
+            setTimeout(() => this.router.navigate(['/mileage']), 800);
+            this.loading.set(false);
+          }
         },
         error: (err) => {
           this.errorMessage.set(err?.message || 'Failed to create trip');
@@ -307,5 +352,219 @@ export class TripForm implements OnInit, OnDestroy {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
+  }
+
+  /**
+   * Capture current GPS location for origin
+   */
+  captureOriginGPS(): void {
+    this.geolocation.getCurrentPosition()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (position) => {
+          this.currentLocation.set(position);
+
+          // Reverse geocode to get address
+          this.googleMaps.reverseGeocode(position.latitude, position.longitude)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (address) => {
+                this.form.patchValue({
+                  origin_address: address
+                });
+                this.snackBar.open('Origin location captured', 'Close', { duration: 2000 });
+              },
+              error: (err) => {
+                this.snackBar.open('Failed to get address', 'Close', { duration: 3000 });
+              }
+            });
+        },
+        error: (err) => {
+          this.snackBar.open(err.message, 'Close', { duration: 4000 });
+        }
+      });
+  }
+
+  /**
+   * Capture current GPS location for destination
+   */
+  captureDestinationGPS(): void {
+    this.geolocation.getCurrentPosition()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (position) => {
+          // Reverse geocode to get address
+          this.googleMaps.reverseGeocode(position.latitude, position.longitude)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (address) => {
+                this.form.patchValue({
+                  destination_address: address
+                });
+                this.snackBar.open('Destination location captured', 'Close', { duration: 2000 });
+              },
+              error: (err) => {
+                this.snackBar.open('Failed to get address', 'Close', { duration: 3000 });
+              }
+            });
+        },
+        error: (err) => {
+          this.snackBar.open(err.message, 'Close', { duration: 4000 });
+        }
+      });
+  }
+
+  /**
+   * Auto-calculate distance using Google Maps
+   */
+  autoCalculateDistance(): void {
+    const origin = this.form.get('origin_address')?.value;
+    const destination = this.form.get('destination_address')?.value;
+
+    if (!origin || !destination) {
+      this.snackBar.open('Please enter both addresses', 'Close', { duration: 3000 });
+      return;
+    }
+
+    this.calculatingDistance.set(true);
+
+    this.googleMaps.calculateRoute(origin, destination)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          this.form.patchValue({
+            distance_miles: Math.round(result.distance * 100) / 100 // Round to 2 decimals
+          });
+          this.calculatingDistance.set(false);
+          this.snackBar.open(
+            `Distance: ${result.distance.toFixed(2)} miles (~${Math.round(result.duration)} min drive)`,
+            'Close',
+            { duration: 4000 }
+          );
+        },
+        error: (err) => {
+          this.calculatingDistance.set(false);
+          this.snackBar.open(err.message || 'Failed to calculate distance', 'Close', { duration: 4000 });
+        }
+      });
+  }
+
+  /**
+   * Start GPS tracking
+   */
+  startGPSTracking(): void {
+    this.trackingService.startTracking().subscribe({
+      next: () => {
+        this.isTracking.set(true);
+        this.trackingMode.set('gps');
+        this.snackBar.open('GPS tracking started', 'Close', { duration: 2000 });
+
+        // Subscribe to tracking updates
+        interval(1000)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe(() => {
+            if (this.trackingService.isTracking()) {
+              this.trackingDistance.set(this.trackingService.distance());
+              this.trackingDuration.set(this.trackingService.duration());
+            }
+          });
+      },
+      error: (err) => {
+        this.snackBar.open(err.message, 'Close', { duration: 4000 });
+      }
+    });
+  }
+
+  /**
+   * Stop GPS tracking
+   */
+  stopGPSTracking(): void {
+    const trackingState = this.trackingService.stopTracking();
+
+    this.isTracking.set(false);
+    this.trackedCoordinates = trackingState.coordinates;
+
+    // Auto-fill form with tracking data
+    if (trackingState.coordinates.length > 0) {
+      const firstCoord = trackingState.coordinates[0];
+      const lastCoord = trackingState.coordinates[trackingState.coordinates.length - 1];
+
+      // Reverse geocode start and end locations
+      this.googleMaps.reverseGeocode(firstCoord.latitude, firstCoord.longitude)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (originAddress) => {
+            this.form.patchValue({
+              origin_address: originAddress,
+              distance_miles: Math.round(trackingState.distance * 100) / 100
+            });
+
+            // Get destination address
+            this.googleMaps.reverseGeocode(lastCoord.latitude, lastCoord.longitude)
+              .pipe(takeUntil(this.destroy$))
+              .subscribe({
+                next: (destAddress) => {
+                  this.form.patchValue({
+                    destination_address: destAddress
+                  });
+
+                  this.snackBar.open(
+                    `Trip tracked: ${trackingState.distance.toFixed(2)} miles in ${this.formatDuration(trackingState.duration)}`,
+                    'Close',
+                    { duration: 5000 }
+                  );
+                }
+              });
+          }
+        });
+    } else {
+      this.snackBar.open('No GPS data recorded', 'Close', { duration: 3000 });
+    }
+  }
+
+  /**
+   * Cancel GPS tracking
+   */
+  cancelGPSTracking(): void {
+    if (confirm('Cancel tracking? All GPS data will be lost.')) {
+      this.trackingService.stopTracking();
+      this.isTracking.set(false);
+      this.trackingDistance.set(0);
+      this.trackingDuration.set(0);
+      this.trackedCoordinates = [];
+      this.snackBar.open('Tracking cancelled', 'Close', { duration: 2000 });
+    }
+  }
+
+  /**
+   * Check if form can auto-calculate distance
+   */
+  canAutoCalculate(): boolean {
+    const origin = this.form.get('origin_address')?.value;
+    const destination = this.form.get('destination_address')?.value;
+    return !!(origin && destination && origin.length >= 3 && destination.length >= 3);
+  }
+
+  /**
+   * Format duration in seconds to readable string
+   */
+  formatDuration(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins > 0) {
+      return `${mins}m ${secs}s`;
+    }
+    return `${secs}s`;
+  }
+
+  /**
+   * Switch between tracking modes
+   */
+  onTrackingModeChange(index: number): void {
+    if (this.isTracking()) {
+      this.snackBar.open('Stop tracking before switching modes', 'Close', { duration: 3000 });
+      return;
+    }
+    this.trackingMode.set(index === 0 ? 'quick' : 'gps');
   }
 }

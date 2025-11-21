@@ -11,7 +11,8 @@ import {
   MileageStats,
   MileageRateCalculation,
   MileageCategory,
-  MileageStatus
+  MileageStatus,
+  TripCoordinate
 } from '../models/mileage.model';
 
 /**
@@ -191,6 +192,25 @@ export class MileageService {
     ).pipe(
       map(({ error }) => {
         if (error) throw error;
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get GPS coordinates for a trip
+   */
+  getTripCoordinates(tripId: string): Observable<TripCoordinate[]> {
+    return from(
+      this.supabase.client
+        .from('trip_coordinates')
+        .select('*')
+        .eq('trip_id', tripId)
+        .order('recorded_at', { ascending: true })
+    ).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        return (data || []) as TripCoordinate[];
       }),
       catchError(this.handleError)
     );

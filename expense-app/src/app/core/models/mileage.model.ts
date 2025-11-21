@@ -6,6 +6,7 @@
 
 export type MileageCategory = 'business' | 'medical' | 'charity' | 'moving';
 export type MileageStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'reimbursed';
+export type TrackingMethod = 'manual' | 'gps_tracked';
 
 /**
  * Mileage Trip Interface
@@ -33,6 +34,7 @@ export interface MileageTrip {
   total_miles: number; // Generated in database
   irs_rate: number;
   reimbursement_amount: number; // Generated in database
+  tracking_method: TrackingMethod; // How the trip was tracked
 
   // Trip Purpose & Classification
   purpose: string;
@@ -87,6 +89,7 @@ export interface CreateMileageTripDto {
   is_round_trip: boolean;
   purpose: string;
   category?: MileageCategory; // Defaults to 'business'
+  tracking_method?: TrackingMethod; // Defaults to 'manual'
   department?: string;
   project_code?: string;
   notes?: string;
@@ -176,4 +179,18 @@ export interface TripValidationErrors {
   distance_miles?: string;
   purpose?: string;
   general?: string;
+}
+
+/**
+ * Trip Coordinate Interface
+ * GPS breadcrumb for real-time trip tracking
+ */
+export interface TripCoordinate {
+  id?: string;
+  trip_id?: string;
+  latitude: number;
+  longitude: number;
+  accuracy: number; // in meters
+  recorded_at: string; // ISO timestamp
+  created_at?: string;
 }

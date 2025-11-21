@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -9,8 +9,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { MileageService } from '../../../core/services/mileage.service';
-import { MileageTrip, MileageStatus } from '../../../core/models/mileage.model';
+import { MileageTrip, MileageStatus, TripCoordinate } from '../../../core/models/mileage.model';
 import { StatusBadge, ExpenseStatus as BadgeStatus } from '../../../shared/components/status-badge/status-badge';
+import { TripMap, TripMapData } from '../../../shared/components/trip-map/trip-map';
 
 /**
  * Trip Detail Component
@@ -25,7 +26,8 @@ import { StatusBadge, ExpenseStatus as BadgeStatus } from '../../../shared/compo
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    StatusBadge
+    StatusBadge,
+    TripMap
   ],
   templateUrl: './trip-detail.html',
   styleUrl: './trip-detail.scss',
@@ -36,9 +38,31 @@ export class TripDetailComponent implements OnInit, OnDestroy {
 
   // State signals
   trip = signal<MileageTrip | null>(null);
+  coordinates = signal<TripCoordinate[]>([]);
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
   deleting = signal<boolean>(false);
+
+  // Map data (computed from trip)
+  mapData = computed((): TripMapData | undefined => {
+    const tripValue = this.trip();
+    if (!tripValue || !tripValue.origin_lat || !tripValue.origin_lng || !tripValue.destination_lat || !tripValue.destination_lng) {
+      return undefined;
+    }
+    return {
+      origin: {
+        lat: tripValue.origin_lat,
+        lng: tripValue.origin_lng,
+        address: tripValue.origin_address
+      },
+      destination: {
+        lat: tripValue.destination_lat,
+        lng: tripValue.destination_lng,
+        address: tripValue.destination_address
+      },
+      coordinates: this.coordinates() // Include GPS coordinates if available
+    };
+  });
 
   constructor(
     private route: ActivatedRoute,
@@ -73,10 +97,35 @@ export class TripDetailComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (trip) => {
           this.trip.set(trip);
-          this.loading.set(false);
+
+          // If trip was GPS tracked, load coordinates
+          if (trip.tracking_method === 'gps_tracked') {
+            this.loadTripCoordinates(id);
+          } else {
+            this.loading.set(false);
+          }
         },
         error: (err: Error) => {
           this.error.set(err.message || 'Failed to load trip');
+          this.loading.set(false);
+        }
+      });
+  }
+
+  /**
+   * Load GPS coordinates for a trip
+   */
+  private loadTripCoordinates(tripId: string): void {
+    this.mileageService.getTripCoordinates(tripId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (coords) => {
+          this.coordinates.set(coords);
+          this.loading.set(false);
+        },
+        error: (err: Error) => {
+          console.error('Failed to load GPS coordinates:', err);
+          // Still show trip even if coordinates fail to load
           this.loading.set(false);
         }
       });

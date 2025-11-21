@@ -2,10 +2,91 @@
   <mat-card class="jensify-card">
     <mat-card-header>
       <mat-card-title>{{ isEditMode ? 'Edit Trip' : 'New Mileage Trip' }}</mat-card-title>
-      <mat-card-subtitle>Log your business mileage for reimbursement</mat-card-subtitle>
+      <mat-card-subtitle>Choose tracking method: Quick Entry or GPS Tracking</mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
+      <!-- Tracking Mode Tabs -->
+      @if (!isEditMode) {
+        <mat-tab-group (selectedIndexChange)="onTrackingModeChange($event)" [selectedIndex]="trackingMode() === 'quick' ? 0 : 1">
+          <mat-tab label="Quick Entry">
+            <ng-template matTabContent>
+              <div class="jensify-tab-content">
+                <p class="jensify-text-muted">Enter start/end addresses and auto-calculate distance</p>
+              </div>
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="GPS Tracking">
+            <ng-template matTabContent>
+              <div class="jensify-tab-content">
+                <p class="jensify-text-muted">Live GPS tracking for accurate mileage calculation</p>
+
+                <!-- GPS Tracking Interface -->
+                @if (!isTracking()) {
+                  <div class="jensify-tracking-start">
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      type="button"
+                      (click)="startGPSTracking()"
+                      [disabled]="!gpsAvailable()"
+                      class="jensify-button-lg">
+                      <mat-icon>play_arrow</mat-icon>
+                      Start Tracking
+                    </button>
+                    @if (!gpsAvailable()) {
+                      <p class="jensify-message-warning">GPS not available on this device</p>
+                    }
+                  </div>
+                } @else {
+                  <div class="jensify-tracking-active">
+                    <div class="jensify-tracking-header">
+                      <mat-icon color="accent">gps_fixed</mat-icon>
+                      <h3>Tracking in Progress...</h3>
+                    </div>
+                    <div class="jensify-tracking-stats">
+                      <div class="jensify-stat">
+                        <mat-icon>straighten</mat-icon>
+                        <div class="jensify-stat-content">
+                          <span class="jensify-stat-label">Distance</span>
+                          <span class="jensify-stat-value">{{ trackingDistance().toFixed(2) }} mi</span>
+                        </div>
+                      </div>
+                      <div class="jensify-stat">
+                        <mat-icon>timer</mat-icon>
+                        <div class="jensify-stat-content">
+                          <span class="jensify-stat-label">Duration</span>
+                          <span class="jensify-stat-value">{{ formatDuration(trackingDuration()) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="jensify-tracking-actions">
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        type="button"
+                        (click)="stopGPSTracking()"
+                        class="jensify-button">
+                        <mat-icon>stop</mat-icon>
+                        Stop Tracking
+                      </button>
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        (click)="cancelGPSTracking()"
+                        class="jensify-button">
+                        <mat-icon>close</mat-icon>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </ng-template>
+          </mat-tab>
+        </mat-tab-group>
+      }
+
       <!-- Real-time Calculation Display -->
       @if (totalMiles() > 0 && currentRate() > 0) {
         <div class="jensify-calculation-card">
@@ -62,6 +143,16 @@
             matInput
             formControlName="origin_address"
             placeholder="123 Main St, City, ST">
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            [disabled]="!gpsAvailable()"
+            (click)="captureOriginGPS()"
+            matTooltip="Capture current location"
+            aria-label="Capture current GPS location for origin">
+            <mat-icon>my_location</mat-icon>
+          </button>
           @if (hasError('origin_address', 'required')) {
             <mat-error>{{ getErrorMessage('origin_address') }}</mat-error>
           }
@@ -78,6 +169,16 @@
             matInput
             formControlName="destination_address"
             placeholder="456 Oak Ave, City, ST">
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            [disabled]="!gpsAvailable()"
+            (click)="captureDestinationGPS()"
+            matTooltip="Capture current location"
+            aria-label="Capture current GPS location for destination">
+            <mat-icon>my_location</mat-icon>
+          </button>
           @if (hasError('destination_address', 'required')) {
             <mat-error>{{ getErrorMessage('destination_address') }}</mat-error>
           }
@@ -98,13 +199,27 @@
               min="0.1"
               formControlName="distance_miles"
               placeholder="0.0">
-            <span matSuffix>miles</span>
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              [disabled]="calculatingDistance()"
+              (click)="autoCalculateDistance()"
+              matTooltip="Auto-calculate distance"
+              aria-label="Auto-calculate distance using Google Maps">
+              @if (calculatingDistance()) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                <mat-icon>route</mat-icon>
+              }
+            </button>
             @if (hasError('distance_miles', 'required')) {
               <mat-error>{{ getErrorMessage('distance_miles') }}</mat-error>
             }
             @if (hasError('distance_miles', 'min')) {
               <mat-error>{{ getErrorMessage('distance_miles') }}</mat-error>
             }
+            <mat-hint>Click route icon to auto-calculate</mat-hint>
           </mat-form-field>
 
           <div class="jensify-round-trip-field">

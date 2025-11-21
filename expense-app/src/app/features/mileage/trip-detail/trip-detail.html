@@ -88,6 +88,21 @@
       </mat-card-content>
     </mat-card>
 
+    <!-- Route Map -->
+    @if (mapData()) {
+      <mat-card class="jensify-card">
+        <div class="jensify-card-header">
+          <h2 class="jensify-card-title">
+            <mat-icon>map</mat-icon>
+            Route Map
+          </h2>
+        </div>
+        <mat-card-content>
+          <app-trip-map [tripData]="mapData()!" />
+        </mat-card-content>
+      </mat-card>
+    }
+
     <!-- Reimbursement Details -->
     <mat-card class="jensify-card">
       <div class="jensify-card-header">

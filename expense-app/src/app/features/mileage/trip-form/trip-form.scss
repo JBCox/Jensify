@@ -3,4 +3,127 @@
  * Layout, colors, spacing come from global Jensify utilities
  */
 
-// Add component-specific overrides here if needed
+// GPS Tracking UI
+.jensify-tab-content {
+  padding: 24px 0;
+}
+
+.jensify-tracking-start {
+  text-align: center;
+  padding: 40px 20px;
+
+  .jensify-button-lg {
+    padding: 12px 48px;
+    font-size: 16px;
+    margin-bottom: 16px;
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
+    }
+  }
+}
+
+.jensify-tracking-active {
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(255, 89, 0, 0.05) 0%, rgba(255, 89, 0, 0.02) 100%);
+  border-radius: 12px;
+  border: 2px dashed var(--jensify-primary);
+}
+
+.jensify-tracking-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    animation: pulse 2s infinite;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--jensify-primary);
+  }
+}
+
+.jensify-tracking-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.jensify-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    color: var(--jensify-primary);
+  }
+}
+
+.jensify-stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.jensify-stat-label {
+  font-size: 12px;
+  color: var(--jensify-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.jensify-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--jensify-text);
+}
+
+.jensify-tracking-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// Mobile responsive
+@media (max-width: 600px) {
+  .jensify-tracking-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .jensify-tracking-actions {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+}
