@@ -103,21 +103,23 @@ describe('Auth Guards', () => {
   });
 
   describe('financeGuard', () => {
-    it('should allow finance users', () => {
+    it('should allow finance users', async () => {
       (mockOrganizationService.isCurrentUserFinanceOrAdmin as jasmine.Spy).and.returnValue(true);
 
-      const result = TestBed.runInInjectionContext(() => {
-        return financeGuard({} as any, {} as any);
+      const result = await TestBed.runInInjectionContext(async () => {
+        const guardResult = financeGuard({} as any, {} as any);
+        return await firstValueFrom(guardResult as any);
       });
 
       expect(result).toBe(true);
     });
 
-    it('should deny non-finance users', () => {
+    it('should deny non-finance users', async () => {
       (mockOrganizationService.isCurrentUserFinanceOrAdmin as jasmine.Spy).and.returnValue(false);
 
-      const result = TestBed.runInInjectionContext(() => {
-        return financeGuard({} as any, {} as any);
+      const result = await TestBed.runInInjectionContext(async () => {
+        const guardResult = financeGuard({} as any, {} as any);
+        return await firstValueFrom(guardResult as any);
       });
 
       expect(result).toBe(false);
@@ -126,21 +128,23 @@ describe('Auth Guards', () => {
   });
 
   describe('adminGuard', () => {
-    it('should allow admin users', () => {
+    it('should allow admin users', async () => {
       (mockOrganizationService.isCurrentUserAdmin as jasmine.Spy).and.returnValue(true);
 
-      const result = TestBed.runInInjectionContext(() => {
-        return adminGuard({} as any, {} as any);
+      const result = await TestBed.runInInjectionContext(async () => {
+        const guardResult = adminGuard({} as any, {} as any);
+        return await firstValueFrom(guardResult as any);
       });
 
       expect(result).toBe(true);
     });
 
-    it('should deny non-admin users', () => {
+    it('should deny non-admin users', async () => {
       (mockOrganizationService.isCurrentUserAdmin as jasmine.Spy).and.returnValue(false);
 
-      const result = TestBed.runInInjectionContext(() => {
-        return adminGuard({} as any, {} as any);
+      const result = await TestBed.runInInjectionContext(async () => {
+        const guardResult = adminGuard({} as any, {} as any);
+        return await firstValueFrom(guardResult as any);
       });
 
       expect(result).toBe(false);
@@ -149,21 +153,23 @@ describe('Auth Guards', () => {
   });
 
   describe('managerGuard', () => {
-    it('should allow manager users', () => {
+    it('should allow manager users', async () => {
       (mockOrganizationService.isCurrentUserManagerOrAbove as jasmine.Spy).and.returnValue(true);
 
-      const result = TestBed.runInInjectionContext(() => {
-        return managerGuard({} as any, {} as any);
+      const result = await TestBed.runInInjectionContext(async () => {
+        const guardResult = managerGuard({} as any, {} as any);
+        return await firstValueFrom(guardResult as any);
       });
 
       expect(result).toBe(true);
     });
 
-    it('should deny non-manager users', () => {
+    it('should deny non-manager users', async () => {
       (mockOrganizationService.isCurrentUserManagerOrAbove as jasmine.Spy).and.returnValue(false);
 
-      const result = TestBed.runInInjectionContext(() => {
-        return managerGuard({} as any, {} as any);
+      const result = await TestBed.runInInjectionContext(async () => {
+        const guardResult = managerGuard({} as any, {} as any);
+        return await firstValueFrom(guardResult as any);
       });
 
       expect(result).toBe(false);

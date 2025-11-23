@@ -1,9 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { Router, NavigationEnd } from '@angular/router';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { MatDialog } from '@angular/material/dialog';
 import { App } from './app';
 import { AuthService } from './core/services/auth.service';
+import { KeyboardShortcutsService } from './core/services/keyboard-shortcuts.service';
+import { PwaService } from './core/services/pwa.service';
 import { User } from './core/models/user.model';
 import { UserRole } from './core/models/enums';
 
@@ -11,9 +14,13 @@ describe('App Component', () => {
   let component: App;
   let fixture: ComponentFixture<App>;
   let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockRouter: jasmine.SpyObj<Router>;
+  let mockRouter: Partial<Router>;
+  let mockDialog: jasmine.SpyObj<MatDialog>;
+  let mockKeyboardShortcuts: jasmine.SpyObj<KeyboardShortcutsService>;
+  let mockPwaService: jasmine.SpyObj<PwaService>;
   let userProfileSubject: BehaviorSubject<User | null>;
   let sessionSubject: BehaviorSubject<any>;
+  let routerEventsSubject: Subject<any>;
 
   const mockEmployee: User = {
     id: 'user-123',
@@ -45,6 +52,7 @@ describe('App Component', () => {
   beforeEach(async () => {
     userProfileSubject = new BehaviorSubject<User | null>(null);
     sessionSubject = new BehaviorSubject<any>(null);
+    routerEventsSubject = new Subject<any>();
 
     mockAuthService = jasmine.createSpyObj('AuthService', ['signOut'], {
       userProfile$: userProfileSubject.asObservable(),
@@ -52,13 +60,25 @@ describe('App Component', () => {
       isFinanceOrAdmin: false
     });
 
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
+    mockRouter = {
+      url: '/home',
+      events: routerEventsSubject.asObservable(),
+      navigate: jasmine.createSpy('navigate')
+    };
+
+    mockDialog = jasmine.createSpyObj('MatDialog', ['open']);
+    mockKeyboardShortcuts = jasmine.createSpyObj('KeyboardShortcutsService', ['registerShortcuts']);
+    mockPwaService = jasmine.createSpyObj('PwaService', ['checkForUpdate', 'activateUpdate', 'canInstall', 'promptInstall']);
+    mockPwaService.canInstall.and.returnValue(false);
 
     await TestBed.configureTestingModule({
       imports: [App, NoopAnimationsModule],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
-        { provide: Router, useValue: mockRouter }
+        { provide: Router, useValue: mockRouter },
+        { provide: MatDialog, useValue: mockDialog },
+        { provide: KeyboardShortcutsService, useValue: mockKeyboardShortcuts },
+        { provide: PwaService, useValue: mockPwaService }
       ]
     }).compileComponents();
 
@@ -132,7 +152,7 @@ describe('App Component', () => {
       component.vm$.subscribe(vm => {
         emissionCount++;
 
-        if (emissionCount === 2) {
+        if (emissionCount === 3) {
           expect(vm.profile).toBeNull();
           expect(vm.isAuthenticated).toBe(false);
           done();

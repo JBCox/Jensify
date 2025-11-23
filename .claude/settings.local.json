@@ -120,7 +120,10 @@
       "Bash(chcp:*)",
       "Bash(set:*)",
       "Skill(visual-ui-audit)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(git fetch:*)",
+      "Bash(node fix-guard-tests.js:*)",
+      "Bash(expense-app/src/app/core/guards/auth.guard.spec.ts)"
     ],
     "deny": [],
     "ask": [],
