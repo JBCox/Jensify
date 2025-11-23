@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 import { SupabaseService } from './supabase.service';
+import { LoggerService } from './logger.service';
 import { User } from '../models/user.model';
 import { LoginCredentials, RegisterCredentials } from '../models';
 import { UserRole } from '../models/enums';
@@ -11,6 +12,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let mockSupabaseService: jasmine.SpyObj<SupabaseService>;
   let mockRouter: jasmine.SpyObj<Router>;
+  let mockLoggerService: jasmine.SpyObj<LoggerService>;
   let currentUserSubject: BehaviorSubject<any>;
 
   const mockUser: User = {
@@ -51,12 +53,14 @@ describe('AuthService', () => {
     });
 
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
+    mockLoggerService = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
 
     TestBed.configureTestingModule({
       providers: [
         AuthService,
         { provide: SupabaseService, useValue: mockSupabaseService },
-        { provide: Router, useValue: mockRouter }
+        { provide: Router, useValue: mockRouter },
+        { provide: LoggerService, useValue: mockLoggerService }
       ]
     });
 
@@ -427,7 +431,10 @@ describe('AuthService', () => {
 
   describe('refreshUserProfile()', () => {
     it('should refresh user profile when userId is available', async () => {
-      (mockSupabaseService as any).userId = 'user-123';
+      Object.defineProperty(mockSupabaseService, 'userId', {
+        get: () => 'user-123',
+        configurable: true
+      });
 
       const mockProfileResponse = { data: mockUser, error: null };
       const singleSpy = jasmine.createSpy('single').and.resolveTo(mockProfileResponse);
@@ -443,7 +450,10 @@ describe('AuthService', () => {
     });
 
     it('should not refresh when userId is null', async () => {
-      (mockSupabaseService as any).userId = null;
+      Object.defineProperty(mockSupabaseService, 'userId', {
+        get: () => null,
+        configurable: true
+      });
 
       await service.refreshUserProfile();
 
@@ -451,7 +461,10 @@ describe('AuthService', () => {
     });
 
     it('should handle profile refresh error', async () => {
-      (mockSupabaseService as any).userId = 'user-123';
+      Object.defineProperty(mockSupabaseService, 'userId', {
+        get: () => 'user-123',
+        configurable: true
+      });
 
       const mockError = { message: 'Profile not found' };
       const mockProfileResponse = { data: null, error: mockError };
@@ -460,26 +473,34 @@ describe('AuthService', () => {
       const selectSpy = jasmine.createSpy('select').and.returnValue({ eq: eqSpy });
       (mockSupabaseService.client.from as jasmine.Spy).and.returnValue({ select: selectSpy });
 
-      spyOn(console, 'error');
-
       await service.refreshUserProfile();
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      expect(console.error).toHaveBeenCalledWith('Error loading user profile:', mockError);
+      expect(mockLoggerService.warn).toHaveBeenCalledWith(
+        'Error loading user profile, using provisional',
+        'AuthService',
+        mockError
+      );
     });
   });
 
   describe('Role-based Access', () => {
     describe('isAuthenticated', () => {
       it('should return true when user is authenticated', () => {
-        (mockSupabaseService as any).isAuthenticated = true;
+        Object.defineProperty(mockSupabaseService, 'isAuthenticated', {
+          get: () => true,
+          configurable: true
+        });
 
         expect(service.isAuthenticated).toBe(true);
       });
 
       it('should return false when user is not authenticated', () => {
-        (mockSupabaseService as any).isAuthenticated = false;
+        Object.defineProperty(mockSupabaseService, 'isAuthenticated', {
+          get: () => false,
+          configurable: true
+        });
 
         expect(service.isAuthenticated).toBe(false);
       });
