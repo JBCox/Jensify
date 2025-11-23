@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -36,6 +36,9 @@ import { AuthService } from '../../../core/services/auth.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ForgotPasswordComponent implements OnInit, OnDestroy {
+  private formBuilder = inject(FormBuilder);
+  private authService = inject(AuthService);
+
   // Cleanup
   private destroy$ = new Subject<void>();
 
@@ -43,11 +46,6 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy {
   loading = false;
   errorMessage = '';
   successMessage = '';
-
-  constructor(
-    private formBuilder: FormBuilder,
-    private authService: AuthService
-  ) {}
 
   ngOnInit(): void {
     this.forgotPasswordForm = this.formBuilder.group({

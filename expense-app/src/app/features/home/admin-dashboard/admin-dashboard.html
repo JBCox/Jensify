@@ -1,3 +1,4 @@
+<!-- Admin Dashboard - Rebuild Trigger -->
 <div class="jensify-dashboard-container">
   <!-- Header -->
   <div class="jensify-dashboard-header">
@@ -13,8 +14,9 @@
     </div>
   </div>
 
+  @if (metrics$ | async; as metrics) {
   <!-- Metrics Row -->
-  <div class="jensify-metrics-grid" *ngIf="metrics$ | async as metrics">
+  <div class="jensify-metrics-grid">
     <app-metric-card
       icon="people"
       label="Total Users"
@@ -53,22 +55,68 @@
       </h2>
     </div>
 
-    <div class="jensify-metrics-grid" *ngIf="metrics$ | async as metrics">
-      <app-metric-card
-        icon="receipt_long"
-        label="Total Expenses"
-        [value]="metrics.totalExpenses.toString()"
-        variant="info">
-      </app-metric-card>
+    <div class="jensify-charts-grid">
+      <!-- Total Expenses Line Chart -->
+      <div class="jensify-card chart-card">
+        <div class="chart-header">
+          <div class="chart-icon-wrapper">
+            <mat-icon>receipt_long</mat-icon>
+          </div>
+          <div class="chart-info">
+            <div class="chart-value">{{ metrics.totalExpenses }}</div>
+            <div class="chart-label">Total Expenses</div>
+          </div>
+        </div>
+        <div class="chart-container line-chart">
+          <!-- CSS/SVG Line Chart Representation -->
+          <svg viewBox="0 0 300 100" preserveAspectRatio="none" class="chart-svg">
+            <path d="M0,80 C50,80 50,30 100,30 C150,30 150,60 200,60 C250,60 250,10 300,10" 
+                  fill="none" stroke="url(#orangeGradient)" stroke-width="3" />
+            <defs>
+              <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#F7580C;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#FF8A4D;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <!-- Area under curve -->
+            <path d="M0,80 C50,80 50,30 100,30 C150,30 150,60 200,60 C250,60 250,10 300,10 V100 H0 Z" 
+                  fill="url(#orangeAreaGradient)" opacity="0.2" />
+            <defs>
+              <linearGradient id="orangeAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#F7580C;stop-opacity:0.5" />
+                <stop offset="100%" style="stop-color:#F7580C;stop-opacity:0" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </div>
 
-      <app-metric-card
-        icon="payments"
-        label="Monthly Spend"
-        [value]="formatCurrency(metrics.monthlySpend)"
-        variant="primary">
-      </app-metric-card>
+      <!-- Monthly Spend Bar Chart -->
+      <div class="jensify-card chart-card">
+        <div class="chart-header">
+          <div class="chart-icon-wrapper">
+            <mat-icon>payments</mat-icon>
+          </div>
+          <div class="chart-info">
+            <div class="chart-value">{{ formatCurrency(metrics.monthlySpend) }}</div>
+            <div class="chart-label">Monthly Spend</div>
+          </div>
+        </div>
+        <div class="chart-container bar-chart">
+          <div class="bar-group">
+            <div class="bar" style="height: 40%"></div>
+            <div class="bar active" style="height: 70%"></div>
+            <div class="bar" style="height: 50%"></div>
+            <div class="bar" style="height: 85%"></div>
+            <div class="bar" style="height: 60%"></div>
+            <div class="bar" style="height: 90%"></div>
+            <div class="bar" style="height: 45%"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+  }
 
   <!-- Quick Actions -->
   <div class="jensify-section">

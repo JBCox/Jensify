@@ -65,74 +65,91 @@ html {
 
 // Jensify design tokens (global CSS variables)
 // Brex-inspired orange color palette
+// Jensify design tokens (global CSS variables)
+// Updated Palette: Light Tans/Oranges & Deep Dark Browns
 :root {
-  // Primary Orange (Brex-inspired)
-  --jensify-primary: #ff5900;
-  --jensify-primary-strong: #e54f00;
-  --jensify-primary-hover: #ff6a1a;
-  --jensify-primary-soft: #fff4ed;
-  --jensify-primary-border: #ffcfb3;
-  --jensify-primary-background-active: #ffe5d6;
+  // Primary Orange (Vibrant)
+  --jensify-primary: #F7580C;
+  --jensify-primary-strong: #D55110;
+  --jensify-primary-hover: #FF6A1A;
+  --jensify-primary-soft: #FFF4ED;
+  --jensify-primary-border: #FFCFB3;
+  --jensify-primary-background-active: #FFE5D6;
 
   // Accent & Secondary
-  --jensify-accent: #ff7a33;
-  --jensify-secondary: #3b82f6;
+  --jensify-accent: #FF7A33;
+  --jensify-secondary: #3B82F6;
 
-  // Surface & Background
-  --jensify-surface-soft: #f9fafb;
-  --jensify-surface-card: #ffffff;
-  --jensify-surface-raised: #ffffff;
-  --jensify-background-dark: #1a1a1a;
+  // Surface & Background (Light Mode - Light Tans & Oranges)
+  --jensify-surface-soft: #FFFBF7;
+  --jensify-surface-card: #FFFFFF;
+  --jensify-surface-raised: #FFFFFF;
+  --jensify-background-gradient-start: #FFF8F3;
+  --jensify-background-gradient-end: #FDEED9;
 
-  // Borders
-  --jensify-border-subtle: #e5e7eb;
-  --jensify-border-medium: #d1d5db;
-  --jensify-border-strong: #9ca3af;
+  // Borders (Light Mode - Tan Tones)
+  --jensify-border-subtle: #F0E0D0;
+  --jensify-border-medium: #E6CCB2;
+  --jensify-border-strong: #DDB899;
 
-  // Text
-  --jensify-text-strong: #111827;
-  --jensify-text-medium: #374151;
-  --jensify-text-muted: #6b7280;
-  --jensify-text-subtle: #9ca3af;
+  // Text (Light Mode - Dark Brown on Tan)
+  --jensify-text-strong: #4A2C1A;
+  --jensify-text-medium: #6D4C3D;
+  --jensify-text-muted: #8B5A3C;
+  --jensify-text-subtle: #A67C5C;
+  --jensify-text-inverse: #FFFFFF;
 
-  // Icons
-  --jensify-icon-strong: #374151;
-  --jensify-icon-muted: #9ca3af;
+  // Icons (Light Mode)
+  --jensify-icon-strong: #4A2C1A;
+  --jensify-icon-muted: #8B5A3C;
 
   // Semantic Colors
-  --jensify-danger: #ef4444;
-  --jensify-danger-strong: #dc2626;
-  --jensify-danger-soft: #fee2e2;
-  --jensify-danger-border: #fecaca;
+  --jensify-danger: #EF4444;
+  --jensify-danger-strong: #DC2626;
+  --jensify-danger-soft: #FEE2E2;
+  --jensify-danger-border: #FECACA;
 
   --jensify-success: #059669;
   --jensify-success-strong: #047857;
-  --jensify-success-soft: #d1fae5;
-  --jensify-success-border: #a7f3d0;
+  --jensify-success-soft: #D1FAE5;
+  --jensify-success-border: #A7F3D0;
 
-  --jensify-warning: #f59e0b;
-  --jensify-warning-strong: #d97706;
-  --jensify-warning-soft: #fef3c7;
-  --jensify-warning-border: #fde68a;
+  --jensify-warning: #F59E0B;
+  --jensify-warning-strong: #D97706;
+  --jensify-warning-soft: #FEF3C7;
+  --jensify-warning-border: #FDE68A;
 
-  --jensify-info: #3b82f6;
-  --jensify-info-strong: #2563eb;
-  --jensify-info-soft: #dbeafe;
-  --jensify-info-border: #bfdbfe;
+  --jensify-info: #3B82F6;
+  --jensify-info-strong: #2563EB;
+  --jensify-info-soft: #DBEAFE;
+  --jensify-info-border: #BFDBFE;
 
   // Focus & Interactive States
-  --jensify-focus-ring: #ffb380;
+  --jensify-focus-ring: #FFB380;
   --jensify-focus-ring-width: 2px;
 
-  // Shadows (Refined for premium feel)
-  --jensify-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  // Shadows (Enhanced for premium feel with orange glow)
+  --jensify-shadow-sm: 0 1px 2px 0 rgba(74, 44, 26, 0.05);
   --jensify-shadow-md:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    0 4px 6px -1px rgba(74, 44, 26, 0.1), 
+    0 2px 4px -1px rgba(74, 44, 26, 0.06),
+    0 0 20px rgba(247, 88, 12, 0.1);
   --jensify-shadow-lg:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    0 10px 15px -3px rgba(74, 44, 26, 0.1), 
+    0 4px 6px -2px rgba(74, 44, 26, 0.05),
+    0 0 30px rgba(247, 88, 12, 0.15);
   --jensify-shadow-xl:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --jensify-shadow-icon: 0 2px 8px rgba(0, 0, 0, 0.08);
+    0 20px 25px -5px rgba(74, 44, 26, 0.1), 
+    0 10px 10px -5px rgba(74, 44, 26, 0.04),
+    0 0 40px rgba(247, 88, 12, 0.2);
+  --jensify-shadow-icon: 0 2px 8px rgba(74, 44, 26, 0.08);
+  --jensify-shadow-card-glow: 
+    0 4px 20px rgba(247, 88, 12, 0.2),
+    0 0 60px rgba(247, 88, 12, 0.1);
+  --jensify-shadow-focus-glow:
+    0 0 0 4px rgba(247, 88, 12, 0.3),
+    0 0 20px rgba(247, 88, 12, 0.4),
+    0 0 40px rgba(247, 88, 12, 0.2);
 
   // Gradients & Special Effects
   --jensify-gradient-card: linear-gradient(
@@ -143,66 +160,203 @@ html {
   --jensify-gradient-hero: linear-gradient(
     135deg,
     var(--jensify-surface-card),
-    #fff8f3
+    #FFF8F3
   );
   --jensify-glow-primary: radial-gradient(
     circle,
-    rgba(255, 89, 0, 0.12),
+    rgba(247, 88, 12, 0.25),
     transparent 60%
   );
   --jensify-surface-frosted: rgba(255, 255, 255, 0.95);
   --jensify-surface-glass-nav: rgba(255, 255, 255, 0.65);
-  --jensify-overlay: rgba(0, 0, 0, 0.5);
-  --jensify-warning-glow-start: rgba(245, 158, 11, 0.4);
-  --jensify-warning-glow-end: rgba(245, 158, 11, 0);
+  --jensify-overlay: rgba(74, 44, 26, 0.5);
 
-  // Spacing Scale (for generous whitespace)
-  --jensify-spacing-xs: 0.25rem; // 4px
-  --jensify-spacing-sm: 0.5rem; // 8px
-  --jensify-spacing-md: 1rem; // 16px
-  --jensify-spacing-lg: 1.5rem; // 24px
-  --jensify-spacing-xl: 2rem; // 32px
-  --jensify-spacing-2xl: 3rem; // 48px
-  --jensify-spacing-3xl: 4rem; // 64px
+  // Spacing Scale
+  --jensify-spacing-xs: 0.25rem;
+  --jensify-spacing-sm: 0.5rem;
+  --jensify-spacing-md: 1rem;
+  --jensify-spacing-lg: 1.5rem;
+  --jensify-spacing-xl: 2rem;
+  --jensify-spacing-2xl: 3rem;
+  --jensify-spacing-3xl: 4rem;
 
   // Border Radius
-  --jensify-radius-sm: 0.375rem; // 6px
-  --jensify-radius-md: 0.5rem; // 8px
-  --jensify-radius-lg: 0.75rem; // 12px
-  --jensify-radius-xl: 1rem; // 16px
+  --jensify-radius-sm: 0.375rem;
+  --jensify-radius-md: 0.5rem;
+  --jensify-radius-lg: 0.75rem;
+  --jensify-radius-xl: 1rem;
   --jensify-radius-full: 9999px;
 
-  // Legacy aliases (for older component styles)
-  // These ensure any remaining uses of generic spacing/radius tokens still work.
+  // Legacy aliases
   --spacing-xs: var(--jensify-spacing-xs);
   --spacing-sm: var(--jensify-spacing-sm);
   --spacing-md: var(--jensify-spacing-md);
   --spacing-lg: var(--jensify-spacing-lg);
   --spacing-xl: var(--jensify-spacing-xl);
-
   --radius-sm: var(--jensify-radius-sm);
   --radius-md: var(--jensify-radius-md);
   --radius-lg: var(--jensify-radius-lg);
   --radius-xl: var(--jensify-radius-xl);
 
-  // Additional surface & text tokens used by layout components
-  --jensify-surface-hover: #f3f4f6;
+  // Additional surface & text tokens
+  --jensify-surface-hover: #F3F4F6;
   --jensify-text-primary: var(--jensify-text-strong);
   --jensify-text-secondary: var(--jensify-text-medium);
 
-  // Layout (sidebar, content widths)
+  // Form Inputs (Rounded, Filled Style)
+  --jensify-input-bg: rgba(74, 44, 26, 0.05);
+  --jensify-input-border: rgba(247, 88, 12, 0.3);
+  --jensify-input-border-hover: rgba(247, 88, 12, 0.5);
+  --jensify-input-border-focus: #F7580C;
+  --jensify-input-text: var(--jensify-text-strong);
+  --jensify-input-placeholder: var(--jensify-text-muted);
+  --jensify-input-radius: 24px;
+
+  // Layout
   --jensify-sidebar-width: 64px;
   --jensify-sidebar-expanded: 240px;
   --jensify-content-max-width: 1400px;
   --jensify-topbar-height: 64px;
 }
 
+// Dark Mode Overrides - Cool Blue-Grey with Orange Glows
+.dark {
+  // Surface & Background (Cool Blue-Grey)
+  --jensify-surface-soft: #0f172a; // Slate 900
+  --jensify-surface-card: #1e293b; // Slate 800
+  --jensify-surface-raised: #334155; // Slate 700
+  --jensify-background-gradient-start: #020617; // Slate 950
+  --jensify-background-gradient-end: #0f172a; // Slate 900
+
+  // Borders (Subtle Blue-Grey + Orange)
+  --jensify-border-subtle: rgba(247, 88, 12, 0.15);
+  --jensify-border-medium: rgba(247, 88, 12, 0.25);
+  --jensify-border-strong: rgba(247, 88, 12, 0.4);
+
+  // Text (White/Off-white)
+  --jensify-text-strong: #f8fafc; // Slate 50
+  --jensify-text-medium: #cbd5e1; // Slate 300
+  --jensify-text-muted: #94a3b8; // Slate 400
+  --jensify-text-subtle: #64748b; // Slate 500
+  --jensify-text-inverse: #0f172a;
+
+  // Icons
+  --jensify-icon-strong: #f8fafc;
+  --jensify-icon-muted: #94a3b8;
+
+  // Semantic Colors
+  --jensify-danger-soft: rgba(239, 68, 68, 0.1);
+  --jensify-danger-border: rgba(239, 68, 68, 0.2);
+
+  --jensify-success-soft: rgba(16, 185, 129, 0.1);
+  --jensify-success-border: rgba(16, 185, 129, 0.2);
+
+  --jensify-warning-soft: rgba(245, 158, 11, 0.1);
+  --jensify-warning-border: rgba(245, 158, 11, 0.2);
+
+  --jensify-info-soft: rgba(59, 130, 246, 0.1);
+  --jensify-info-border: rgba(59, 130, 246, 0.2);
+
+  // Shadows (Orange Glow Focus)
+  --jensify-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --jensify-shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.5),
+    0 0 15px rgba(247, 88, 12, 0.1); /* Subtle orange glow */
+  --jensify-shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.5),
+    0 0 25px rgba(247, 88, 12, 0.15); /* Medium orange glow */
+  --jensify-shadow-xl:
+    0 20px 25px -5px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(247, 88, 12, 0.2); /* Strong orange glow */
+
+  --jensify-shadow-card-glow:
+    0 0 0 1px rgba(247, 88, 12, 0.15), /* Border glow */
+    0 0 30px rgba(247, 88, 12, 0.1);   /* Ambient glow */
+    
+  --jensify-shadow-focus-glow:
+    0 0 0 2px rgba(247, 88, 12, 0.5),
+    0 0 15px rgba(247, 88, 12, 0.3);
+
+  // Gradients & Special Effects
+  --jensify-gradient-card: linear-gradient(
+    180deg,
+    rgba(20, 20, 20, 0.9) 0%,
+    rgba(10, 10, 10, 0.95) 100%
+  );
+  --jensify-gradient-hero: linear-gradient(135deg, #121212, #000000);
+  --jensify-surface-frosted: rgba(10, 10, 10, 0.85);
+  --jensify-surface-glass-nav: rgba(10, 10, 10, 0.8);
+  --jensify-surface-hover: #1F1F1F;
+
+  // Form Inputs
+  --jensify-input-bg: rgba(255, 255, 255, 0.03);
+  --jensify-input-border: rgba(255, 255, 255, 0.1);
+  --jensify-input-border-hover: rgba(247, 88, 12, 0.5);
+  --jensify-input-text: #FFFFFF;
+  --jensify-input-placeholder: #737373;
+
+  // Dark Mode Body Background Override
+  background: #020617 !important; // Slate 950
+}
+
+// Aggressive Override for Dark Mode Background
+body.dark, html.dark, .dark body {
+  background-color: #020617 !important;
+  background: #020617 !important;
+
+  // Ambient Glow Effects (Matches user example)
+  &::before {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: -10%;
+    width: 80vw;
+    height: 80vh;
+    background: radial-gradient(
+      circle at center,
+      rgba(247, 88, 12, 0.15) 0%,
+      rgba(247, 88, 12, 0.05) 40%,
+      transparent 70%
+    ) !important;
+    filter: blur(100px);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  &::after {
+    content: '';
+    position: fixed;
+    bottom: -20%;
+    right: -10%;
+    width: 70vw;
+    height: 70vh;
+    background: radial-gradient(
+      circle at center,
+      rgba(247, 88, 12, 0.1) 0%,
+      rgba(247, 88, 12, 0.02) 40%,
+      transparent 70%
+    ) !important;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+
 body {
   // Default the application to a light color theme
   color-scheme: light;
 
-  // Set base typography and background
-  background-color: var(--jensify-surface-soft);
+  // LIGHT MODE: Warm Tan/Orange gradient background
+  background: linear-gradient(
+    135deg,
+    #FFF8F3 0%,
+    #FDEED9 20%,
+    #FADDBE 40%,
+    #FDEED9 60%,
+    #FFF8F3 100%
+  );
+  background-attachment: fixed;
   color: var(--jensify-text-strong);
   font: var(--mat-sys-body-medium);
   line-height: 1.6;
@@ -210,6 +364,46 @@ body {
   // Reset the user agent margin
   margin: 0;
   height: 100%;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden; // Prevent scrollbar from glow
+
+  // LIGHT MODE: Subtle warm glow effects
+  &::before {
+    content: '';
+    position: fixed;
+    top: -20vh;
+    left: -20vw;
+    width: 80vw;
+    height: 80vh;
+    background: radial-gradient(
+      circle at center,
+      rgba(247, 88, 12, 0.12) 0%,
+      rgba(247, 88, 12, 0.06) 40%,
+      transparent 70%
+    );
+    pointer-events: none;
+    z-index: -1;
+    filter: blur(80px);
+  }
+
+  &::after {
+    content: '';
+    position: fixed;
+    bottom: -20vh;
+    right: -20vw;
+    width: 80vw;
+    height: 80vh;
+    background: radial-gradient(
+      circle at center,
+      rgba(247, 88, 12, 0.12) 0%,
+      rgba(247, 88, 12, 0.06) 40%,
+      transparent 70%
+    );
+    pointer-events: none;
+    z-index: -1;
+    filter: blur(80px);
+  }
 }
 
 html {
@@ -235,19 +429,30 @@ body {
 // ============================================================================
 
 @mixin jensify-mesh-gradient-bg {
-  background-color: #fff0e6;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(255, 89, 0, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(255, 122, 51, 0.1) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(255, 89, 0, 0.15) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(255, 122, 51, 0.1) 0px, transparent 50%);
+  background-color: var(--jensify-surface-soft);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(247, 88, 12, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(240, 224, 208, 0.2) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(247, 88, 12, 0.15) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(240, 224, 208, 0.2) 0px, transparent 50%);
+
+  // Dark mode adjustments
+  @at-root .dark & {
+    background-color: #020617; // Slate 950
+    background-image:
+      radial-gradient(at 0% 0%, rgba(247, 88, 12, 0.1) 0px, transparent 40%),
+      radial-gradient(at 100% 0%, rgba(247, 88, 12, 0.05) 0px, transparent 40%),
+      radial-gradient(at 100% 100%, rgba(247, 88, 12, 0.1) 0px, transparent 40%),
+      radial-gradient(at 0% 100%, rgba(247, 88, 12, 0.05) 0px, transparent 40%);
+  }
+
   position: relative;
   // overflow-x: hidden; // Removed to prevent nested scroll context
 }
 
 @mixin jensify-floating-shapes {
   &::before, &::after {
-    content: '';
+    content: "";
     position: absolute;
     border-radius: 50%;
     filter: blur(80px);
@@ -260,7 +465,7 @@ body {
   &::before {
     width: 600px;
     height: 600px;
-    background: rgba(255, 89, 0, 0.08);
+    background: rgba(247, 88, 12, 0.08);
     top: -100px;
     left: -100px;
     animation-delay: -5s;
@@ -269,27 +474,33 @@ body {
   &::after {
     width: 500px;
     height: 500px;
-    background: rgba(255, 122, 51, 0.08);
+    background: rgba(240, 224, 208, 0.1);
     bottom: -50px;
     right: -50px;
   }
 }
 
 @mixin jensify-glass-card($opacity: 0.9, $blur: 20px) {
-  background: rgba(255, 255, 255, $opacity);
+  background: var(--jensify-surface-card);
   backdrop-filter: blur($blur);
   -webkit-backdrop-filter: blur($blur);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  border: 1px solid var(--jensify-border-subtle);
+  box-shadow: var(--jensify-shadow-xl);
 }
 
 @keyframes float {
-  0%, 100% { transform: translate(0, 0); }
-  25% { transform: translate(20px, 20px); }
-  50% { transform: translate(-10px, 40px); }
-  75% { transform: translate(-30px, 10px); }
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(20px, 20px);
+  }
+  50% {
+    transform: translate(-10px, 40px);
+  }
+  75% {
+    transform: translate(-30px, 10px);
+  }
 }
 
 // Utility Classes for Components
@@ -308,7 +519,7 @@ body {
 .jensify-premium-mesh-bg {
   mat-card, .mat-mdc-card {
     @include jensify-glass-card;
-    background-color: rgba(255, 255, 255, 0.9) !important; // Ensure override
+    background-color: var(--jensify-surface-card) !important;
   }
 }
 
@@ -322,7 +533,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: var(--jensify-spacing-lg);
-  
+
   // Apply Mixins
   @include jensify-mesh-gradient-bg;
   @include jensify-floating-shapes;
@@ -333,10 +544,10 @@ body {
   grid-template-columns: 1.1fr 1fr;
   max-width: 1100px;
   width: 100%;
-  
+
   // Apply Glassmorphism Mixin
   @include jensify-glass-card;
-  
+
   border-radius: var(--jensify-radius-xl);
   overflow: visible;
   min-height: 600px;
@@ -355,7 +566,7 @@ body {
 }
 
 .jensify-auth-benefits {
-  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  background: linear-gradient(135deg, #2D1E17 0%, #1C1311 100%);
   color: white;
   padding: var(--jensify-spacing-3xl);
   display: flex;
@@ -371,7 +582,10 @@ body {
     content: "";
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-image: radial-gradient(
+      rgba(255, 255, 255, 0.1) 1px,
+      transparent 1px
+    );
     background-size: 30px 30px;
     opacity: 0.1;
   }
@@ -386,7 +600,7 @@ body {
     height: 200%;
     background: radial-gradient(
       circle,
-      rgba(255, 89, 0, 0.15) 0%,
+      rgba(247, 88, 12, 0.15) 0%,
       transparent 70%
     );
     pointer-events: none;
@@ -430,7 +644,7 @@ body {
     letter-spacing: -0.03em;
     position: relative;
     z-index: 1;
-    
+
     background: linear-gradient(to right, #ffffff, #e0e0e0);
     -webkit-background-clip: text;
     background-clip: text;
@@ -460,7 +674,7 @@ body {
     &:hover {
       transform: translateX(5px);
       color: white;
-      
+
       mat-icon {
         transform: scale(1.1);
         filter: drop-shadow(0 0 5px rgba(255, 89, 0, 0.5));
@@ -495,7 +709,11 @@ body {
   color: var(--jensify-text-strong);
   margin-bottom: var(--jensify-spacing-xs);
   letter-spacing: -0.03em;
-  background: linear-gradient(135deg, var(--jensify-text-strong) 0%, #4b5563 100%);
+  background: linear-gradient(
+    135deg,
+    var(--jensify-text-strong) 0%,
+    #4b5563 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -539,171 +757,7 @@ body {
   }
 }
 
-// ============================================================================
-// GLOBAL MATERIAL FORM FIELD FIX - Complete Override
-// Fixes label overlap, spacing, and alignment issues across entire app
-// ============================================================================
-
-// CRITICAL: Override Material's default form field behavior
-.mat-mdc-form-field {
-  width: 100%;
-  margin-bottom: 1rem;
-}
-
-// Target the actual wrapper element
-.mat-mdc-text-field-wrapper {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-// Fix the container that holds input/select
-.mat-mdc-form-field-flex {
-  padding-top: 0 !important;
-}
-
-// CRITICAL: Set proper height and padding for the input area
-.mat-mdc-form-field-infix {
-  min-height: 56px !important;
-  padding-top: 28px !important;
-  padding-bottom: 8px !important;
-  border-top: none !important;
-  min-width: 0 !important; // Allow shrinking
-}
-
-// CRITICAL: Force label to float above content ALWAYS
-.mat-mdc-form-field .mdc-floating-label {
-  position: absolute !important;
-  left: 16px !important;
-  top: 16px !important;
-  transform: translateY(0) scale(0.75) !important;
-  transform-origin: left top !important;
-  transition: none !important;
-  color: var(--jensify-text-muted) !important;
-  pointer-events: none !important;
-  z-index: 1 !important;
-  max-width: calc(100% - 32px) !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-// When focused, change label color
-.mat-mdc-form-field.mat-focused .mdc-floating-label {
-  color: var(--jensify-primary) !important;
-}
-
-// CRITICAL: Prevent text overflow in input/select content
-.mat-mdc-form-field input.mat-mdc-input-element,
-.mat-mdc-form-field textarea.mat-mdc-input-element,
-.mat-mdc-form-field .mat-mdc-select-trigger {
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-  line-height: 1.5 !important;
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: initial !important;
-}
-
-// CRITICAL: mat-select specific - ensure value displays below label
-.mat-mdc-form-field .mat-mdc-select {
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-}
-
-.mat-mdc-form-field .mat-mdc-select-value,
-.mat-mdc-form-field .mat-mdc-select-value-text {
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-  line-height: 1.5 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-  display: block !important;
-}
-
-// Ensure select arrow doesn't get cut off
-.mat-mdc-form-field .mat-mdc-select-arrow-wrapper {
-  flex-shrink: 0 !important;
-}
-
-// Fix datepicker and suffix icons
-.mat-mdc-form-field .mat-mdc-form-field-icon-suffix,
-.mat-mdc-form-field .mat-datepicker-toggle {
-  margin-top: 12px !important;
-  flex-shrink: 0 !important;
-}
-
-// appearance="fill" specific
-.mat-mdc-form-field-appearance-fill .mdc-line-ripple {
-  display: none !important;
-}
-
-// Ensure filter rows work properly
-.jensify-filter-row mat-form-field,
-.jensify-form-row mat-form-field {
-  min-width: 0 !important;
-}
-
-.mat-mdc-form-field-appearance-fill .mat-mdc-form-field-flex {
-  @include jensify-form-field-surface;
-}
-
-.mat-mdc-form-field-appearance-fill .mat-mdc-form-field-infix {
-  @include jensify-form-field-infix-spacing;
-}
-
-.mat-mdc-form-field-appearance-fill.mat-focused .mat-mdc-form-field-flex {
-  @include jensify-form-field-focus-state;
-}
-
-.mat-mdc-form-field-appearance-fill .mdc-floating-label,
-.mat-mdc-form-field-appearance-fill .mdc-floating-label--float-above {
-  transform: translateY(-1.45rem) scale(0.85);
-  color: var(--jensify-text-muted);
-  background-color: transparent;
-}
-
-.mat-mdc-form-field-appearance-fill.mat-focused .mdc-floating-label {
-  color: var(--jensify-primary);
-}
-
-.mat-mdc-form-field-appearance-fill input.mat-mdc-input-element,
-.mat-mdc-form-field-appearance-fill .mat-mdc-select-trigger {
-  font-size: 1rem;
-  padding: 0.25rem 0;
-}
-
-.mat-mdc-form-field-appearance-outline .mat-mdc-form-field-flex {
-  @include jensify-form-field-surface;
-}
-
-.mat-mdc-form-field-appearance-outline.mat-mdc-form-field-has-icon-prefix
-  .mat-mdc-notched-outline {
-  display: none;
-}
-
-.mat-mdc-form-field-appearance-outline .mat-mdc-form-field-infix {
-  @include jensify-form-field-infix-spacing;
-}
-
-.mat-mdc-form-field-appearance-outline.mat-focused .mat-mdc-form-field-flex {
-  @include jensify-form-field-focus-state;
-}
-
-.mat-mdc-form-field:not([appearance]),
-.mat-mdc-form-field[appearance="legacy"] {
-  .mat-mdc-form-field-flex {
-    @include jensify-form-field-surface;
-  }
-
-  .mat-mdc-form-field-infix {
-    @include jensify-form-field-infix-spacing;
-  }
-
-  &.mat-focused .mat-mdc-form-field-flex {
-    @include jensify-form-field-focus-state;
-  }
-}
+// [Removed conflicting form field overrides to fix text overlap]
 
 .mat-mdc-form-field-appearance-outline .mdc-floating-label,
 .mat-mdc-form-field-appearance-outline .mdc-floating-label--float-above {
@@ -841,10 +895,29 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
-// Global fix: Ensure all Material cards have solid backgrounds
+// Global fix: Ensure all Material cards have proper backgrounds for both modes
 mat-card, .mat-mdc-card {
-  background-color: var(--jensify-surface-card) !important;
+  // LIGHT MODE: Clean white with warm border
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 2px solid var(--jensify-border-medium) !important;
+  box-shadow: 0 4px 20px rgba(255, 89, 0, 0.12) !important;
+  color: var(--jensify-text-strong) !important;
   opacity: 1 !important;
+
+  // DARK MODE: Brown gradient glass
+  // DARK MODE: Slate Blue-Grey Glass
+  @at-root .dark & {
+    background: linear-gradient(
+      135deg,
+      rgba(30, 41, 59, 0.7) 0%,
+      rgba(15, 23, 42, 0.8) 100%
+    ) !important;
+    border: 1px solid rgba(247, 88, 12, 0.2) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+  }
 }
 
 // ============================================================================
@@ -1024,3 +1097,305 @@ mat-card, .mat-mdc-card {
     content: "";
   }
 }
+
+// ============================================================================
+// ROUNDED, FILLED FORM FIELD STYLING (Reference Images Style)
+// ============================================================================
+
+// Override Angular Material form fields to get rounded, filled pill-shaped inputs
+.mat-mdc-form-field {
+  width: 100%;
+
+  // Remove the default underline
+  .mdc-line-ripple {
+    display: none !important;
+  }
+
+  // Hide the default line ripple and underline
+  .mat-mdc-form-field-focus-overlay,
+  .mat-mdc-form-field-ripple {
+    display: none !important;
+  }
+
+  // Style the input wrapper - LIGHT MODE
+  .mat-mdc-text-field-wrapper {
+    background: rgba(74, 44, 26, 0.04);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: var(--jensify-input-radius);
+    border: 1.5px solid rgba(247, 88, 12, 0.2);
+    padding: 0 !important;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+    &:hover {
+      border-color: rgba(247, 88, 12, 0.4);
+      box-shadow: 0 4px 12px rgba(255, 89, 0, 0.1);
+      background: rgba(74, 44, 26, 0.06);
+    }
+  }
+
+  // Focused state - LIGHT MODE
+  &.mat-focused .mat-mdc-text-field-wrapper {
+    border-color: var(--jensify-primary);
+    box-shadow: 0 0 0 3px rgba(255, 89, 0, 0.15), 0 4px 16px rgba(255, 89, 0, 0.2);
+    background: rgba(255, 89, 0, 0.03);
+  }
+
+  // Input text - LIGHT MODE
+  .mat-mdc-input-element {
+    color: var(--jensify-text-strong) !important;
+    padding: 12px 20px !important;
+    height: auto !important;
+    min-height: 48px;
+
+    &::placeholder {
+      color: var(--jensify-text-muted) !important;
+      opacity: 0.7;
+    }
+  }
+
+  // Float label - LIGHT MODE
+  .mat-mdc-floating-label {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    left: 20px !important;
+    color: var(--jensify-text-muted) !important;
+    font-size: 14px !important;
+  }
+
+  // DARK MODE OVERRIDES
+  @at-root .dark & {
+    .mat-mdc-text-field-wrapper {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(247, 88, 12, 0.25);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+
+      &:hover {
+        border-color: rgba(247, 88, 12, 0.45);
+        box-shadow: 0 4px 16px rgba(255, 89, 0, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+      }
+    }
+
+    &.mat-focused .mat-mdc-text-field-wrapper {
+      border-color: rgba(247, 88, 12, 0.8);
+      box-shadow: 0 0 0 3px rgba(255, 89, 0, 0.25), 0 4px 20px rgba(255, 89, 0, 0.3);
+      background: rgba(255, 89, 0, 0.08);
+    }
+
+    .mat-mdc-input-element {
+      color: rgba(255, 255, 255, 0.95) !important;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.6) !important;
+      }
+    }
+
+    .mat-mdc-floating-label {
+      color: rgba(255, 255, 255, 0.7) !important;
+    }
+  }
+
+  // When field has value or is focused, move label to top left
+  &.mat-form-field-should-float .mat-mdc-floating-label,
+  &.mat-focused .mat-mdc-floating-label,
+  .mdc-floating-label--float-above {
+    top: 8px !important;
+    transform: translateY(0) scale(0.85) !important;
+    left: 16px !important;
+  }
+
+  // When field has value, adjust input padding to make room for label
+  &.mat-form-field-should-float .mat-mdc-input-element,
+  &.mat-form-field-should-float .mat-mdc-select-trigger {
+    padding-top: 24px !important;
+    padding-bottom: 8px !important;
+  }
+
+  // Prefix/Suffix icons
+  .mat-mdc-form-field-icon-prefix,
+  .mat-mdc-form-field-icon-suffix {
+    padding: 0 12px;
+    color: var(--jensify-icon-muted);
+  }
+
+  // Remove subscript wrapper (hint/error messages below field)
+  .mat-mdc-form-field-subscript-wrapper {
+    margin-top: 4px;
+    padding: 0 20px;
+  }
+
+  // Error styling
+  &.mat-form-field-invalid {
+    .mat-mdc-text-field-wrapper {
+      border-color: var(--jensify-danger);
+    }
+  }
+
+  // Disabled state
+  &.mat-form-field-disabled {
+    .mat-mdc-text-field-wrapper {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Style mat-select (dropdowns) - LIGHT MODE
+.mat-mdc-select {
+  .mat-mdc-select-trigger {
+    padding: 12px 20px;
+    height: auto !important;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+
+  .mat-mdc-select-value {
+    color: var(--jensify-text-strong);
+  }
+
+  .mat-mdc-select-placeholder {
+    color: var(--jensify-text-muted);
+  }
+
+  .mat-mdc-select-arrow {
+    color: var(--jensify-icon-muted);
+    margin-left: auto;
+  }
+
+  // DARK MODE
+  @at-root .dark & {
+    .mat-mdc-select-value {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .mat-mdc-select-placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .mat-mdc-select-arrow {
+      color: rgba(255, 255, 255, 0.7);
+    }
+  }
+}
+
+// Style the dropdown panel - LIGHT MODE
+.mat-mdc-select-panel {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  border: 2px solid var(--jensify-border-medium);
+  box-shadow: 0 8px 32px rgba(255, 89, 0, 0.15);
+  margin-top: 8px;
+
+  .mat-mdc-option {
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 4px 8px;
+    color: var(--jensify-text-strong);
+
+    &:hover {
+      background: rgba(255, 122, 51, 0.1);
+    }
+
+    &.mat-mdc-option-active,
+    &.mat-selected {
+      background: rgba(255, 89, 0, 0.15);
+      color: var(--jensify-primary);
+    }
+  }
+
+  // DARK MODE
+  @at-root .dark & {
+    background: #1e293b; // Slate 800
+    border: 1px solid rgba(247, 88, 12, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+    .mat-mdc-option {
+      color: rgba(255, 255, 255, 0.9);
+
+      &:hover {
+        background: rgba(255, 122, 51, 0.3);
+      }
+
+      &.mat-mdc-option-active,
+      &.mat-selected {
+        background: rgba(255, 89, 0, 0.4);
+        color: rgba(255, 255, 255, 1);
+      }
+    }
+  }
+}
+
+// Date picker input styling
+.mat-datepicker-toggle {
+  color: var(--jensify-icon-muted);
+
+  button {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+// Textarea specific styling
+textarea.mat-mdc-input-element {
+  min-height: 100px !important;
+  padding: 16px 20px !important;
+  resize: vertical;
+}
+
+// ============================================================================
+// BUTTON STYLING - SOLID & PREMIUM
+// ============================================================================
+// Override Material's primary raised button to ensure it's solid orange
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-flat-button.mat-primary {
+  background-color: var(--jensify-primary) !important;
+  color: white !important;
+  opacity: 1 !important;
+  box-shadow: var(--jensify-shadow-card-glow);
+  
+  &:hover {
+    background-color: var(--jensify-primary-hover) !important;
+    box-shadow: var(--jensify-shadow-focus-glow);
+  }
+  
+  &:active {
+    box-shadow: var(--jensify-shadow-lg);
+  }
+}
+
+// Fix for "transparent" buttons - ensure default raised buttons have background
+.mat-mdc-raised-button:not(.mat-primary):not(.mat-accent):not(.mat-warn) {
+  background-color: var(--jensify-surface-card) !important;
+  color: var(--jensify-text-strong) !important;
+}
+
+// ENHANCED GLOW & INPUT FIXES
+.mat-mdc-form-field {
+  // Stronger glow
+  &.mat-focused .mat-mdc-text-field-wrapper {
+    box-shadow: 0 0 0 4px rgba(255, 89, 0, 0.25) !important; // Increased spread and opacity
+    border-color: var(--jensify-primary) !important;
+  }
+
+  // Fix label overlap - ensure it clears the text
+  &.mat-form-field-should-float .mat-mdc-floating-label,
+  &.mat-focused .mat-mdc-floating-label {
+    transform: translateY(-6px) scale(0.85) !important; // Adjust position
+  }
+}
+
+// ============================================================================
+// DIALOG BACKGROUND FIX
+// ============================================================================
+.mat-mdc-dialog-container,
+.mdc-dialog__surface {
+  background-color: var(--jensify-surface-card) !important;
+  opacity: 1 !important;
+}
+

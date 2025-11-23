@@ -1,4 +1,4 @@
-import { Component, OnDestroy, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -64,6 +64,9 @@ import { takeUntil } from 'rxjs/operators';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AttachReceiptDialog implements OnDestroy {
+  private readonly expenseService = inject(ExpenseService);
+  private readonly dialogRef = inject<MatDialogRef<AttachReceiptDialog>>(MatDialogRef);
+
   // Cleanup
   private destroy$ = new Subject<void>();
 
@@ -72,10 +75,7 @@ export class AttachReceiptDialog implements OnDestroy {
   readonly errorMessage = signal<string | null>(null);
   pendingFile: File | null = null;
 
-  constructor(
-    private readonly expenseService: ExpenseService,
-    private readonly dialogRef: MatDialogRef<AttachReceiptDialog>
-  ) {
+  constructor() {
     this.receipts$ = this.expenseService.getMyReceipts().pipe(shareReplay(1));
   }
 
@@ -119,5 +119,12 @@ export class AttachReceiptDialog implements OnDestroy {
 
   close(): void {
     this.dialogRef.close();
+  }
+
+  /**
+   * TrackBy function for receipt list - improves ngFor performance
+   */
+  trackByReceiptId(_index: number, receipt: Receipt): string {
+    return receipt.id;
   }
 }

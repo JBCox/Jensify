@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -41,6 +41,12 @@ import { Invitation } from '../../../core/models';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrganizationSetupComponent implements OnInit, OnDestroy {
+  private fb = inject(FormBuilder);
+  private organizationService = inject(OrganizationService);
+  private invitationService = inject(InvitationService);
+  private notificationService = inject(NotificationService);
+  private router = inject(Router);
+
   // Cleanup
   private destroy$ = new Subject<void>();
 
@@ -49,13 +55,7 @@ export class OrganizationSetupComponent implements OnInit, OnDestroy {
   pendingInvitations = signal<Invitation[]>([]);
   showCreateForm = signal(false);
 
-  constructor(
-    private fb: FormBuilder,
-    private organizationService: OrganizationService,
-    private invitationService: InvitationService,
-    private notificationService: NotificationService,
-    private router: Router
-  ) {
+  constructor() {
     this.createOrgForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       domain: ['', [Validators.pattern(/^[a-z0-9-]+\.[a-z]{2,}$/i)]]
@@ -174,7 +174,7 @@ export class OrganizationSetupComponent implements OnInit, OnDestroy {
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (membership) => {
+        next: () => {
           this.isLoading.set(false);
           this.notificationService.showSuccess(
             `Successfully joined ${invitation.organization?.name || 'organization'}!`

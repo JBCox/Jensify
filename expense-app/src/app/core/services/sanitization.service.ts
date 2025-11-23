@@ -174,7 +174,7 @@ export class SanitizationService {
     let sanitized = filename.toString().replace(/\.\./g, '');
 
     // Remove path separators
-    sanitized = sanitized.replace(/[\/\\]/g, '');
+    sanitized = sanitized.replace(/[/\\]/g, '');
 
     // Remove null bytes
     sanitized = sanitized.replace(/\0/g, '');

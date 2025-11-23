@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -28,14 +28,14 @@ import { OcrStatus } from '../../../core/models/enums';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ReceiptList {
+  private readonly expenseService = inject(ExpenseService);
+  private readonly router = inject(Router);
+  private readonly supabase = inject(SupabaseService);
+
   receipts$: Observable<Receipt[]>;
   readonly OcrStatus = OcrStatus;
 
-  constructor(
-    private readonly expenseService: ExpenseService,
-    private readonly router: Router,
-    private readonly supabase: SupabaseService
-  ) {
+  constructor() {
     this.receipts$ = this.expenseService.getMyReceipts();
   }
 
@@ -69,5 +69,12 @@ export class ReceiptList {
 
   getStatusClass(receipt: Receipt): string {
     return `status-${receipt.ocr_status}`;
+  }
+
+  /**
+   * TrackBy function for receipt list - improves ngFor performance
+   */
+  trackByReceiptId(_index: number, receipt: Receipt): string {
+    return receipt.id;
   }
 }

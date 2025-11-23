@@ -41,8 +41,6 @@ export class OcrService {
   private readonly supabase = inject(SupabaseService);
   private readonly logger = inject(LoggerService);
 
-  constructor() {}
-
   /**
    * Process receipt image using Supabase Edge Function (secure)
    * @param file Image file (JPEG, PNG, or PDF)

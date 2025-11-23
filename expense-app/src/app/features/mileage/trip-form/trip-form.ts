@@ -374,13 +374,13 @@ export class TripForm implements OnInit, OnDestroy {
                 });
                 this.snackBar.open('Origin location captured', 'Close', { duration: 2000 });
               },
-              error: (err) => {
+              error: () => {
                 this.snackBar.open('Failed to get address', 'Close', { duration: 3000 });
               }
             });
         },
-        error: (err) => {
-          this.snackBar.open(err.message, 'Close', { duration: 4000 });
+        error: (error) => {
+          this.snackBar.open(error.message, 'Close', { duration: 4000 });
         }
       });
   }
@@ -403,13 +403,13 @@ export class TripForm implements OnInit, OnDestroy {
                 });
                 this.snackBar.open('Destination location captured', 'Close', { duration: 2000 });
               },
-              error: (err) => {
+              error: () => {
                 this.snackBar.open('Failed to get address', 'Close', { duration: 3000 });
               }
             });
         },
-        error: (err) => {
-          this.snackBar.open(err.message, 'Close', { duration: 4000 });
+        error: (error) => {
+          this.snackBar.open(error.message, 'Close', { duration: 4000 });
         }
       });
   }

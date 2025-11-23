@@ -49,7 +49,7 @@
             <div class="info-item">
               <mat-icon>badge</mat-icon>
               <div>
-                <label>Role</label>
+                <span class="label">Role</span>
                 <span>{{ inv.role }}</span>
               </div>
             </div>
@@ -58,7 +58,7 @@
               <div class="info-item">
                 <mat-icon>business_center</mat-icon>
                 <div>
-                  <label>Department</label>
+                  <span class="label">Department</span>
                   <span>{{ inv.department }}</span>
                 </div>
               </div>
@@ -67,7 +67,7 @@
             <div class="info-item">
               <mat-icon>person</mat-icon>
               <div>
-                <label>Invited by</label>
+                <span class="label">Invited by</span>
                 <span>{{ inv.inviter?.full_name || 'Admin' }}</span>
               </div>
             </div>
@@ -75,7 +75,7 @@
             <div class="info-item">
               <mat-icon>schedule</mat-icon>
               <div>
-                <label>Expires</label>
+                <span class="label">Expires</span>
                 <span>{{ inv.expires_at | date:'short' }}</span>
               </div>
             </div>

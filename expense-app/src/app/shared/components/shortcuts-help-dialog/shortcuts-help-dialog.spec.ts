@@ -27,14 +27,14 @@ describe('ShortcutsHelpDialog', () => {
             key: 'k',
             ctrl: true,
             description: 'Open search',
-            callback: () => {}
+            callback: () => { /* Test callback */ }
           },
           {
             id: 'help',
             key: '?',
             shift: true,
             description: 'Show help',
-            callback: () => {}
+            callback: () => { /* Test callback */ }
           }
         ]
       }

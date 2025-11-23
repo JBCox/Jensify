@@ -1,13 +1,4 @@
-import {
-  Component,
-  Input,
-  OnChanges,
-  SimpleChanges,
-  ViewChild,
-  ElementRef,
-  ChangeDetectionStrategy,
-  signal
-} from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ViewChild, ElementRef, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GoogleMapsService } from '../../../core/services/google-maps.service';
 import { TripCoordinate } from '../../../core/models/mileage.model';
@@ -60,6 +51,8 @@ export interface TripMapData {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TripMap implements OnChanges {
+  private googleMapsService = inject(GoogleMapsService);
+
   @Input() tripData?: TripMapData;
   @ViewChild('mapElement', { static: true }) mapElement!: ElementRef<HTMLDivElement>;
 
@@ -67,8 +60,6 @@ export class TripMap implements OnChanges {
   private map?: any;
   private directionsService?: any;
   private directionsRenderer?: any;
-
-  constructor(private googleMapsService: GoogleMapsService) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['tripData'] && this.tripData) {
@@ -142,7 +133,7 @@ export class TripMap implements OnChanges {
     }));
 
     // Create polyline for actual GPS path
-    const polyline = new google.maps.Polyline({
+    new google.maps.Polyline({
       path,
       geodesic: true,
       strokeColor: '#FF5900', // Jensify orange

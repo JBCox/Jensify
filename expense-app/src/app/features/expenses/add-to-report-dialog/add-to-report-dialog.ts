@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, Inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -45,7 +45,12 @@ export class AddToReportDialogComponent implements OnInit {
   expenseIds: string[];
   totalAmount: number;
 
-  constructor(@Inject(MAT_DIALOG_DATA) data: { expenseIds: string[], totalAmount: number }) {
+  constructor() {
+    const data = inject<{
+    expenseIds: string[];
+    totalAmount: number;
+}>(MAT_DIALOG_DATA);
+
     this.expenseIds = data.expenseIds;
     this.totalAmount = data.totalAmount;
   }
@@ -57,7 +62,7 @@ export class AddToReportDialogComponent implements OnInit {
   error = signal<string | null>(null);
 
   // Selected report or 'new' for creating new report
-  selectedOption: string = '';
+  selectedOption = '';
 
   ngOnInit(): void {
     this.loadDraftReports();

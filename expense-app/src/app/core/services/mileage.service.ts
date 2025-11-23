@@ -149,7 +149,7 @@ export class MileageService {
   updateTrip(id: string, updates: UpdateMileageTripDto): Observable<MileageTrip> {
     return from(
       (async () => {
-        let updateData: any = { ...updates };
+        const updateData: any = { ...updates };
 
         if (updates.trip_date || updates.category) {
           const { data: currentTrip } = await this.supabase.client

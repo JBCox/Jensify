@@ -13,11 +13,11 @@ export type ChangeType = 'positive' | 'negative' | 'neutral';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MetricCard {
-  @Input() value: string = '0';
-  @Input() label: string = '';
-  @Input() icon: string = 'trending_up';
+  @Input() value = '0';
+  @Input() label = '';
+  @Input() icon = 'trending_up';
   @Input() iconType: MetricIconType = 'spend';
   @Input() change?: string;
   @Input() changeType?: ChangeType;
-  @Input() loading: boolean = false;
+  @Input() loading = false;
 }

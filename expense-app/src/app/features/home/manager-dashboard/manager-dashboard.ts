@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -33,15 +33,13 @@ interface ManagerMetrics {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ManagerDashboard implements OnInit {
+  private expenseService = inject(ExpenseService);
+  private router = inject(Router);
+
   metrics$!: Observable<ManagerMetrics>;
   teamPendingApprovals$!: Observable<ExpenseWithUser[]>;
   myRecentExpenses$!: Observable<ExpenseWithUser[]>;
   loading = true;
-
-  constructor(
-    private expenseService: ExpenseService,
-    private router: Router
-  ) {}
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -110,13 +108,11 @@ export class ManagerDashboard implements OnInit {
   onApprove(expense: ExpenseWithUser, event: Event): void {
     event.stopPropagation();
     // TODO: Implement approve logic
-    console.log('Approve expense:', expense.id);
   }
 
   onReject(expense: ExpenseWithUser, event: Event): void {
     event.stopPropagation();
     // TODO: Implement reject logic
-    console.log('Reject expense:', expense.id);
   }
 
   onViewExpense(expense: ExpenseWithUser): void {
@@ -133,5 +129,12 @@ export class ManagerDashboard implements OnInit {
 
   getUserName(expense: ExpenseWithUser): string {
     return expense.user?.full_name || expense.user?.email || 'Unknown';
+  }
+
+  /**
+   * TrackBy function for expense lists - improves ngFor performance
+   */
+  trackByExpenseId(_index: number, expense: ExpenseWithUser): string {
+    return expense.id;
   }
 }

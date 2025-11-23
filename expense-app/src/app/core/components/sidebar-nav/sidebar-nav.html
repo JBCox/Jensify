@@ -2,26 +2,40 @@
 <div
   class="sidebar-backdrop"
   [class.active]="isOpen"
-  (click)="onBackdropClick()">
+  (click)="onBackdropClick()"
+>
 </div>
 
 <!-- Sidebar -->
-<aside class="sidebar" [class.expanded]="!collapsed()" [class.collapsed]="collapsed()" [class.open]="isOpen">
+<aside
+  class="sidebar"
+  [class.expanded]="!collapsed()"
+  [class.collapsed]="collapsed()"
+  [class.open]="isOpen"
+>
   <div class="sidebar-top">
     <div class="brand">
       <mat-icon class="brand-icon">receipt_long</mat-icon>
       <span class="brand-label" *ngIf="!collapsed()">Jensify</span>
     </div>
-    <button mat-icon-button class="collapse-toggle" (click)="toggleCollapse()" aria-label="Collapse sidebar">
+    <button
+      mat-icon-button
+      class="collapse-toggle"
+      (click)="toggleCollapse()"
+      [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+      [matTooltip]="collapsed() ? 'Expand' : 'Collapse'"
+      matTooltipPosition="right"
+    >
       <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
     </button>
   </div>
   <nav class="sidebar-nav">
     <div
-      *ngFor="let item of filteredNavItems"
+      *ngFor="let item of filteredNavItems; trackBy: trackByNavItemRoute"
       class="nav-item"
       [class.active]="isActive(item.route)"
-      (click)="navigate(item.route)">
+      (click)="navigate(item.route)"
+    >
       <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
       <span class="nav-label" *ngIf="!collapsed()">{{ item.label }}</span>
       <!-- Badges for key routes -->
@@ -47,9 +61,22 @@
     </div>
   </nav>
   <div class="sidebar-footer" *ngIf="!collapsed()">
-    <button mat-button color="primary" (click)="navigate('/home')">
+    <button
+      mat-button
+      color="primary"
+      (click)="navigate('/home')"
+      class="home-btn"
+    >
       <mat-icon>home</mat-icon>
       Home
+    </button>
+    <button
+      mat-icon-button
+      (click)="themeService.toggleTheme()"
+      class="theme-toggle"
+    >
+      <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode'
+        }}</mat-icon>
     </button>
   </div>
 </aside>

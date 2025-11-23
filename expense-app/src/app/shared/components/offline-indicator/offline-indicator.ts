@@ -1,8 +1,8 @@
 import { Component, ChangeDetectionStrategy, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { fromEvent, merge, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { fromEvent, merge, of, Subject, Subscription } from 'rxjs';
+import { map, takeUntil } from 'rxjs/operators';
 
 /**
  * Offline Indicator Component
@@ -47,18 +47,22 @@ import { map } from 'rxjs/operators';
 })
 export class OfflineIndicator implements OnInit, OnDestroy {
   isOnline = signal(navigator.onLine);
+  private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
     merge(
       of(navigator.onLine),
       fromEvent(window, 'online').pipe(map(() => true)),
       fromEvent(window, 'offline').pipe(map(() => false))
-    ).subscribe(online => {
-      this.isOnline.set(online);
-    });
+    )
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(online => {
+        this.isOnline.set(online);
+      });
   }
 
   ngOnDestroy(): void {
-    // Cleanup handled by RxJS
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

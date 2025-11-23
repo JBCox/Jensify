@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, computed, OnDestroy, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -44,6 +44,11 @@ import { Subject, interval, takeUntil, take } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ReceiptUpload implements OnDestroy {
+  private expenseService = inject(ExpenseService);
+  private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
+  private logger = inject(LoggerService);
+
   // State signals
   selectedFile = signal<File | null>(null);
   previewUrl = signal<string | null>(null);
@@ -99,13 +104,6 @@ export class ReceiptUpload implements OnDestroy {
   private progressIntervalId: number | null = null;
   private ocrPollIntervalId: number | null = null;
   private hasPopulatedOcrFields = false;
-
-  constructor(
-    private expenseService: ExpenseService,
-    private snackBar: MatSnackBar,
-    private router: Router,
-    private logger: LoggerService
-  ) {}
 
   /**
    * Clean up subscriptions and timers when component is destroyed
@@ -302,21 +300,26 @@ export class ReceiptUpload implements OnDestroy {
     const receipt = this.uploadedReceipt();
     if (!receipt) return;
 
-    const queryParams: any = { receiptId: receipt.id };
+    const queryParams: Record<string, string> = { receiptId: receipt.id };
 
     // Pass edited values as query params (expense form will use these instead of receipt values)
     if (this.ocrCompleted()) {
-      if (this.extractedMerchant()) {
-        queryParams.merchant = this.extractedMerchant();
+      const merchant = this.extractedMerchant();
+      const amount = this.extractedAmount();
+      const date = this.extractedDate();
+      const category = this.extractedCategory();
+
+      if (merchant) {
+        queryParams['merchant'] = merchant;
       }
-      if (this.extractedAmount()) {
-        queryParams.amount = this.extractedAmount();
+      if (amount !== null) {
+        queryParams['amount'] = String(amount);
       }
-      if (this.extractedDate()) {
-        queryParams.date = this.extractedDate();
+      if (date) {
+        queryParams['date'] = date;
       }
-      if (this.extractedCategory()) {
-        queryParams.category = this.extractedCategory();
+      if (category) {
+        queryParams['category'] = category;
       }
     }
 

@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { Router } from '@angular/router';
 import { PwaService } from '../../../core/services/pwa.service';
 
 /**
@@ -39,12 +40,19 @@ import { PwaService } from '../../../core/services/pwa.service';
   styles: [`
     .install-banner {
       position: fixed;
-      bottom: 16px;
+      bottom: 80px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 1000;
+      z-index: 900;
       max-width: 500px;
       width: calc(100% - 32px);
+    }
+
+    @media (max-width: 768px) {
+      .install-banner {
+        bottom: 100px;
+        max-width: calc(100% - 32px);
+      }
     }
 
     .install-card {
@@ -86,18 +94,35 @@ import { PwaService } from '../../../core/services/pwa.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InstallPrompt {
+  private pwaService = inject(PwaService);
+  private router = inject(Router);
+
   showPrompt = signal(false);
 
-  constructor(private pwaService: PwaService) {
+  constructor() {
     // Check if we should show the prompt
     setTimeout(() => {
-      if (this.pwaService.canInstall() && !this.pwaService.isInstalled()) {
+      if (this.shouldShowPrompt()) {
         const dismissed = localStorage.getItem('jensify_install_dismissed');
         if (!dismissed || Date.now() - parseInt(dismissed) > 7 * 24 * 60 * 60 * 1000) {
           this.showPrompt.set(true);
         }
       }
     }, 3000); // Show after 3 seconds
+  }
+
+  /**
+   * Check if prompt should be shown
+   * Don't show on auth pages to avoid overlapping forms
+   */
+  private shouldShowPrompt(): boolean {
+    if (!this.pwaService.canInstall() || this.pwaService.isInstalled()) {
+      return false;
+    }
+
+    const currentUrl = this.router.url;
+    const authRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/auth/confirm-email'];
+    return !authRoutes.some(route => currentUrl.includes(route));
   }
 
   async install(): Promise<void> {

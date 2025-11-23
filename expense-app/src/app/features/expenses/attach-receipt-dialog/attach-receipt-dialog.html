@@ -24,7 +24,7 @@
     <div class="existing-pane">
       <ng-container *ngIf="receipts$ | async as receipts; else loadingReceipts">
         <div *ngIf="receipts.length; else empty">
-          <div class="receipt-row" *ngFor="let receipt of receipts">
+          <div class="receipt-row" *ngFor="let receipt of receipts; trackBy: trackByReceiptId">
             <div class="receipt-meta">
               <span class="receipt-name">{{ receipt.file_name }}</span>
               <small>{{ receipt.file_type }} · {{ (receipt.file_size / 1024) | number:'1.0-0' }} KB</small>

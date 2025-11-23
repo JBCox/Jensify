@@ -2,8 +2,8 @@
   position: relative;
   background: var(--jensify-gradient-card);
   border: 1px solid var(--jensify-border-subtle);
-  border-radius: var(--jensify-radius-xl);
-  padding: var(--jensify-spacing-lg) var(--jensify-spacing-lg) calc(var(--jensify-spacing-lg) - 4px);
+  border-radius: var(--jensify-radius-lg);
+  padding: var(--jensify-spacing-md);
   box-shadow: var(--jensify-shadow-sm);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100%;
@@ -12,7 +12,25 @@
   overflow: hidden;
   cursor: default;
 
-  /* Subtle accent bar */
+  // Dark mode overrides for glassmorphism
+  :host-context(.dark) & {
+    background: linear-gradient(
+      145deg,
+      rgba(20, 20, 20, 0.95) 0%,
+      rgba(10, 10, 10, 0.98) 100%
+    );
+    border: 1px solid rgba(247, 88, 12, 0.15);
+    box-shadow: 
+      0 4px 20px rgba(0, 0, 0, 0.4),
+      inset 0 0 20px rgba(255, 255, 255, 0.02);
+
+    // Remove top accent bar in dark mode for cleaner look
+    &::before {
+      display: none;
+    }
+  }
+
+  /* Subtle accent bar (Light mode only) */
   &::before {
     content: '';
     position: absolute;
@@ -37,30 +55,61 @@
     .metric-icon {
       transform: scale(1.05);
     }
+    
+    // Dark mode hover
+    :host-context(.dark) & {
+      border-color: rgba(247, 88, 12, 0.4);
+      box-shadow: 
+        0 10px 25px -5px rgba(0, 0, 0, 0.6),
+        0 0 15px rgba(247, 88, 12, 0.15);
+    }
   }
 
   .metric-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--jensify-spacing-md);
+    margin-bottom: var(--jensify-spacing-sm);
 
     .metric-icon {
-      width: 52px;
-      height: 52px;
-      border-radius: var(--jensify-radius-xl);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: var(--jensify-shadow-icon);
+      position: relative;
+      z-index: 1;
 
-      mat-icon {
-        font-size: 24px;
-        width: 24px;
-        height: 24px;
+      // Dark mode icon glow effect
+      :host-context(.dark) & {
+        background: linear-gradient(135deg, rgba(247, 88, 12, 0.2) 0%, rgba(247, 88, 12, 0.05) 100%);
+        color: #F7580C;
+        box-shadow: 
+          0 0 15px rgba(247, 88, 12, 0.2),
+          inset 0 0 10px rgba(247, 88, 12, 0.1);
+        border: 1px solid rgba(247, 88, 12, 0.2);
+        
+        // Inner highlight
+        &::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 16px;
+          background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.2), transparent 70%);
+          pointer-events: none;
+        }
       }
 
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+
+      // Variant overrides for light mode (keep existing logic)
       &.spend {
         background: var(--jensify-primary-soft);
         color: var(--jensify-primary);
@@ -104,12 +153,17 @@
     flex-direction: column;
 
     .metric-value {
-      font-size: 36px;
+      font-size: 28px;
       font-weight: 700;
       color: var(--jensify-text-strong);
       line-height: 1.1;
       margin-bottom: var(--jensify-spacing-xs);
       letter-spacing: -0.02em;
+
+      :host-context(.dark) & {
+        color: #FFFFFF;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      }
     }
 
     .metric-value-skeleton {
@@ -131,6 +185,10 @@
       color: var(--jensify-text-muted);
       font-weight: 500;
       margin-bottom: var(--jensify-spacing-sm);
+      
+      :host-context(.dark) & {
+        color: rgba(255, 255, 255, 0.6);
+      }
     }
 
     .metric-change {
@@ -174,21 +232,21 @@
 // Responsive adjustments
 @media (max-width: 767px) {
   .metric-card {
-    padding: var(--jensify-spacing-md);
+    padding: var(--jensify-spacing-sm);
 
     .metric-header .metric-icon {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
 
       mat-icon {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
       }
     }
 
     .metric-content .metric-value {
-      font-size: 28px;
+      font-size: 24px;
     }
   }
 }

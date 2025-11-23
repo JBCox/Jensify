@@ -1,11 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, from, throwError, firstValueFrom } from 'rxjs';
-import { map, catchError, switchMap } from 'rxjs/operators';
+import { Observable, from, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
 import { OrganizationService } from './organization.service';
 import {
   ExpenseReport,
-  ReportExpense,
   CreateReportDto,
   UpdateReportDto,
   ReportStatus,
@@ -392,6 +391,7 @@ export class ReportService {
 
   /**
    * Reorder expenses within a report
+   * OPTIMIZED: Uses batch update instead of N individual queries
    *
    * @param reportId Report ID
    * @param expenseIds Array of expense IDs in desired order
@@ -400,17 +400,33 @@ export class ReportService {
   reorderExpenses(reportId: string, expenseIds: string[]): Observable<void> {
     return from(
       (async () => {
-        // Update each junction record with new display_order
-        for (let i = 0; i < expenseIds.length; i++) {
-          const { error } = await this.supabase.client
-            .from('report_expenses')
-            .update({ display_order: i })
-            .eq('report_id', reportId)
-            .eq('expense_id', expenseIds[i]);
+        if (expenseIds.length === 0) {
+          return;
+        }
 
-          if (error) {
-            throw error;
+        // Batch update using PostgreSQL RPC function
+        // This converts N queries into 1 query
+        const { error } = await this.supabase.client.rpc('reorder_report_expenses', {
+          p_report_id: reportId,
+          p_expense_ids: expenseIds
+        });
+
+        // Fallback to individual updates if RPC not available
+        // This ensures backward compatibility
+        if (error?.code === '42883') { // function does not exist
+          for (let i = 0; i < expenseIds.length; i++) {
+            const { error: updateError } = await this.supabase.client
+              .from('report_expenses')
+              .update({ display_order: i })
+              .eq('report_id', reportId)
+              .eq('expense_id', expenseIds[i]);
+
+            if (updateError) {
+              throw updateError;
+            }
           }
+        } else if (error) {
+          throw error;
         }
       })()
     ).pipe(

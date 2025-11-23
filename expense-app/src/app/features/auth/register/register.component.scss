@@ -3,35 +3,4 @@
  * Uses Jensify design tokens for consistency
  */
 
-// Password Requirements Section
-.password-requirements {
-  margin: var(--jensify-spacing-md) 0;
-  padding: var(--jensify-spacing-md);
-  background: var(--jensify-info-soft);
-  border-left: 3px solid var(--jensify-info);
-  border-radius: var(--jensify-radius-sm);
-
-  .requirements-title {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--jensify-text-strong);
-    margin: 0 0 var(--jensify-spacing-xs) 0;
-  }
-
-  ul {
-    margin: 0;
-    padding-left: var(--jensify-spacing-lg);
-    list-style-type: disc;
-
-    li {
-      font-size: 0.8125rem;
-      color: var(--jensify-text-medium);
-      margin-bottom: var(--jensify-spacing-xs);
-      line-height: 1.5;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-  }
-}
+// Component-specific styles removed - now using global .jensify-password-requirements from _utilities.scss

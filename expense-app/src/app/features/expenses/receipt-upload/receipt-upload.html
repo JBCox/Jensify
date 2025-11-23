@@ -74,7 +74,7 @@
           <!-- Image Preview -->
           @if (hasPreview()) {
             <div class="jensify-image-preview">
-              <img [src]="previewUrl()" alt="Receipt preview">
+              <img [src]="previewUrl()" alt="Receipt preview" loading="lazy">
             </div>
           }
 

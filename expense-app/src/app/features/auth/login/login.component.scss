@@ -28,7 +28,7 @@
     opacity: 0;
     animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     animation-delay: 0.4s;
-    
+
     // Premium button styling
     height: 48px;
     font-size: 1rem;
@@ -44,7 +44,20 @@
     }
 
     &:active:not([disabled]) {
-      transform: translateY(0);
+      transform: translateY(1px); // Pressed down effect
+      box-shadow: 0 2px 8px rgba(255, 89, 0, 0.3);
+    }
+
+    &[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: var(--jensify-gray-300) !important;
+      box-shadow: none;
+    }
+
+    // Loading spinner centering
+    mat-spinner {
+      margin: 0 auto;
     }
   }
 
@@ -71,34 +84,5 @@
   to { opacity: 1; }
 }
 
-// Enhanced link styling
-.jensify-link {
-  color: var(--jensify-primary);
-  text-decoration: none;
-  font-weight: 500;
-  position: relative;
-  transition: color 0.2s ease;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 100%;
-    height: 1px;
-    background-color: var(--jensify-primary);
-    transform: scaleX(0);
-    transform-origin: right;
-    transition: transform 0.3s ease;
-  }
-
-  &:hover {
-    color: var(--jensify-primary-strong);
-    
-    &::after {
-      transform: scaleX(1);
-      transform-origin: left;
-    }
-  }
-}
+// Link styling now in global _utilities.scss for consistency across app
 

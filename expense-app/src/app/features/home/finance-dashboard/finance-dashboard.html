@@ -60,7 +60,7 @@
       </app-empty-state>
 
       <div
-        *ngFor="let expense of approvals"
+        *ngFor="let expense of approvals; trackBy: trackByExpenseId"
         class="jensify-queue-item"
         (click)="onViewExpense(expense)">
         <div class="jensify-queue-info">
@@ -109,7 +109,7 @@
       </app-empty-state>
 
       <div
-        *ngFor="let expense of expenses"
+        *ngFor="let expense of expenses; trackBy: trackByExpenseId"
         class="jensify-expense-item"
         (click)="onViewExpense(expense)">
         <div class="jensify-expense-icon">

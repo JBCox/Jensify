@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -15,6 +15,7 @@ import { ReportService } from '../../../core/services/report.service';
 import { ExpenseReport, ReportStatus } from '../../../core/models/report.model';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loading-skeleton';
+import { SNACKBAR_DURATION } from '../../../shared/constants/ui.constants';
 
 /**
  * Report-based Approval Queue
@@ -42,6 +43,9 @@ import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loa
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ApprovalQueueComponent implements OnInit, OnDestroy {
+  private reportService = inject(ReportService);
+  private snackBar = inject(MatSnackBar);
+
   private destroy$ = new Subject<void>();
 
   submittedReports = signal<ExpenseReport[]>([]);
@@ -69,11 +73,6 @@ export class ApprovalQueueComponent implements OnInit, OnDestroy {
     this.filteredReports().reduce((sum, r) => sum + (r.total_amount || 0), 0)
   );
   selectedCount = computed(() => this.selectedReportIds().size);
-
-  constructor(
-    private reportService: ReportService,
-    private snackBar: MatSnackBar
-  ) {}
 
   ngOnInit(): void {
     this.loadSubmittedReports();
@@ -104,7 +103,11 @@ export class ApprovalQueueComponent implements OnInit, OnDestroy {
 
   toggleSelection(reportId: string): void {
     const selected = new Set(this.selectedReportIds());
-    selected.has(reportId) ? selected.delete(reportId) : selected.add(reportId);
+    if (selected.has(reportId)) {
+      selected.delete(reportId);
+    } else {
+      selected.add(reportId);
+    }
     this.selectedReportIds.set(selected);
   }
 
@@ -167,10 +170,10 @@ export class ApprovalQueueComponent implements OnInit, OnDestroy {
   }
 
   private showSuccess(message: string): void {
-    this.snackBar.open(message, 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
+    this.snackBar.open(message, 'Close', { duration: SNACKBAR_DURATION.SUCCESS, panelClass: ['success-snackbar'] });
   }
 
   private showError(message: string): void {
-    this.snackBar.open(message, 'Close', { duration: 4000, panelClass: ['error-snackbar'] });
+    this.snackBar.open(message, 'Close', { duration: SNACKBAR_DURATION.ERROR, panelClass: ['error-snackbar'] });
   }
 }

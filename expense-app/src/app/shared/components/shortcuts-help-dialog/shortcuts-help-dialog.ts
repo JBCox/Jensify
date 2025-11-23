@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -22,12 +22,10 @@ import { KeyboardShortcutsService } from '../../../core/services/keyboard-shortc
   styleUrl: './shortcuts-help-dialog.scss'
 })
 export class ShortcutsHelpDialog implements OnInit {
-  shortcutGroups: Array<{ group: string; shortcuts: Array<{ key: string; description: string }> }> = [];
+  private dialogRef = inject<MatDialogRef<ShortcutsHelpDialog>>(MatDialogRef);
+  private keyboardService = inject(KeyboardShortcutsService);
 
-  constructor(
-    private dialogRef: MatDialogRef<ShortcutsHelpDialog>,
-    private keyboardService: KeyboardShortcutsService
-  ) {}
+  shortcutGroups: { group: string; shortcuts: { key: string; description: string }[] }[] = [];
 
   ngOnInit(): void {
     this.loadShortcuts();

@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -34,22 +34,18 @@ interface DashboardMetrics {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmployeeDashboard implements OnInit {
+  private expenseService = inject(ExpenseService);
+  private router = inject(Router);
+
   metrics$!: Observable<DashboardMetrics>;
   recentExpenses$!: Observable<Expense[]>;
   loading = true;
 
-  constructor(
-    private expenseService: ExpenseService,
-    private router: Router
-  ) {}
-
   ngOnInit(): void {
-    console.log('[EmployeeDashboard] Component initialized');
     this.loadDashboardData();
   }
 
   private loadDashboardData(): void {
-    console.log('[EmployeeDashboard] Loading dashboard data...');
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -60,7 +56,6 @@ export class EmployeeDashboard implements OnInit {
     // Calculate metrics
     this.metrics$ = allExpenses$.pipe(
       map(expenses => {
-        console.log('[EmployeeDashboard] Loaded expenses:', expenses.length);
         const monthExpenses = expenses.filter(e => e.created_at >= startOfMonth);
         const recentExpenses = expenses.filter(e => e.created_at >= sevenDaysAgo);
 
@@ -70,7 +65,6 @@ export class EmployeeDashboard implements OnInit {
           approvedCount: expenses.filter(e => e.status === ExpenseStatus.APPROVED).length,
           recentUploads: recentExpenses.length
         };
-        console.log('[EmployeeDashboard] Calculated metrics:', metrics);
         return metrics;
       })
     );
@@ -112,5 +106,12 @@ export class EmployeeDashboard implements OnInit {
 
   onViewExpense(expense: Expense): void {
     this.router.navigate(['/expenses', expense.id]);
+  }
+
+  /**
+   * TrackBy function for expense list - improves ngFor performance
+   */
+  trackByExpenseId(_index: number, expense: Expense): string {
+    return expense.id;
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -50,6 +50,12 @@ import { UserRole } from '../../../core/models/enums';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserManagementComponent implements OnInit, OnDestroy {
+  private fb = inject(FormBuilder);
+  private organizationService = inject(OrganizationService);
+  private invitationService = inject(InvitationService);
+  private notificationService = inject(NotificationService);
+  private dialog = inject(MatDialog);
+
   // Cleanup
   private destroy$ = new Subject<void>();
 
@@ -80,13 +86,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     { value: UserRole.ADMIN, label: 'Admin' }
   ];
 
-  constructor(
-    private fb: FormBuilder,
-    private organizationService: OrganizationService,
-    private invitationService: InvitationService,
-    private notificationService: NotificationService,
-    private dialog: MatDialog
-  ) {
+  constructor() {
     this.inviteForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       role: [UserRole.EMPLOYEE, Validators.required],
@@ -131,7 +131,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
           ));
           this.isLoading.set(false);
         },
-        error: (error) => {
+        error: () => {
           this.notificationService.showError('Failed to load members');
           this.isLoading.set(false);
         }
@@ -148,7 +148,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
         next: (invitations) => {
           this.invitations.set(invitations);
         },
-        error: (error) => {
+        error: () => {
           this.notificationService.showError('Failed to load invitations');
         }
       });
@@ -203,7 +203,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
         next: () => {
           this.loadMembers();
         },
-        error: (error) => {
+        error: () => {
           this.notificationService.showError('Failed to update member role');
         }
       });
@@ -223,7 +223,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
         next: () => {
           this.loadMembers();
         },
-        error: (error) => {
+        error: () => {
           this.notificationService.showError('Failed to deactivate member');
         }
       });
@@ -239,7 +239,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
         next: () => {
           this.loadMembers();
         },
-        error: (error) => {
+        error: () => {
           this.notificationService.showError('Failed to reactivate member');
         }
       });
@@ -255,7 +255,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
         next: () => {
           this.notificationService.showSuccess('Invitation resent');
         },
-        error: (error) => {
+        error: () => {
           this.notificationService.showError('Failed to resend invitation');
         }
       });
@@ -275,7 +275,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
         next: () => {
           this.loadInvitations();
         },
-        error: (error) => {
+        error: () => {
           this.notificationService.showError('Failed to revoke invitation');
         }
       });

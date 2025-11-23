@@ -56,7 +56,7 @@
 
     <div class="jensify-card" *ngIf="teamPendingApprovals$ | async as approvals">
       <div class="jensify-expense-list" *ngIf="approvals.length > 0; else noApprovals">
-        <div class="jensify-expense-item" *ngFor="let expense of approvals" (click)="onViewExpense(expense)">
+        <div class="jensify-expense-item" *ngFor="let expense of approvals; trackBy: trackByExpenseId" (click)="onViewExpense(expense)">
           <div class="jensify-expense-user">
             <mat-icon class="user-avatar">account_circle</mat-icon>
             <div class="user-info">
@@ -101,7 +101,7 @@
 
     <div class="jensify-card" *ngIf="myRecentExpenses$ | async as expenses">
       <div class="jensify-expense-list" *ngIf="expenses.length > 0; else noExpenses">
-        <div class="jensify-expense-item" *ngFor="let expense of expenses" (click)="onViewExpense(expense)">
+        <div class="jensify-expense-item" *ngFor="let expense of expenses; trackBy: trackByExpenseId" (click)="onViewExpense(expense)">
           <div class="jensify-expense-info">
             <div class="expense-desc">{{ expense.merchant || 'No merchant' }}</div>
             <div class="expense-date">{{ formatDate(expense.expense_date) }}</div>

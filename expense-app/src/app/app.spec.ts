@@ -3,9 +3,16 @@ import { App } from './app';
 import { of } from 'rxjs';
 import { AuthService } from './core/services/auth.service';
 import { provideRouter } from '@angular/router';
+import { SwUpdate } from '@angular/service-worker';
 
 describe('App', () => {
   beforeEach(async () => {
+    const mockSwUpdate = {
+      versionUpdates: of(),
+      checkForUpdate: () => Promise.resolve(false),
+      activateUpdate: () => Promise.resolve(true)
+    };
+
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
@@ -17,6 +24,10 @@ describe('App', () => {
             isFinanceOrAdmin: false,
             signOut: () => Promise.resolve()
           }
+        },
+        {
+          provide: SwUpdate,
+          useValue: mockSwUpdate
         },
         provideRouter([])
       ]

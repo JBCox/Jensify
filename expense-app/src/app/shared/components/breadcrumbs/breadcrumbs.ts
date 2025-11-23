@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -52,6 +52,9 @@ export interface Breadcrumb {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class Breadcrumbs implements OnInit, OnDestroy {
+  private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
+
   private destroy$ = new Subject<void>();
 
   breadcrumbs = signal<Breadcrumb[]>([]);
@@ -86,11 +89,6 @@ export class Breadcrumbs implements OnInit, OnDestroy {
     'dashboard': 'dashboard'
   };
 
-  constructor(
-    private router: Router,
-    private activatedRoute: ActivatedRoute
-  ) {}
-
   ngOnInit(): void {
     // Generate breadcrumbs on navigation
     this.router.events
@@ -117,7 +115,7 @@ export class Breadcrumbs implements OnInit, OnDestroy {
    */
   private buildBreadcrumbs(
     route: ActivatedRoute,
-    url: string = '',
+    url = '',
     breadcrumbs: Breadcrumb[] = []
   ): Breadcrumb[] {
     // Get route data

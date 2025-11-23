@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, from, throwError } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
@@ -23,12 +23,11 @@ import { NotificationService } from './notification.service';
   providedIn: 'root'
 })
 export class InvitationService {
-  constructor(
-    private supabase: SupabaseService,
-    private organizationService: OrganizationService,
-    private notificationService: NotificationService,
-    private logger: LoggerService
-  ) {}
+  private supabase = inject(SupabaseService);
+  private organizationService = inject(OrganizationService);
+  private notificationService = inject(NotificationService);
+  private logger = inject(LoggerService);
+
 
   // ============================================================================
   // INVITATION CRUD
@@ -232,7 +231,7 @@ export class InvitationService {
         if (!data) throw new Error('Failed to accept invitation');
         return data as OrganizationMember;
       }),
-      tap((membership) => {
+      tap((_membership) => {
         this.notificationService.showSuccess('Successfully joined organization');
       }),
       catchError(this.handleError)
@@ -335,7 +334,7 @@ export class InvitationService {
    */
   private async sendInvitationEmail(invitation: Invitation): Promise<void> {
     try {
-      const { data, error } = await this.supabase.client.functions.invoke('send-invitation-email', {
+      const { data: _data, error } = await this.supabase.client.functions.invoke('send-invitation-email', {
         body: {
           invitation_id: invitation.id,
           email: invitation.email,
@@ -383,7 +382,7 @@ export class InvitationService {
       const line = lines[i].trim();
       if (!line) continue;
 
-      const [email, role, department, managerEmail] = line.split(',').map(s => s.trim());
+      const [email, role, department, _managerEmail] = line.split(',').map(s => s.trim());
 
       if (!email || !role) {
         this.logger.warn(`Skipping invalid row ${i}: missing email or role`, 'InvitationService.CSV');

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -18,7 +18,7 @@ import { takeUntil } from 'rxjs/operators';
 import { ExpenseService } from '../../../core/services/expense.service';
 import { SanitizationService } from '../../../core/services/sanitization.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
-import { Expense, ExpenseFilters } from '../../../core/models/expense.model';
+import { Expense } from '../../../core/models/expense.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ExpenseStatus, ExpenseCategory } from '../../../core/models/enums';
 import { StatusBadge, ExpenseStatus as BadgeStatus } from '../../../shared/components/status-badge/status-badge';
@@ -58,6 +58,13 @@ import { AddToReportDialogComponent } from '../add-to-report-dialog/add-to-repor
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ExpenseList implements OnInit, OnDestroy {
+  private expenseService = inject(ExpenseService);
+  private sanitizationService = inject(SanitizationService);
+  private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
+  private dialog = inject(MatDialog);
+  private supabase = inject(SupabaseService);
+
   // Cleanup
   private destroy$ = new Subject<void>();
 
@@ -172,15 +179,6 @@ export class ExpenseList implements OnInit, OnDestroy {
     { value: ExpenseCategory.SOFTWARE, label: ExpenseCategory.SOFTWARE },
     { value: ExpenseCategory.MISCELLANEOUS, label: ExpenseCategory.MISCELLANEOUS }
   ];
-
-  constructor(
-    private expenseService: ExpenseService,
-    private sanitizationService: SanitizationService,
-    private snackBar: MatSnackBar,
-    private router: Router,
-    private dialog: MatDialog,
-    private supabase: SupabaseService
-  ) {}
 
   ngOnInit(): void {
     this.loadExpenses();
@@ -526,7 +524,7 @@ export class ExpenseList implements OnInit, OnDestroy {
       }
     });
 
-    dialogRef.afterClosed().subscribe((result: any) => {
+    dialogRef.afterClosed().subscribe((result: { success?: boolean; action?: string; report?: any } | undefined) => {
       if (result?.success) {
         this.clearSelection();
         const action = result.action === 'created' ? 'created new report' : 'added to report';

@@ -13,7 +13,8 @@
     "test:coverage": "ng test --code-coverage --browsers=ChromeHeadless --watch=false",
     "test:ci": "ng test --browsers=ChromeHeadless --watch=false --code-coverage",
     "type-check": "ng build --configuration development --no-emit",
-    "serve:prod": "ng serve --configuration production"
+    "serve:prod": "ng serve --configuration production",
+    "lint": "ng lint"
   },
   "prettier": {
     "printWidth": 100,
@@ -53,7 +54,9 @@
     "@angular/compiler-cli": "^20.3.0",
     "@types/google.maps": "^3.58.1",
     "@types/jasmine": "~5.1.0",
+    "angular-eslint": "20.6.0",
     "autoprefixer": "^10.4.22",
+    "eslint": "^9.39.0",
     "jasmine-core": "~5.9.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
@@ -62,6 +65,7 @@
     "karma-jasmine-html-reporter": "~2.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.18",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "typescript-eslint": "8.46.3"
   }
 }

@@ -67,11 +67,10 @@
   }
 }
 
-// Search placeholder (center)
+// Search placeholder (center) - Hidden until search functionality is implemented
 .toolbar-center {
   flex: 1;
-  display: flex;
-  justify-content: center;
+  display: none; // Hide until search is implemented
 
   @media (max-width: 767px) {
     display: none;
@@ -153,14 +152,14 @@
   &.with-sidebar {
     @media (min-width: 768px) {
       margin-left: 210px;
+      transition: margin-left 0.3s ease;
     }
-  }
-}
 
-// Keep content aligned with actual sidebar state
-@media (min-width: 768px) {
-  .sidebar.collapsed ~ .app-content.with-sidebar {
-    margin-left: 64px;
+    &.sidebar-collapsed {
+      @media (min-width: 768px) {
+        margin-left: 64px;
+      }
+    }
   }
 }
 

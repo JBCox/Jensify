@@ -6,7 +6,7 @@
     </mat-card-header>
     <mat-card-content>
       <div class="jensify-receipt-toolbar">
-        <button mat-stroked-button color="primary" type="button" (click)="openAttachDialog()" class="jensify-button">
+        <button mat-flat-button color="primary" type="button" (click)="openAttachDialog()" class="jensify-button">
           <mat-icon>attach_file</mat-icon>
           {{ attachedReceipt ? 'Change receipt' : 'Attach receipt' }}
         </button>
@@ -65,7 +65,7 @@
         <mat-form-field appearance="fill" floatLabel="always" class="jensify-full-width">
           <mat-label>Category</mat-label>
           <mat-select formControlName="category">
-            <mat-option *ngFor="let c of categories" [value]="c">{{ c }}</mat-option>
+            <mat-option *ngFor="let c of categories; trackBy: trackByCategory" [value]="c">{{ c }}</mat-option>
           </mat-select>
         </mat-form-field>
 

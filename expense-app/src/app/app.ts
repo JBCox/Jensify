@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -51,19 +51,20 @@ interface ShellViewModel {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class App implements OnInit, OnDestroy {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private dialog = inject(MatDialog);
+  private keyboardShortcuts = inject(KeyboardShortcutsService);
+
   // Cleanup
   private destroy$ = new Subject<void>();
 
   vm$: Observable<ShellViewModel>;
   isSidebarOpen = false;
   isAuthRoute = false;
+  isSidebarCollapsed = false;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router,
-    private dialog: MatDialog,
-    private keyboardShortcuts: KeyboardShortcutsService
-  ) {
+  constructor() {
     this.isAuthRoute = this.router.url.startsWith('/auth');
     this.router.events
       .pipe(
@@ -75,15 +76,16 @@ export class App implements OnInit, OnDestroy {
       });
 
     this.vm$ = combineLatest([this.authService.userProfile$, this.authService.session$]).pipe(
-      map(([profile, session]) => {
-        const sessionMetadata = (session?.user?.user_metadata ?? {}) as Record<string, any>;
-        const email = profile?.email || session?.user?.email || sessionMetadata['email'] || '';
-        const displayName =
+      map(([profile, session]): ShellViewModel => {
+        const sessionMetadata = (session?.user?.user_metadata ?? {}) as Record<string, unknown>;
+        const email: string = String(profile?.email || session?.user?.email || sessionMetadata['email'] || '');
+        const displayName: string = String(
           profile?.full_name ||
           sessionMetadata['full_name'] ||
           sessionMetadata['name'] ||
           email ||
-          'User';
+          'User'
+        );
         return {
           profile,
           isAuthenticated: !!session,
@@ -115,6 +117,13 @@ export class App implements OnInit, OnDestroy {
    */
   closeSidebar(): void {
     this.isSidebarOpen = false;
+  }
+
+  /**
+   * Handle sidebar collapsed state change
+   */
+  onSidebarCollapsedChange(collapsed: boolean): void {
+    this.isSidebarCollapsed = collapsed;
   }
 
   /**

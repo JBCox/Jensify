@@ -34,7 +34,8 @@
         Add Trip
       </button>
       <button
-        mat-stroked-button
+        mat-flat-button
+        color="primary"
         class="jensify-export-btn jensify-button"
         (click)="exportToCSV()"
         [disabled]="filteredTrips().length === 0">
@@ -79,7 +80,7 @@
   <mat-card class="jensify-card jensify-filters-card">
     <!-- Status Filter Chips -->
     <div class="jensify-filter-section">
-      <label class="jensify-filter-label">Status</label>
+      <div class="jensify-filter-label">Status</div>
       <mat-chip-set class="jensify-status-chips">
         @for (option of statusOptions; track option.value) {
           <mat-chip

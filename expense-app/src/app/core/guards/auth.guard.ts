@@ -1,8 +1,9 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
-import { map, take } from 'rxjs/operators';
+import { map, take, filter, switchMap } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { OrganizationService } from '../services/organization.service';
+import { SupabaseService } from '../services/supabase.service';
 
 /**
  * Route guard that protects authenticated routes.
@@ -21,9 +22,17 @@ import { OrganizationService } from '../services/organization.service';
 export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const organizationService = inject(OrganizationService);
+  const supabaseService = inject(SupabaseService);
   const router = inject(Router);
 
-  return authService.userProfile$.pipe(
+  // Wait for BOTH session AND organization initialization before checking authentication
+  return supabaseService.sessionInitialized$.pipe(
+    filter(initialized => initialized === true), // Wait until session is loaded
+    take(1),
+    switchMap(() => organizationService.organizationInitialized$), // Then wait for organization
+    filter(initialized => initialized === true),
+    take(1),
+    switchMap(() => authService.userProfile$),
     take(1),
     map(user => {
       // Allow if profile is present or we already have an authenticated session
@@ -64,17 +73,24 @@ export const authGuard: CanActivateFn = (route, state) => {
  * }
  * ```
  */
-export const financeGuard: CanActivateFn = (route, state) => {
+export const financeGuard: CanActivateFn = (_route, _state) => {
   const organizationService = inject(OrganizationService);
   const router = inject(Router);
 
-  if (organizationService.isCurrentUserFinanceOrAdmin()) {
-    return true;
-  }
+  // Wait for organization context to be initialized before checking role
+  return organizationService.organizationInitialized$.pipe(
+    filter(initialized => initialized === true),
+    take(1),
+    map(() => {
+      if (organizationService.isCurrentUserFinanceOrAdmin()) {
+        return true;
+      }
 
-  // User is authenticated but doesn't have permission
-  router.navigate(['/home']);
-  return false;
+      // User is authenticated but doesn't have permission
+      router.navigate(['/home']);
+      return false;
+    })
+  );
 };
 
 /**
@@ -90,17 +106,35 @@ export const financeGuard: CanActivateFn = (route, state) => {
  * }
  * ```
  */
-export const adminGuard: CanActivateFn = (route, state) => {
+export const adminGuard: CanActivateFn = (_route, _state) => {
   const organizationService = inject(OrganizationService);
   const router = inject(Router);
 
-  if (organizationService.isCurrentUserAdmin()) {
-    return true;
-  }
+  console.log('[adminGuard] Waiting for organization initialization...');
 
-  // User is authenticated but doesn't have permission
-  router.navigate(['/home']);
-  return false;
+  // Wait for organization context to be initialized before checking role
+  return organizationService.organizationInitialized$.pipe(
+    filter(initialized => initialized === true),
+    take(1),
+    map(() => {
+      const isAdmin = organizationService.isCurrentUserAdmin();
+      const currentRole = organizationService.currentUserRole;
+
+      console.log('[adminGuard] Organization initialized');
+      console.log('[adminGuard] Current user role:', currentRole);
+      console.log('[adminGuard] Is admin:', isAdmin);
+
+      if (isAdmin) {
+        console.log('[adminGuard] Access granted - user is admin');
+        return true;
+      }
+
+      // User is authenticated but doesn't have permission
+      console.warn('[adminGuard] Access denied - redirecting to /home');
+      router.navigate(['/home']);
+      return false;
+    })
+  );
 };
 
 /**
@@ -116,15 +150,22 @@ export const adminGuard: CanActivateFn = (route, state) => {
  * }
  * ```
  */
-export const managerGuard: CanActivateFn = (route, state) => {
+export const managerGuard: CanActivateFn = (_route, _state) => {
   const organizationService = inject(OrganizationService);
   const router = inject(Router);
 
-  if (organizationService.isCurrentUserManagerOrAbove()) {
-    return true;
-  }
+  // Wait for organization context to be initialized before checking role
+  return organizationService.organizationInitialized$.pipe(
+    filter(initialized => initialized === true),
+    take(1),
+    map(() => {
+      if (organizationService.isCurrentUserManagerOrAbove()) {
+        return true;
+      }
 
-  // User is authenticated but doesn't have permission
-  router.navigate(['/home']);
-  return false;
+      // User is authenticated but doesn't have permission
+      router.navigate(['/home']);
+      return false;
+    })
+  );
 };

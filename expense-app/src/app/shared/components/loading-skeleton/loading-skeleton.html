@@ -1,6 +1,6 @@
 <div class="skeleton-wrapper">
   <div
-    *ngFor="let item of items"
+    *ngFor="let item of items; trackBy: trackByIndex"
     class="skeleton"
     [ngClass]="type"
     [ngStyle]="{ 'width': width, 'height': height }"

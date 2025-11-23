@@ -105,11 +105,13 @@
   }
 
   &.draft {
-    background: var(--jensify-surface-soft);
-    color: var(--jensify-text-muted);
-    border-color: var(--jensify-border-subtle);
+    background: var(--jensify-primary);  // ORANGE background (matches screenshot)
+    color: white;                         // WHITE text for contrast
+    border-color: var(--jensify-primary); // ORANGE border
+    font-weight: 600;                     // Bold text for emphasis
 
     mat-icon {
+      color: white;                       // Ensure icon is also white
       animation: fadeIn 0.3s ease-in;
     }
   }

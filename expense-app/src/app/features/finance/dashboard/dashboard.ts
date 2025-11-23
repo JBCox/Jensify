@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,6 +14,7 @@ import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loading-skeleton';
 import { MetricCard } from '../../../shared/components/metric-card/metric-card';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { SNACKBAR_DURATION } from '../../../shared/constants/ui.constants';
 
 /**
  * Finance Dashboard (Report-based)
@@ -38,6 +39,10 @@ import { SupabaseService } from '../../../core/services/supabase.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FinanceDashboardComponent implements OnInit, OnDestroy {
+  private reportService = inject(ReportService);
+  private snackBar = inject(MatSnackBar);
+  private supabase = inject(SupabaseService);
+
   private readonly RECEIPT_BUCKET = 'receipts';
   private destroy$ = new Subject<void>();
 
@@ -49,12 +54,6 @@ export class FinanceDashboardComponent implements OnInit, OnDestroy {
   totalPending = computed(() => this.approvedReports().length);
   totalAmount = computed(() => this.approvedReports().reduce((sum, r) => sum + (r.total_amount || 0), 0));
   selectedCount = computed(() => this.selectedReportIds().size);
-
-  constructor(
-    private reportService: ReportService,
-    private snackBar: MatSnackBar,
-    private supabase: SupabaseService
-  ) {}
 
   ngOnInit(): void {
     this.loadApprovedReports();
@@ -79,7 +78,11 @@ export class FinanceDashboardComponent implements OnInit, OnDestroy {
 
   toggleSelection(reportId: string): void {
     const selected = new Set(this.selectedReportIds());
-    selected.has(reportId) ? selected.delete(reportId) : selected.add(reportId);
+    if (selected.has(reportId)) {
+      selected.delete(reportId);
+    } else {
+      selected.add(reportId);
+    }
     this.selectedReportIds.set(selected);
   }
 
@@ -244,10 +247,10 @@ export class FinanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   private showSuccess(message: string): void {
-    this.snackBar.open(message, 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
+    this.snackBar.open(message, 'Close', { duration: SNACKBAR_DURATION.SUCCESS, panelClass: ['success-snackbar'] });
   }
 
   private showError(message: string): void {
-    this.snackBar.open(message, 'Close', { duration: 4000, panelClass: ['error-snackbar'] });
+    this.snackBar.open(message, 'Close', { duration: SNACKBAR_DURATION.ERROR, panelClass: ['error-snackbar'] });
   }
 }

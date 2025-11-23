@@ -19,7 +19,7 @@ interface StatusConfig {
 })
 export class StatusBadge {
   @Input() status: ExpenseStatus = 'pending';
-  @Input() showIcon: boolean = true;
+  @Input() showIcon = true;
   @Input() size: 'small' | 'medium' = 'medium';
 
   private statusConfigs: Record<ExpenseStatus, StatusConfig> = {

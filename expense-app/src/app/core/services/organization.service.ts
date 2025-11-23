@@ -1,41 +1,49 @@
-import { Injectable } from '@angular/core';
-import { Observable, from, throwError, BehaviorSubject } from 'rxjs';
-import { map, catchError, tap } from 'rxjs/operators';
-import { SupabaseService } from './supabase.service';
-import { LoggerService } from './logger.service';
+import { Injectable, inject } from "@angular/core";
+import { BehaviorSubject, from, Observable, throwError } from "rxjs";
+import { catchError, map, tap } from "rxjs/operators";
+import { SupabaseService } from "./supabase.service";
+import { LoggerService } from "./logger.service";
 import {
+  CreateOrganizationDto,
   Organization,
   OrganizationMember,
-  CreateOrganizationDto,
+  OrganizationWithStats,
   UpdateOrganizationDto,
   UpdateOrganizationMemberDto,
-  OrganizationWithStats,
-  UserOrganizationContext
-} from '../models/organization.model';
-import { User } from '../models/user.model';
-import { NotificationService } from './notification.service';
+  UserOrganizationContext,
+} from "../models/organization.model";
+import { NotificationService } from "./notification.service";
 
 /**
  * Service for managing organizations and memberships
  * Handles organization CRUD, member management, and context switching
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root",
 })
 export class OrganizationService {
+  private supabase = inject(SupabaseService);
+  private notificationService = inject(NotificationService);
+  private logger = inject(LoggerService);
+
   /** Current organization context */
-  private currentOrganizationSubject = new BehaviorSubject<Organization | null>(null);
-  public readonly currentOrganization$ = this.currentOrganizationSubject.asObservable();
+  private currentOrganizationSubject = new BehaviorSubject<Organization | null>(
+    null,
+  );
+  public readonly currentOrganization$ = this.currentOrganizationSubject
+    .asObservable();
 
   /** Current organization membership */
-  private currentMembershipSubject = new BehaviorSubject<OrganizationMember | null>(null);
-  public readonly currentMembership$ = this.currentMembershipSubject.asObservable();
+  private currentMembershipSubject = new BehaviorSubject<
+    OrganizationMember | null
+  >(null);
+  public readonly currentMembership$ = this.currentMembershipSubject
+    .asObservable();
 
-  constructor(
-    private supabase: SupabaseService,
-    private notificationService: NotificationService,
-    private logger: LoggerService
-  ) {}
+  /** Track if organization context has been initialized */
+  private organizationInitializedSubject = new BehaviorSubject<boolean>(false);
+  public readonly organizationInitialized$ = this.organizationInitializedSubject
+    .asObservable();
 
   // ============================================================================
   // ORGANIZATION CRUD
@@ -48,26 +56,28 @@ export class OrganizationService {
   createOrganization(dto: CreateOrganizationDto): Observable<Organization> {
     const userId = this.supabase.userId;
     if (!userId) {
-      return throwError(() => new Error('User not authenticated'));
+      return throwError(() => new Error("User not authenticated"));
     }
 
     return from(
-      this.supabase.client.rpc('create_organization_with_admin', {
+      this.supabase.client.rpc("create_organization_with_admin", {
         p_name: dto.name,
         p_domain: dto.domain || null,
         p_settings: dto.settings || null,
-        p_admin_user_id: userId
-      })
+        p_admin_user_id: userId,
+      }),
     ).pipe(
       map(({ data, error }) => {
         if (error) throw error;
-        if (!data) throw new Error('No organization data returned');
+        if (!data) throw new Error("No organization data returned");
         return data as Organization;
       }),
       tap((org) => {
-        this.notificationService.showSuccess(`Organization "${org.name}" created successfully`);
+        this.notificationService.showSuccess(
+          `Organization "${org.name}" created successfully`,
+        );
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
@@ -77,17 +87,17 @@ export class OrganizationService {
   getOrganizationById(id: string): Observable<Organization> {
     return from(
       this.supabase.client
-        .from('organizations')
-        .select('*')
-        .eq('id', id)
-        .single()
+        .from("organizations")
+        .select("*")
+        .eq("id", id)
+        .single(),
     ).pipe(
       map(({ data, error }) => {
         if (error) throw error;
-        if (!data) throw new Error('Organization not found');
+        if (!data) throw new Error("Organization not found");
         return data as Organization;
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
@@ -95,28 +105,33 @@ export class OrganizationService {
    * Update organization
    * Requires admin role
    */
-  updateOrganization(id: string, dto: UpdateOrganizationDto): Observable<Organization> {
+  updateOrganization(
+    id: string,
+    dto: UpdateOrganizationDto,
+  ): Observable<Organization> {
     return from(
       this.supabase.client
-        .from('organizations')
+        .from("organizations")
         .update(dto)
-        .eq('id', id)
+        .eq("id", id)
         .select()
-        .single()
+        .single(),
     ).pipe(
       map(({ data, error }) => {
         if (error) throw error;
-        if (!data) throw new Error('Organization not found');
+        if (!data) throw new Error("Organization not found");
         return data as Organization;
       }),
       tap((org) => {
-        this.notificationService.showSuccess('Organization updated successfully');
+        this.notificationService.showSuccess(
+          "Organization updated successfully",
+        );
         // Update current organization if it's the active one
         if (this.currentOrganizationSubject.value?.id === id) {
           this.currentOrganizationSubject.next(org);
         }
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
@@ -125,16 +140,16 @@ export class OrganizationService {
    */
   getOrganizationWithStats(id: string): Observable<OrganizationWithStats> {
     return from(
-      this.supabase.client.rpc('get_organization_stats', {
-        p_organization_id: id
-      })
+      this.supabase.client.rpc("get_organization_stats", {
+        p_organization_id: id,
+      }),
     ).pipe(
       map(({ data, error }) => {
         if (error) throw error;
-        if (!data) throw new Error('Organization not found');
+        if (!data) throw new Error("Organization not found");
         return data as OrganizationWithStats;
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
@@ -145,46 +160,56 @@ export class OrganizationService {
   /**
    * Get all members of an organization
    */
-  getOrganizationMembers(organizationId: string, activeOnly = true): Observable<OrganizationMember[]> {
+  getOrganizationMembers(
+    organizationId: string,
+    activeOnly = true,
+  ): Observable<OrganizationMember[]> {
     let query = this.supabase.client
-      .from('organization_members')
-      .select('*, user:users!user_id(*), manager:organization_members!manager_id(*)')
-      .eq('organization_id', organizationId);
+      .from("organization_members")
+      .select(
+        "*, user:users!user_id(*), manager:organization_members!manager_id(*)",
+      )
+      .eq("organization_id", organizationId);
 
     if (activeOnly) {
-      query = query.eq('is_active', true);
+      query = query.eq("is_active", true);
     }
 
-    return from(query.order('created_at', { ascending: false })).pipe(
+    return from(query.order("created_at", { ascending: false })).pipe(
       map(({ data, error }) => {
         if (error) throw error;
         return (data || []) as OrganizationMember[];
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
   /**
    * Get a specific organization member
    */
-  getOrganizationMember(organizationId: string, userId: string): Observable<OrganizationMember | null> {
+  getOrganizationMember(
+    organizationId: string,
+    userId: string,
+  ): Observable<OrganizationMember | null> {
     return from(
       this.supabase.client
-        .from('organization_members')
-        .select('*, user:users!user_id(*), manager:organization_members!manager_id(*)')
-        .eq('organization_id', organizationId)
-        .eq('user_id', userId)
-        .single()
+        .from("organization_members")
+        .select(
+          "*, user:users!user_id(*), manager:organization_members!manager_id(*)",
+        )
+        .eq("organization_id", organizationId)
+        .eq("user_id", userId)
+        .single(),
     ).pipe(
       map(({ data, error }) => {
-        if (error?.code === 'PGRST116') {
+        if (error?.code === "PGRST116") {
           // Not found
           return null;
         }
         if (error) throw error;
         return data as OrganizationMember;
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
@@ -194,25 +219,25 @@ export class OrganizationService {
    */
   updateOrganizationMember(
     membershipId: string,
-    dto: UpdateOrganizationMemberDto
+    dto: UpdateOrganizationMemberDto,
   ): Observable<OrganizationMember> {
     return from(
       this.supabase.client
-        .from('organization_members')
+        .from("organization_members")
         .update(dto)
-        .eq('id', membershipId)
-        .select('*, user:users!user_id(*)')
-        .single()
+        .eq("id", membershipId)
+        .select("*, user:users!user_id(*)")
+        .single(),
     ).pipe(
       map(({ data, error }) => {
         if (error) throw error;
-        if (!data) throw new Error('Member not found');
+        if (!data) throw new Error("Member not found");
         return data as OrganizationMember;
       }),
       tap(() => {
-        this.notificationService.showSuccess('Member updated successfully');
+        this.notificationService.showSuccess("Member updated successfully");
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
@@ -223,17 +248,17 @@ export class OrganizationService {
   deactivateMember(membershipId: string): Observable<void> {
     return from(
       this.supabase.client
-        .from('organization_members')
+        .from("organization_members")
         .update({ is_active: false })
-        .eq('id', membershipId)
+        .eq("id", membershipId),
     ).pipe(
       map(({ error }) => {
         if (error) throw error;
       }),
       tap(() => {
-        this.notificationService.showSuccess('Member deactivated');
+        this.notificationService.showSuccess("Member deactivated");
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
@@ -244,17 +269,17 @@ export class OrganizationService {
   reactivateMember(membershipId: string): Observable<void> {
     return from(
       this.supabase.client
-        .from('organization_members')
+        .from("organization_members")
         .update({ is_active: true })
-        .eq('id', membershipId)
+        .eq("id", membershipId),
     ).pipe(
       map(({ error }) => {
         if (error) throw error;
       }),
       tap(() => {
-        this.notificationService.showSuccess('Member reactivated');
+        this.notificationService.showSuccess("Member reactivated");
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
@@ -268,22 +293,22 @@ export class OrganizationService {
   getUserOrganizations(): Observable<Organization[]> {
     const userId = this.supabase.userId;
     if (!userId) {
-      return throwError(() => new Error('User not authenticated'));
+      return throwError(() => new Error("User not authenticated"));
     }
 
     return from(
       this.supabase.client
-        .from('organization_members')
-        .select('organization:organizations(*)')
-        .eq('user_id', userId)
-        .eq('is_active', true)
+        .from("organization_members")
+        .select("organization:organizations(*)")
+        .eq("user_id", userId)
+        .eq("is_active", true),
     ).pipe(
       map(({ data, error }) => {
         if (error) throw error;
         // Double type assertion needed because Supabase doesn't properly infer foreign key relations
-        return ((data || []) as unknown as Array<{ organization: Organization }>).map(item => item.organization);
+        return ((data || []) as unknown as { organization: Organization }[]).map((item) => item.organization);
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
@@ -294,39 +319,52 @@ export class OrganizationService {
   getUserOrganizationContext(): Observable<UserOrganizationContext | null> {
     const userId = this.supabase.userId;
     if (!userId) {
-      return throwError(() => new Error('User not authenticated'));
+      return throwError(() => new Error("User not authenticated"));
     }
 
     return from(
-      this.supabase.client.rpc('get_user_organization_context', {
-        p_user_id: userId
-      })
+      this.supabase.client.rpc("get_user_organization_context", {
+        p_user_id: userId,
+      }),
     ).pipe(
       map(({ data, error }) => {
         if (error) throw error;
         if (!data || data.length === 0) return null;
         return data[0] as UserOrganizationContext;
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
   /**
    * Set the current active organization
    */
-  setCurrentOrganization(organization: Organization, membership: OrganizationMember): void {
+  setCurrentOrganization(
+    organization: Organization,
+    membership: OrganizationMember,
+  ): void {
+    console.log('[OrganizationService] setCurrentOrganization called');
+    console.log('[OrganizationService] Organization:', organization.name, organization.id);
+    console.log('[OrganizationService] Membership role:', membership.role);
+    console.log('[OrganizationService] Membership data:', membership);
+
     this.currentOrganizationSubject.next(organization);
     this.currentMembershipSubject.next(membership);
 
     // Store in localStorage for persistence
-    localStorage.setItem('current_organization_id', organization.id);
+    localStorage.setItem("current_organization_id", organization.id);
+
+    // Mark organization as initialized
+    this.organizationInitializedSubject.next(true);
+    console.log('[OrganizationService] Organization context set, initialized=true');
   }
 
   /**
    * Get current organization ID
    */
   get currentOrganizationId(): string | null {
-    return this.currentOrganizationSubject.value?.id || localStorage.getItem('current_organization_id');
+    return this.currentOrganizationSubject.value?.id ||
+      localStorage.getItem("current_organization_id");
   }
 
   /**
@@ -339,11 +377,11 @@ export class OrganizationService {
   /**
    * Check if current user has a specific role or higher
    */
-  hasRole(requiredRole: 'employee' | 'finance' | 'manager' | 'admin'): boolean {
+  hasRole(requiredRole: "employee" | "finance" | "manager" | "admin"): boolean {
     const role = this.currentUserRole;
     if (!role) return false;
 
-    const roleHierarchy = ['employee', 'finance', 'manager', 'admin'];
+    const roleHierarchy = ["employee", "finance", "manager", "admin"];
     const userRoleLevel = roleHierarchy.indexOf(role);
     const requiredRoleLevel = roleHierarchy.indexOf(requiredRole);
 
@@ -356,7 +394,10 @@ export class OrganizationService {
   clearCurrentOrganization(): void {
     this.currentOrganizationSubject.next(null);
     this.currentMembershipSubject.next(null);
-    localStorage.removeItem('current_organization_id');
+    localStorage.removeItem("current_organization_id");
+
+    // Mark as initialized (with no organization)
+    this.organizationInitializedSubject.next(true);
   }
 
   // ============================================================================
@@ -367,7 +408,7 @@ export class OrganizationService {
    * Check if user is admin of current organization
    */
   isCurrentUserAdmin(): boolean {
-    return this.currentUserRole === 'admin';
+    return this.currentUserRole === "admin";
   }
 
   /**
@@ -375,7 +416,7 @@ export class OrganizationService {
    */
   isCurrentUserFinanceOrAdmin(): boolean {
     const role = this.currentUserRole;
-    return role === 'finance' || role === 'admin';
+    return role === "finance" || role === "admin";
   }
 
   /**
@@ -383,7 +424,7 @@ export class OrganizationService {
    */
   isCurrentUserManagerOrAbove(): boolean {
     const role = this.currentUserRole;
-    return role === 'manager' || role === 'finance' || role === 'admin';
+    return role === "manager" || role === "finance" || role === "admin";
   }
 
   // ============================================================================
@@ -391,9 +432,13 @@ export class OrganizationService {
   // ============================================================================
 
   private handleError = (error: unknown): Observable<never> => {
-    this.logger.error('OrganizationService error', error, 'OrganizationService');
+    this.logger.error(
+      "OrganizationService error",
+      error,
+      "OrganizationService",
+    );
 
-    const message = this.logger.getErrorMessage(error, 'An error occurred');
+    const message = this.logger.getErrorMessage(error, "An error occurred");
 
     this.notificationService.showError(message);
     return throwError(() => new Error(message));

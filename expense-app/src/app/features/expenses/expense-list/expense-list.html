@@ -21,7 +21,8 @@
       </div>
     </div>
     <button
-      mat-stroked-button
+      mat-flat-button
+      color="primary"
       class="jensify-export-btn"
       (click)="exportToCSV()"
       [disabled]="filteredExpenses().length === 0">
@@ -49,7 +50,7 @@
           Clear Selection
         </button>
         <button
-          mat-stroked-button
+          mat-flat-button
           color="primary"
           (click)="addToReport()"
           [disabled]="submittingBatch()">
@@ -64,7 +65,7 @@
   <mat-card class="jensify-card jensify-filters-card">
     <!-- Status Filter Chips -->
     <div class="jensify-filter-section">
-      <label class="jensify-filter-label">Status</label>
+      <div class="jensify-filter-label">Status</div>
       <mat-chip-set class="jensify-status-chips">
         @for (option of statusOptions; track option.value) {
           <mat-chip
@@ -223,7 +224,8 @@
               @if (getReceiptThumbnail(expense)) {
                 <img
                   [src]="getReceiptThumbnail(expense)"
-                  [alt]="expense.merchant + ' receipt'">
+                  [alt]="expense.merchant + ' receipt'"
+                  loading="lazy">
                 <!-- Receipt Count Badge (shows when multiple receipts) -->
                 @if (hasMultipleReceipts(expense)) {
                   <div class="jensify-receipt-count-badge">

@@ -276,7 +276,7 @@ export class KeyboardShortcutsService implements OnDestroy {
   /**
    * Get shortcuts for help dialog
    */
-  getShortcutsForHelp(): Array<{ group: string; shortcuts: KeyboardShortcut[] }> {
+  getShortcutsForHelp(): { group: string; shortcuts: KeyboardShortcut[] }[] {
     const allShortcuts = this.getAllShortcuts();
 
     return [

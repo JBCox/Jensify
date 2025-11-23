@@ -29,10 +29,12 @@
   left: 0;
   bottom: 0;
   width: 64px;
-  background-color: var(--jensify-surface-glass-nav);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  // LIGHT MODE: Clean white glass with warm border
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 2px solid var(--jensify-border-medium);
+  box-shadow: 4px 0 20px rgba(255, 89, 0, 0.15);
   z-index: 1000;
   transition: width 0.3s ease, transform 0.3s ease;
   display: flex;
@@ -41,6 +43,18 @@
   padding: 0 0.2rem;
   padding-left: 0.1rem;
   overflow-x: hidden; // Prevent horizontal scrollbar
+
+  // DARK MODE: Brown/orange gradient glass
+  // DARK MODE: Cool Blue-Grey with Orange accents
+  :host-context(.dark) & {
+    background: linear-gradient(
+      135deg,
+      rgba(15, 23, 42, 0.95) 0%, // Slate 900
+      rgba(30, 41, 59, 0.9) 100% // Slate 800
+    );
+    border-right: 1px solid rgba(247, 88, 12, 0.15);
+    box-shadow: 4px 0 30px rgba(247, 88, 12, 0.1);
+  }
 
   &.expanded {
     width: 210px;
@@ -89,8 +103,8 @@
   }
 
   &.active {
-    background-color: rgba(255, 89, 0, 0.12);
-    color: var(--jensify-primary-strong);
+    background-color: rgba(247, 88, 12, 0.12);
+    color: var(--jensify-primary);
     font-weight: 600; // Bolder text
 
     &::before {
@@ -101,10 +115,22 @@
       bottom: 0;
       width: 4px; // Wider indicator (was 3px)
       background-color: var(--jensify-primary);
+      box-shadow: 0 0 10px var(--jensify-primary); // Add glow to indicator
     }
 
     .nav-icon {
       transform: scale(1.05); // Subtle icon emphasis
+      filter: drop-shadow(0 0 5px rgba(247, 88, 12, 0.4)); // Icon glow
+    }
+
+    // Dark mode active state
+    :host-context(.dark) & {
+      background-color: rgba(247, 88, 12, 0.15);
+      color: #F3E5DC; // Light text
+      
+      &::before {
+        box-shadow: 0 0 15px var(--jensify-primary); // Stronger glow
+      }
     }
   }
 
@@ -201,5 +227,23 @@
   border-top: 1px solid var(--jensify-border-subtle);
   padding: var(--jensify-spacing-sm) 0.5rem;
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--jensify-spacing-xs);
+
+  .home-btn {
+    flex: 1;
+    justify-content: flex-start;
+    padding-left: 0.5rem;
+  }
+
+  .theme-toggle {
+    color: var(--jensify-text-muted);
+    transition: color 0.2s ease;
+    
+    &:hover {
+      color: var(--jensify-primary);
+      background-color: rgba(255, 89, 0, 0.1);
+    }
+  }
 }

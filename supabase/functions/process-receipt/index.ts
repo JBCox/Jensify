@@ -33,18 +33,39 @@ interface OcrResult {
   };
 }
 
+// Allowed origins (production and development)
+const ALLOWED_ORIGINS = [
+  "https://bfudcugrarerqvvyfpoz.supabase.co", // Supabase project URL
+  "https://yourapp.com",           // Production domain (when deployed)
+  "https://www.yourapp.com",       // Production www domain (when deployed)
+  "http://localhost:4200",         // Angular dev server
+  "http://localhost:3000",         // Alternative dev port
+];
+
+/**
+ * Get CORS headers with origin validation
+ */
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : ALLOWED_ORIGINS[0]; // Default to first allowed origin
+
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Methods": "POST",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Credentials": "true",
+  };
+}
+
 serve(async (req: Request) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   try {
     // CORS headers
     if (req.method === "OPTIONS") {
-      return new Response("ok", {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST",
-          "Access-Control-Allow-Headers":
-            "authorization, x-client-info, apikey, content-type",
-        },
-      });
+      return new Response("ok", { headers: corsHeaders });
     }
 
     // Verify authentication
@@ -170,8 +191,8 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify(ocrResult), {
       status: 200,
       headers: {
+        ...corsHeaders,
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
       },
     });
   } catch (error) {

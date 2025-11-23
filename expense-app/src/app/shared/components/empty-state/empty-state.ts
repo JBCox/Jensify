@@ -11,9 +11,9 @@ import { MatButtonModule } from '@angular/material/button';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmptyState {
-  @Input() icon: string = 'inbox';
-  @Input() title: string = 'No data available';
-  @Input() message: string = '';
+  @Input() icon = 'inbox';
+  @Input() title = 'No data available';
+  @Input() message = '';
   @Input() actionLabel?: string;
   @Input() actionIcon?: string;
   @Output() action = new EventEmitter<void>();

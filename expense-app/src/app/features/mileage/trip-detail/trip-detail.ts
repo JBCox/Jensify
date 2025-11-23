@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -34,6 +34,11 @@ import { TripMap, TripMapData } from '../../../shared/components/trip-map/trip-m
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TripDetailComponent implements OnInit, OnDestroy {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private mileageService = inject(MileageService);
+  private snackBar = inject(MatSnackBar);
+
   private destroy$ = new Subject<void>();
 
   // State signals
@@ -63,13 +68,6 @@ export class TripDetailComponent implements OnInit, OnDestroy {
       coordinates: this.coordinates() // Include GPS coordinates if available
     };
   });
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private mileageService: MileageService,
-    private snackBar: MatSnackBar
-  ) {}
 
   ngOnInit(): void {
     const tripId = this.route.snapshot.paramMap.get('id');

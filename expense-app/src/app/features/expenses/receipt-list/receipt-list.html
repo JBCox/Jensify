@@ -7,7 +7,7 @@
     <mat-card-content>
       <ng-container *ngIf="receipts$ | async as receipts; else loading">
         <div *ngIf="receipts.length; else empty">
-          <div class="jensify-receipt-row" *ngFor="let receipt of receipts">
+          <div class="jensify-receipt-row" *ngFor="let receipt of receipts; trackBy: trackByReceiptId">
             <div class="jensify-receipt-info">
               <mat-icon>description</mat-icon>
               <div>

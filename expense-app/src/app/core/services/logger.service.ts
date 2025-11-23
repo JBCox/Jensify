@@ -69,7 +69,7 @@ export class LoggerService {
   /**
    * Get all logged entries (useful for debugging)
    */
-  getLogs(): ReadonlyArray<LogEntry> {
+  getLogs(): readonly LogEntry[] {
     return [...this.logs];
   }
 
@@ -150,7 +150,7 @@ export class LoggerService {
   /**
    * Extract error message from unknown error type
    */
-  getErrorMessage(error: unknown, defaultMessage: string = 'An error occurred'): string {
+  getErrorMessage(error: unknown, defaultMessage = 'An error occurred'): string {
     if (error instanceof Error) {
       return error.message;
     }

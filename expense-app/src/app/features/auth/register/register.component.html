@@ -1,11 +1,40 @@
 <div class="jensify-auth-container">
-  <mat-card class="jensify-auth-card">
-    <mat-card-header class="jensify-text-center jensify-mb-lg">
-      <mat-card-title>
-        <h1 class="jensify-page-title jensify-mb-xs">Create Your Account</h1>
-      </mat-card-title>
-      <mat-card-subtitle class="jensify-page-subtitle jensify-mb-0">Join Jensify to manage your expenses</mat-card-subtitle>
-    </mat-card-header>
+  <div class="jensify-auth-hero-layout">
+    <!-- Product Benefits Panel -->
+    <div class="jensify-auth-benefits jensify-animate-slide-down">
+      <div class="jensify-brand-header">
+        <mat-icon class="jensify-brand-icon">receipt_long</mat-icon>
+        <h2>Jensify</h2>
+      </div>
+      <h3>Join thousands of companies simplifying expenses</h3>
+      <ul class="jensify-benefits-list">
+        <li>
+          <mat-icon>check_circle</mat-icon>
+          <span>SmartScan OCR extracts receipt details instantly</span>
+        </li>
+        <li>
+          <mat-icon>check_circle</mat-icon>
+          <span>Track mileage with IRS-compliant reimbursement</span>
+        </li>
+        <li>
+          <mat-icon>check_circle</mat-icon>
+          <span>Multi-level approval workflows</span>
+        </li>
+        <li>
+          <mat-icon>check_circle</mat-icon>
+          <span>Real-time expense analytics and reporting</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Register Form Card -->
+    <mat-card class="jensify-auth-card jensify-animate-fade">
+      <mat-card-header class="jensify-text-center jensify-mb-lg">
+        <mat-card-title>
+          <h1 class="jensify-page-title jensify-mb-xs">Create Your Account</h1>
+        </mat-card-title>
+        <mat-card-subtitle class="jensify-page-subtitle jensify-mb-0">Join Jensify to manage your expenses</mat-card-subtitle>
+      </mat-card-header>
 
     <mat-card-content>
       <!-- Success Message -->
@@ -70,7 +99,7 @@
             matInput
             [type]="hidePassword ? 'password' : 'text'"
             formControlName="password"
-            placeholder="Create a strong password"
+            placeholder="Password (8+ chars)"
             autocomplete="new-password"
             [attr.aria-label]="'Password'"
           />
@@ -103,7 +132,7 @@
             matInput
             [type]="hideConfirmPassword ? 'password' : 'text'"
             formControlName="confirmPassword"
-            placeholder="Re-enter your password"
+            placeholder="Confirm password"
             autocomplete="new-password"
             [attr.aria-label]="'Confirm password'"
           />
@@ -126,8 +155,8 @@
         </mat-form-field>
 
         <!-- Password Requirements -->
-        <div class="password-requirements">
-          <p class="requirements-title">Password must contain:</p>
+        <div class="jensify-password-requirements">
+          <p class="jensify-requirements-title">Password must contain:</p>
           <ul>
             <li>At least 8 characters</li>
             <li>Uppercase and lowercase letters</li>
@@ -155,4 +184,5 @@
       </form>
     </mat-card-content>
   </mat-card>
+  </div>
 </div>

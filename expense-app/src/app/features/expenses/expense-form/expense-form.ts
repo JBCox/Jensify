@@ -88,7 +88,8 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
     this.loading = true;
     const dto = { ...this.form.value, receipt_id: this.receiptId || undefined };
 
-    this.expenses.createExpense(dto as any)
+    // Type assertion is safe here as form validation ensures required fields
+    this.expenses.createExpense(dto as Parameters<typeof this.expenses.createExpense>[0])
       .pipe(
         takeUntil(this.destroy$),
         switchMap((expense) => {
@@ -259,5 +260,12 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
       default:
         return null;
     }
+  }
+
+  /**
+   * TrackBy function for category list - improves ngFor performance
+   */
+  trackByCategory(_index: number, category: string): string {
+    return category;
   }
 }

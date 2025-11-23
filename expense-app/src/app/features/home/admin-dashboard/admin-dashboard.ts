@@ -1,12 +1,11 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, map, combineLatest } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ExpenseService } from '../../../core/services/expense.service';
 import { OrganizationService } from '../../../core/services/organization.service';
-import { ExpenseStatus } from '../../../core/models/enums';
 import { MetricCard } from '../../../shared/components/metric-card/metric-card';
 
 interface AdminMetrics {
@@ -31,14 +30,12 @@ interface AdminMetrics {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminDashboard implements OnInit {
+  private expenseService = inject(ExpenseService);
+  private organizationService = inject(OrganizationService);
+  private router = inject(Router);
+
   metrics$!: Observable<AdminMetrics>;
   loading = true;
-
-  constructor(
-    private expenseService: ExpenseService,
-    private organizationService: OrganizationService,
-    private router: Router
-  ) {}
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -46,7 +43,7 @@ export class AdminDashboard implements OnInit {
 
   private loadDashboardData(): void {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const _startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
     // Get organization context first
     const orgId$ = this.organizationService.currentOrganization$.pipe(

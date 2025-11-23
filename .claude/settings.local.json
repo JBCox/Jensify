@@ -101,9 +101,29 @@
       "Bash(docker rm:*)",
       "Bash(taskkill /F /PID 22692)",
       "Bash(taskkill //F //PID 22692)",
-      "Bash(timeout 10 sleep:*)"
+      "Bash(timeout 10 sleep:*)",
+      "Bash(tasklist:*)",
+      "Bash(powershell:*)",
+      "Bash(taskkill /F /IM chrome.exe /T)",
+      "Bash(cmd //c taskkill //F //IM chrome.exe //T)",
+      "Bash(timeout 10 npm start)",
+      "mcp__chrome-devtools",
+      "mcp__puppeteer",
+      "mcp__supabase",
+      "Bash(timeout 15 sleep:*)",
+      "Bash(taskkill:*)",
+      "Bash(timeout:*)",
+      "*",
+      "Skill(example-skills:skill-creator)",
+      "Bash(python scripts/init_skill.py:*)",
+      "Bash(python:*)",
+      "Bash(chcp:*)",
+      "Bash(set:*)",
+      "Skill(visual-ui-audit)",
+      "Bash(rm:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "defaultMode": "acceptEdits"
   }
 }

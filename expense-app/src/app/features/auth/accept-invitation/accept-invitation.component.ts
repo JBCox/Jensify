@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -32,6 +32,12 @@ import { Invitation } from '../../../core/models';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AcceptInvitationComponent implements OnInit, OnDestroy {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private invitationService = inject(InvitationService);
+  protected authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
+
   // Cleanup
   private destroy$ = new Subject<void>();
 
@@ -39,14 +45,6 @@ export class AcceptInvitationComponent implements OnInit, OnDestroy {
   isLoading = signal(true);
   error = signal<string | null>(null);
   token: string | null = null;
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private invitationService: InvitationService,
-    protected authService: AuthService, // Protected for template access
-    private notificationService: NotificationService
-  ) {}
 
   ngOnInit(): void {
     // Get token from query params
@@ -86,7 +84,7 @@ export class AcceptInvitationComponent implements OnInit, OnDestroy {
           }
           this.isLoading.set(false);
         },
-        error: (error) => {
+        error: (_error) => {
           this.error.set('Failed to load invitation');
           this.isLoading.set(false);
         }
@@ -116,7 +114,7 @@ export class AcceptInvitationComponent implements OnInit, OnDestroy {
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (membership) => {
+        next: (_membership) => {
           this.isLoading.set(false);
           this.notificationService.showSuccess(
             `Successfully joined ${this.invitation()?.organization?.name || 'organization'}!`

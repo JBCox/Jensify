@@ -111,7 +111,7 @@ export class NotificationService {
    * @param message - Success message to display
    * @param title - Optional title (defaults to 'Success')
    */
-  showSuccess(message: string, title: string = 'Success'): void {
+  showSuccess(message: string, title = 'Success'): void {
     this.notify({
       type: 'success',
       title,
@@ -125,7 +125,7 @@ export class NotificationService {
    * @param message - Error message to display
    * @param title - Optional title (defaults to 'Error')
    */
-  showError(message: string, title: string = 'Error'): void {
+  showError(message: string, title = 'Error'): void {
     this.notify({
       type: 'error',
       title,
@@ -139,7 +139,7 @@ export class NotificationService {
    * @param message - Info message to display
    * @param title - Optional title (defaults to 'Info')
    */
-  showInfo(message: string, title: string = 'Info'): void {
+  showInfo(message: string, title = 'Info'): void {
     this.notify({
       type: 'info',
       title,
@@ -153,7 +153,7 @@ export class NotificationService {
    * @param message - Warning message to display
    * @param title - Optional title (defaults to 'Warning')
    */
-  showWarning(message: string, title: string = 'Warning'): void {
+  showWarning(message: string, title = 'Warning'): void {
     this.notify({
       type: 'warning',
       title,

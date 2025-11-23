@@ -12,11 +12,18 @@ export type SkeletonType = 'text' | 'circle' | 'rectangle' | 'card';
 })
 export class LoadingSkeleton {
   @Input() type: SkeletonType = 'text';
-  @Input() width: string = '100%';
-  @Input() height: string = '16px';
-  @Input() count: number = 1;
+  @Input() width = '100%';
+  @Input() height = '16px';
+  @Input() count = 1;
 
   get items(): number[] {
     return Array(this.count).fill(0).map((_, i) => i);
+  }
+
+  /**
+   * TrackBy function for skeleton items - improves ngFor performance
+   */
+  trackByIndex(index: number): number {
+    return index;
   }
 }

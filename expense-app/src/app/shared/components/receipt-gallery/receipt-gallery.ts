@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, signal, OnInit, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -49,7 +49,7 @@ import { SupabaseService } from '../../../core/services/supabase.service';
   templateUrl: './receipt-gallery.html',
   styleUrl: './receipt-gallery.scss'
 })
-export class ReceiptGalleryComponent {
+export class ReceiptGalleryComponent implements OnInit, OnChanges {
   private readonly supabase = inject(SupabaseService);
   private readonly dialog = inject(MatDialog);
 

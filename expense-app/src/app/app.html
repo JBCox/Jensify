@@ -47,14 +47,16 @@
 <app-sidebar-nav
   *ngIf="vm.isAuthenticated && !isAuthRoute"
   [isOpen]="isSidebarOpen"
-  (closeSidebar)="closeSidebar()">
+  (closeSidebar)="closeSidebar()"
+  (collapsedChange)="onSidebarCollapsedChange($event)">
 </app-sidebar-nav>
 
 <!-- Main Content Area -->
 <div
   class="app-content jensify-premium-mesh-bg"
   [class.with-toolbar]="vm.isAuthenticated && !isAuthRoute"
-  [class.with-sidebar]="vm.isAuthenticated && !isAuthRoute">
+  [class.with-sidebar]="vm.isAuthenticated && !isAuthRoute"
+  [class.sidebar-collapsed]="isSidebarCollapsed">
   <!-- Breadcrumbs -->
   <app-breadcrumbs *ngIf="vm.isAuthenticated && !isAuthRoute"></app-breadcrumbs>
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -53,6 +53,12 @@ import { Router } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TripList implements OnInit, OnDestroy {
+  private mileageService = inject(MileageService);
+  private sanitizationService = inject(SanitizationService);
+  private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
+  private keyboardShortcuts = inject(KeyboardShortcutsService);
+
   // Cleanup
   private destroy$ = new Subject<void>();
 
@@ -151,14 +157,6 @@ export class TripList implements OnInit, OnDestroy {
     { value: 'charity' as MileageCategory, label: 'Charity' },
     { value: 'moving' as MileageCategory, label: 'Moving' }
   ];
-
-  constructor(
-    private mileageService: MileageService,
-    private sanitizationService: SanitizationService,
-    private snackBar: MatSnackBar,
-    private router: Router,
-    private keyboardShortcuts: KeyboardShortcutsService
-  ) {}
 
   ngOnInit(): void {
     this.loadTrips();

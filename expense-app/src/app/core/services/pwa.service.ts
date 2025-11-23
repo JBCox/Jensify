@@ -1,8 +1,9 @@
-import { Injectable, ApplicationRef } from '@angular/core';
+import { Injectable, ApplicationRef, inject } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
-import { concat, interval, NEVER } from 'rxjs';
-import { filter, first, map, switchMap, tap } from 'rxjs/operators';
+import { concat, interval } from 'rxjs';
+import { filter, first, switchMap, tap } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { PWA, SNACKBAR_DURATION } from '../../shared/constants/ui.constants';
 
 /**
  * PWA Service
@@ -12,13 +13,13 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   providedIn: 'root'
 })
 export class PwaService {
+  private updates = inject(SwUpdate);
+  private appRef = inject(ApplicationRef);
+  private snackBar = inject(MatSnackBar);
+
   private promptEvent: any;
 
-  constructor(
-    private updates: SwUpdate,
-    private appRef: ApplicationRef,
-    private snackBar: MatSnackBar
-  ) {
+  constructor() {
     this.initUpdateCheck();
     this.listenForInstallPrompt();
   }
@@ -28,7 +29,6 @@ export class PwaService {
    */
   private initUpdateCheck(): void {
     if (!this.updates.isEnabled) {
-      console.log('Service Worker not enabled');
       return;
     }
 
@@ -36,17 +36,12 @@ export class PwaService {
     const appIsStable$ = this.appRef.isStable.pipe(
       first(isStable => isStable === true)
     );
-    const everySixHours$ = interval(6 * 60 * 60 * 1000); // 6 hours
+    const everySixHours$ = interval(PWA.UPDATE_CHECK_INTERVAL);
     const everySixHoursOnceAppIsStable$ = concat(appIsStable$, everySixHours$);
 
     everySixHoursOnceAppIsStable$
       .pipe(
-        switchMap(() => this.updates.checkForUpdate()),
-        tap(updateAvailable => {
-          if (updateAvailable) {
-            console.log('Update available');
-          }
-        })
+        switchMap(() => this.updates.checkForUpdate())
       )
       .subscribe();
 
@@ -55,7 +50,7 @@ export class PwaService {
       .pipe(
         filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY')
       )
-      .subscribe(evt => {
+      .subscribe(_evt => {
         this.promptUserToUpdate();
       });
   }
@@ -68,7 +63,7 @@ export class PwaService {
       'New version available!',
       'Reload',
       {
-        duration: 0, // Don't auto-dismiss
+        duration: SNACKBAR_DURATION.PERSISTENT,
         horizontalPosition: 'center',
         verticalPosition: 'bottom'
       }
@@ -86,7 +81,6 @@ export class PwaService {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       this.promptEvent = e;
-      console.log('Install prompt ready');
     });
   }
 

@@ -44,11 +44,17 @@ export class SupabaseService {
   /** BehaviorSubject for current session state */
   private sessionSubject = new BehaviorSubject<Session | null>(null);
 
+  /** BehaviorSubject to track if session initialization is complete */
+  private sessionInitializedSubject = new BehaviorSubject<boolean>(false);
+
   /** Observable stream of current user changes */
   public currentUser$: Observable<User | null> = this.currentUserSubject.asObservable();
 
   /** Observable stream of session changes */
   public session$: Observable<Session | null> = this.sessionSubject.asObservable();
+
+  /** Observable stream indicating if session initialization is complete */
+  public sessionInitialized$: Observable<boolean> = this.sessionInitializedSubject.asObservable();
 
   /**
    * Initializes the Supabase client with configuration from environment
@@ -89,6 +95,9 @@ export class SupabaseService {
       this.currentUserSubject.next(session?.user || null);
     } catch (error) {
       console.error('Error initializing session:', error);
+    } finally {
+      // Mark session as initialized regardless of success/failure
+      this.sessionInitializedSubject.next(true);
     }
   }
 

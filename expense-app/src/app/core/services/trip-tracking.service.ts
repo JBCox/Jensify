@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { GeolocationService, GeolocationPosition } from './geolocation.service';
 import { SupabaseService } from './supabase.service';
@@ -29,6 +29,9 @@ const STORAGE_KEY = 'jensify_trip_tracking';
   providedIn: 'root'
 })
 export class TripTrackingService {
+  private geolocation = inject(GeolocationService);
+  private supabase = inject(SupabaseService);
+
   private trackingState = new BehaviorSubject<TrackingState>({
     isTracking: false,
     startTime: null,
@@ -48,10 +51,7 @@ export class TripTrackingService {
   duration = signal(0);
   currentLocation = signal<string | null>(null);
 
-  constructor(
-    private geolocation: GeolocationService,
-    private supabase: SupabaseService
-  ) {
+  constructor() {
     this.restoreTrackingState();
   }
 
