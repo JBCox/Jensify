@@ -3,11 +3,214 @@
  * Layout, colors, spacing come from global Jensify utilities (_utilities.scss)
  */
 
-// Table Container
+// Container padding (matches admin dashboard)
+.user-mgmt-container {
+  padding: var(--jensify-spacing-md, 1rem);
+}
+
+// Extra Compact Page Header
+.user-mgmt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--jensify-spacing-sm);
+  padding-bottom: var(--jensify-spacing-xs);
+  border-bottom: 1px solid var(--jensify-border-subtle);
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: var(--jensify-spacing-sm);
+  }
+
+  .header-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--jensify-primary);
+    border-radius: var(--jensify-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 26px;
+      width: 26px;
+      height: 26px;
+      color: white;
+    }
+  }
+
+  .header-text {
+    .jensify-page-title {
+      margin: 0 0 2px;
+      font-size: 1.375rem;
+      font-weight: 600;
+      color: var(--jensify-text-strong);
+    }
+
+    .jensify-page-subtitle {
+      margin: 0;
+      font-size: 0.8125rem;
+      color: var(--jensify-text-medium);
+    }
+  }
+}
+
+// Compact Tab Styling
+::ng-deep .mat-mdc-tab-group {
+  .mat-mdc-tab-header {
+    margin-bottom: var(--jensify-spacing-xs);
+  }
+
+  .mat-mdc-tab {
+    min-width: 120px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .mat-mdc-tab.mdc-tab--active {
+    .mdc-tab__text-label {
+      color: var(--jensify-primary);
+      font-weight: 600;
+    }
+  }
+
+  .mat-ink-bar {
+    height: 3px;
+    background: var(--jensify-primary);
+  }
+}
+
+// Extra Compact Card Header
+.jensify-card-header {
+  border-bottom: 1px solid var(--jensify-border-subtle);
+  padding: var(--jensify-spacing-xs) 0;
+  margin-bottom: var(--jensify-spacing-xs);
+
+  .jensify-card-title {
+    margin: 0;
+    color: var(--jensify-text-strong);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+}
+
+// Reduce card padding
+::ng-deep .jensify-card {
+  .mat-mdc-card-content {
+    padding: var(--jensify-spacing-sm) !important;
+  }
+}
+
+// Compact Summary Metrics
+.jensify-summary-metrics {
+  display: flex;
+  gap: var(--jensify-spacing-sm);
+  flex-wrap: wrap;
+
+  .jensify-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--jensify-spacing-sm) var(--jensify-spacing-md);
+    background: var(--jensify-surface-card);
+    border: 1px solid var(--jensify-border-subtle);
+    border-radius: var(--jensify-radius-md);
+    min-width: 80px;
+
+    .jensify-metric-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--jensify-primary);
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .jensify-metric-label {
+      font-size: 0.75rem;
+      color: var(--jensify-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      font-weight: 500;
+      text-align: center;
+    }
+  }
+}
+
+// Extra Compact Form Styling
+.jensify-form {
+  display: grid;
+  gap: var(--jensify-spacing-sm);
+  max-width: 600px;
+  margin: 0 auto;
+
+  ::ng-deep .mat-mdc-form-field {
+    .mat-mdc-form-field-icon-prefix {
+      margin-right: var(--jensify-spacing-sm);
+      color: var(--jensify-primary);
+    }
+
+    // Reduce field height
+    .mat-mdc-text-field-wrapper {
+      padding-bottom: 0;
+    }
+
+    .mat-mdc-form-field-hint-wrapper,
+    .mat-mdc-form-field-error-wrapper {
+      padding: 0;
+    }
+  }
+}
+
+// Dark mode form fields - must be outside the nested structure
+@at-root .dark {
+  .jensify-form ::ng-deep .mat-mdc-form-field {
+    .mat-mdc-text-field-wrapper {
+      background: rgba(255, 255, 255, 0.05) !important;
+      border-color: rgba(247, 88, 12, 0.25) !important;
+    }
+
+    .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    .mat-mdc-input-element {
+      color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .mat-mdc-select-value,
+    .mat-mdc-select-placeholder {
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .mat-mdc-form-field-hint {
+      color: rgba(255, 255, 255, 0.6) !important;
+    }
+  }
+}
+
+.jensify-form-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--jensify-spacing-xs);
+
+  button {
+    min-width: 180px;
+    height: 40px;
+    font-weight: 600;
+
+    mat-icon {
+      margin-right: var(--jensify-spacing-xs);
+    }
+  }
+}
+
+// Compact Table Container
 .jensify-table-container {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: 600px;
+  max-height: 400px;
   border: 1px solid var(--jensify-border-subtle);
   border-radius: var(--jensify-radius-md);
   background: var(--jensify-surface-card);
@@ -31,41 +234,31 @@
   // Header Cells
   .mat-mdc-header-cell {
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--jensify-text-strong);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: var(--jensify-spacing-md) var(--jensify-spacing-md);
-    border-bottom: 2px solid var(--jensify-border-medium);
+    letter-spacing: 0.3px;
+    padding: var(--jensify-spacing-sm) var(--jensify-spacing-sm);
+    border-bottom: 1px solid var(--jensify-border-medium);
     background: var(--jensify-surface-soft);
   }
 
   // Data Rows (Zebra Striping)
   .mat-mdc-row {
-    transition: background-color 0.15s ease, box-shadow 0.15s ease;
-
-    // Zebra striping
     &:nth-child(even) {
       background-color: var(--jensify-surface-soft);
     }
 
-    &:nth-child(odd) {
-      background-color: var(--jensify-surface-card);
-    }
-
-    // Enhanced hover state
     &:hover {
       background-color: var(--jensify-surface-hover) !important;
-      box-shadow: inset 4px 0 0 var(--jensify-primary);
-      cursor: pointer;
     }
   }
 
   // Data Cells
   .mat-mdc-cell {
-    padding: var(--jensify-spacing-md) var(--jensify-spacing-md);
+    padding: var(--jensify-spacing-sm) var(--jensify-spacing-sm);
     border-bottom: 1px solid var(--jensify-border-subtle);
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     color: var(--jensify-text-medium);
   }
 
@@ -77,8 +270,8 @@
   }
 
   .jensify-user-avatar {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--jensify-radius-full);
     background: var(--jensify-primary-soft);
     color: var(--jensify-primary);
@@ -86,7 +279,7 @@
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.875rem;
     flex-shrink: 0;
   }
 
@@ -94,83 +287,94 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-width: 0; // Allow text truncation
+    min-width: 0;
   }
 
   .jensify-user-name {
     font-weight: 600;
     color: var(--jensify-text-strong);
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
   }
 
   .jensify-user-email {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--jensify-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  // Role & Status Chips
+  // Compact Role & Status Chips
   .jensify-chip {
-    font-size: 0.8125rem;
-    font-weight: 500;
-    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
     border-radius: var(--jensify-radius-full);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 80px;
+    min-width: 70px;
+    border: 1px solid transparent;
   }
 
   .chip-admin {
     background: var(--jensify-danger-soft);
     color: var(--jensify-danger-strong);
+    border-color: var(--jensify-danger-light);
   }
 
   .chip-finance {
     background: var(--jensify-success-soft);
     color: var(--jensify-success-strong);
+    border-color: var(--jensify-success-light);
   }
 
   .chip-manager {
     background: var(--jensify-warning-soft);
     color: var(--jensify-warning-strong);
+    border-color: var(--jensify-warning-light);
   }
 
   .chip-employee {
     background: var(--jensify-info-soft);
     color: var(--jensify-info-strong);
+    border-color: var(--jensify-info-light);
   }
 
   .chip-active {
     background: var(--jensify-success-soft);
     color: var(--jensify-success-strong);
+    border-color: var(--jensify-success-light);
   }
 
   .chip-inactive {
     background: var(--jensify-border-subtle);
     color: var(--jensify-text-muted);
+    border-color: var(--jensify-border-medium);
   }
 
   .chip-pending {
     background: var(--jensify-warning-soft);
     color: var(--jensify-warning-strong);
+    border-color: var(--jensify-warning-light);
   }
 
   .chip-accepted {
     background: var(--jensify-success-soft);
     color: var(--jensify-success-strong);
+    border-color: var(--jensify-success-light);
   }
 
   .chip-expired {
     background: var(--jensify-danger-soft);
     color: var(--jensify-danger-strong);
+    border-color: var(--jensify-danger-light);
   }
 
   .chip-revoked {
     background: var(--jensify-border-subtle);
     color: var(--jensify-text-muted);
+    border-color: var(--jensify-border-medium);
   }
 
   // Action Buttons
@@ -185,31 +389,100 @@
   }
 }
 
-// Responsive Table Adjustments
+// Compact Empty States
+::ng-deep .jensify-empty-state {
+  padding: var(--jensify-spacing-lg) var(--jensify-spacing-md);
+  text-align: center;
+  background: var(--jensify-surface-soft);
+  border-radius: var(--jensify-radius-md);
+  margin: var(--jensify-spacing-sm) 0;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: var(--jensify-text-muted);
+    opacity: 0.5;
+    margin-bottom: var(--jensify-spacing-sm);
+  }
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--jensify-text-strong);
+    margin-bottom: var(--jensify-spacing-xs);
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: var(--jensify-text-muted);
+    margin: 0;
+  }
+}
+
+// Compact Loading State
+::ng-deep .jensify-loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--jensify-spacing-lg);
+  background: var(--jensify-surface-soft);
+  border-radius: var(--jensify-radius-md);
+  margin: var(--jensify-spacing-sm) 0;
+}
+
+// Tab Content Padding
+.jensify-tab-content {
+  padding: var(--jensify-spacing-sm) 0;
+}
+
+// Responsive Adjustments
 @media (max-width: 767px) {
+  .user-mgmt-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--jensify-spacing-sm);
+
+    .header-content {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .header-icon {
+      width: 40px;
+      height: 40px;
+
+      mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+
+  .jensify-form {
+    max-width: 100%;
+  }
+
+  .jensify-form-actions button {
+    min-width: 100%;
+  }
+
   .jensify-table-container {
-    max-height: 500px;
+    max-height: 350px;
   }
 
   .jensify-members-table,
   .jensify-invitations-table {
     .mat-mdc-header-cell,
     .mat-mdc-cell {
-      padding: var(--jensify-spacing-sm) var(--jensify-spacing-xs);
-      font-size: 0.8125rem;
+      padding: var(--jensify-spacing-xs);
+      font-size: 0.75rem;
     }
 
     .jensify-user-avatar {
-      width: 32px;
-      height: 32px;
-      font-size: 0.875rem;
-    }
-
-    .jensify-user-name {
-      font-size: 0.875rem;
-    }
-
-    .jensify-user-email {
+      width: 28px;
+      height: 28px;
       font-size: 0.75rem;
     }
   }
