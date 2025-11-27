@@ -1,6 +1,406 @@
 /**
- * Component-specific styles only
- * Layout, colors, spacing come from global Jensify utilities
+ * Expense Form - Enhanced Layout
+ * Two-column responsive layout with prominent amount field
  */
 
-// Add component-specific overrides here if needed
+// Compact card header
+mat-card-header {
+  padding: var(--jensify-spacing-md) var(--jensify-spacing-lg) var(--jensify-spacing-sm) !important;
+  border-bottom: none !important;
+
+  mat-card-title {
+    font-size: 1.5rem !important;
+    margin-bottom: 0 !important;
+  }
+}
+
+mat-card-content {
+  padding: var(--jensify-spacing-xs) var(--jensify-spacing-md) var(--jensify-spacing-md) !important;
+}
+
+// Receipt attachment area styling
+.jensify-receipt-toolbar {
+  margin-bottom: var(--jensify-spacing-sm);
+  background: transparent;
+
+  button {
+    width: 100%;
+    height: 56px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: 2px dashed var(--jensify-border-medium);
+    border-radius: var(--jensify-radius-md);
+    background: var(--jensify-surface-soft) !important;
+    color: var(--jensify-text-strong) !important;
+    transition: all 0.2s ease;
+
+    // Dark mode - glass-morphism with orange accent
+    :host-context(.dark) & {
+      background: linear-gradient(
+        135deg,
+        rgba(247, 88, 12, 0.12) 0%,
+        rgba(247, 88, 12, 0.05) 100%
+      ) !important;
+      border: 2px dashed rgba(247, 88, 12, 0.4) !important;
+      color: rgb(255, 180, 130) !important;
+      box-shadow:
+        0 2px 8px rgba(247, 88, 12, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+
+      mat-icon {
+        color: rgb(255, 140, 80) !important;
+      }
+    }
+
+    &:hover {
+      border-color: var(--jensify-primary);
+      background: var(--jensify-primary-soft) !important;
+      transform: translateY(-2px);
+
+      :host-context(.dark) & {
+        background: linear-gradient(
+          135deg,
+          rgba(247, 88, 12, 0.2) 0%,
+          rgba(247, 88, 12, 0.1) 100%
+        ) !important;
+        border-color: rgba(247, 88, 12, 0.7) !important;
+        box-shadow:
+          0 4px 16px rgba(247, 88, 12, 0.2),
+          0 0 20px rgba(247, 88, 12, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+        color: rgb(255, 200, 160) !important;
+      }
+    }
+  }
+}
+
+// Form grid layout - two columns on larger screens
+.jensify-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--jensify-spacing-sm);
+
+  @media (min-width: 640px) {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--jensify-spacing-sm) var(--jensify-spacing-md);
+  }
+
+  // Full width items
+  .jensify-message-error,
+  .jensify-message-success {
+    grid-column: 1 / -1;
+  }
+
+  // Amount field - make it prominent and full width on mobile, half on desktop
+  mat-form-field:has([formControlName="amount"]) {
+    @media (min-width: 640px) {
+      grid-column: 1 / -1;
+    }
+
+    input {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--jensify-primary);
+      text-align: center;
+      padding: var(--jensify-spacing-sm) 0;
+    }
+
+    mat-label {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+  }
+
+  // Merchant field - first in grid
+  mat-form-field:has([formControlName="merchant"]) {
+    @media (min-width: 640px) {
+      grid-column: 1;
+      grid-row: 2;
+    }
+  }
+
+  // Category field
+  mat-form-field:has([formControlName="category"]) {
+    @media (min-width: 640px) {
+      grid-column: 2;
+      grid-row: 2;
+    }
+  }
+
+  // Date field
+  mat-form-field:has([formControlName="expense_date"]) {
+    @media (min-width: 640px) {
+      grid-column: 1;
+      grid-row: 3;
+    }
+  }
+
+  // Notes field - full width
+  mat-form-field:has([formControlName="notes"]) {
+    grid-column: 1 / -1;
+
+    input {
+      min-height: 60px;
+    }
+  }
+
+  // Form actions - full width, right-aligned
+  .jensify-form-actions {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+}
+
+// Enhanced SmartScan status banner
+.jensify-smartscan-status {
+  padding: var(--jensify-spacing-md);
+  border-radius: var(--jensify-radius-md);
+  display: flex;
+  gap: var(--jensify-spacing-md);
+  align-items: flex-start;
+  margin-bottom: var(--jensify-spacing-md);
+  border-left: 4px solid;
+
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  &.pending,
+  &.processing {
+    background: var(--jensify-info-soft);
+    border-color: var(--jensify-info);
+
+    mat-icon {
+      color: var(--jensify-info);
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  &.completed {
+    background: var(--jensify-success-soft);
+    border-color: var(--jensify-success);
+
+    mat-icon {
+      color: var(--jensify-success);
+    }
+  }
+
+  &.failed {
+    background: var(--jensify-danger-soft);
+    border-color: var(--jensify-danger);
+
+    mat-icon {
+      color: var(--jensify-danger);
+    }
+  }
+
+  .jensify-status-title {
+    font-weight: 600;
+    margin: 0 0 var(--jensify-spacing-xs);
+    color: var(--jensify-text-strong);
+  }
+
+  .jensify-status-hint {
+    font-size: 0.875rem;
+    color: var(--jensify-text-muted);
+    margin: 0;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// Attached receipt card
+.jensify-attached-receipt {
+  background: var(--jensify-surface-soft);
+  border: 1px solid var(--jensify-border-subtle);
+  border-radius: var(--jensify-radius-md);
+  padding: var(--jensify-spacing-md);
+  margin-bottom: var(--jensify-spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--jensify-spacing-md);
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .jensify-receipt-info {
+    display: flex;
+    gap: var(--jensify-spacing-sm);
+    align-items: center;
+    flex: 1;
+
+    mat-icon {
+      color: var(--jensify-primary);
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+    }
+
+    .jensify-receipt-name {
+      font-weight: 600;
+      margin: 0 0 var(--jensify-spacing-xs);
+      color: var(--jensify-text-strong);
+    }
+
+    .jensify-receipt-meta {
+      font-size: 0.875rem;
+      color: var(--jensify-text-muted);
+      margin: 0;
+    }
+  }
+
+  .jensify-receipt-actions {
+    display: flex;
+    gap: var(--jensify-spacing-sm);
+
+    @media (max-width: 640px) {
+      width: 100%;
+
+      button {
+        flex: 1;
+      }
+    }
+  }
+}
+
+// Split Suggestion Banner
+.jensify-split-suggestion {
+  background: linear-gradient(135deg, rgba(255, 89, 0, 0.08) 0%, rgba(255, 89, 0, 0.04) 100%);
+  border: 1px solid rgba(255, 89, 0, 0.2);
+  border-left: 4px solid var(--jensify-primary);
+  border-radius: var(--jensify-radius-md);
+  padding: var(--jensify-spacing-md);
+  margin-bottom: var(--jensify-spacing-md);
+
+  :host-context(.dark) & {
+    background: linear-gradient(135deg, rgba(255, 89, 0, 0.15) 0%, rgba(255, 89, 0, 0.05) 100%);
+    border-color: rgba(255, 89, 0, 0.3);
+  }
+
+  .split-suggestion-header {
+    display: flex;
+    gap: var(--jensify-spacing-md);
+    align-items: flex-start;
+
+    > mat-icon {
+      color: var(--jensify-primary);
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .dismiss-btn {
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+  }
+
+  .split-suggestion-content {
+    flex: 1;
+
+    .split-suggestion-title {
+      font-weight: 700;
+      font-size: 1rem;
+      margin: 0 0 var(--jensify-spacing-xs);
+      color: var(--jensify-text-strong);
+    }
+
+    .split-suggestion-hint {
+      font-size: 0.875rem;
+      color: var(--jensify-text-muted);
+      margin: 0 0 var(--jensify-spacing-sm);
+    }
+  }
+
+  .detected-categories {
+    margin-top: var(--jensify-spacing-xs);
+
+    mat-chip {
+      font-size: 0.75rem;
+      height: 24px;
+      min-height: 24px;
+    }
+  }
+
+  .detected-items {
+    margin-top: var(--jensify-spacing-md);
+    padding-top: var(--jensify-spacing-md);
+    border-top: 1px dashed var(--jensify-border-medium);
+
+    .items-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--jensify-text-muted);
+      margin: 0 0 var(--jensify-spacing-sm);
+    }
+
+    .detected-item {
+      display: flex;
+      align-items: center;
+      gap: var(--jensify-spacing-sm);
+      padding: var(--jensify-spacing-xs) var(--jensify-spacing-sm);
+      background: var(--jensify-surface-soft);
+      border-radius: var(--jensify-radius-sm);
+      margin-bottom: var(--jensify-spacing-xs);
+
+      :host-context(.dark) & {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .item-description {
+        flex: 1;
+        font-weight: 500;
+        color: var(--jensify-text-strong);
+        font-size: 0.875rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .item-amount {
+        font-weight: 600;
+        color: var(--jensify-text-strong);
+        font-size: 0.875rem;
+        flex-shrink: 0;
+      }
+
+      .item-category {
+        font-size: 0.7rem;
+        height: 20px;
+        min-height: 20px;
+        padding: 0 6px;
+        flex-shrink: 0;
+      }
+    }
+  }
+
+  .split-suggestion-actions {
+    display: flex;
+    gap: var(--jensify-spacing-sm);
+    margin-top: var(--jensify-spacing-md);
+    justify-content: flex-end;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+
+      button {
+        width: 100%;
+      }
+    }
+
+    button mat-icon {
+      margin-right: var(--jensify-spacing-xs);
+    }
+  }
+}

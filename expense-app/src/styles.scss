@@ -215,7 +215,7 @@ html {
   --jensify-input-border-focus: #F7580C;
   --jensify-input-text: var(--jensify-text-strong);
   --jensify-input-placeholder: var(--jensify-text-muted);
-  --jensify-input-radius: 24px;
+  --jensify-input-radius: var(--jensify-radius-md); // 8px - consistent with buttons
 
   // Layout
   --jensify-sidebar-width: 64px;
@@ -421,6 +421,12 @@ body {
 
 html {
   height: 100%;
+  min-height: 100%;
+
+  // Dark mode - ensure background covers full scroll area
+  &.dark {
+    background-color: #020617 !important; // Slate 950 - matches body.dark
+  }
 }
 
 body {
@@ -844,26 +850,7 @@ body {
     padding-left: 0 !important;
   }
 
-  &.mat-mdc-form-field-appearance-outline {
-    .mat-mdc-form-field-flex {
-      &::after {
-        content: "";
-        position: absolute;
-        top: 8px;
-        bottom: 8px;
-        left: calc(#{$jensify-prefix-width} + 0.25rem);
-        width: 1px;
-        background-color: var(--jensify-border-medium);
-        pointer-events: none;
-      }
-    }
-
-    &.mat-focused {
-      .mat-mdc-form-field-flex::after {
-        background-color: var(--jensify-primary);
-      }
-    }
-  }
+  // Divider line removed - was causing text overlap issues with labels
 
   .mat-mdc-form-field-icon-prefix {
     width: $jensify-prefix-width !important;
@@ -1130,6 +1117,16 @@ mat-card, .mat-mdc-card {
     display: none !important;
   }
 
+  // IMPORTANT: Hide the notched outline borders completely
+  // We use our own border on .mat-mdc-text-field-wrapper
+  // The notched outline was causing vertical lines through label text
+  .mdc-notched-outline,
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border: none !important;
+  }
+
   // Style the input wrapper - LIGHT MODE
   .mat-mdc-text-field-wrapper {
     background: rgba(74, 44, 26, 0.04);
@@ -1361,24 +1358,77 @@ textarea.mat-mdc-input-element {
 }
 
 // ============================================================================
-// BUTTON STYLING - SOLID & PREMIUM
+// BUTTON STYLING - PREMIUM FILLED BUTTONS
+// Modern, polished buttons with gradients, glows, and smooth transitions
 // ============================================================================
-// Override Material's primary raised button to ensure it's solid orange
 .mat-mdc-raised-button.mat-primary,
 .mat-mdc-unelevated-button.mat-primary,
 .mat-mdc-flat-button.mat-primary {
-  background-color: var(--jensify-primary) !important;
+  // Gradient background for depth
+  background: linear-gradient(
+    180deg,
+    #ff6a1a 0%,      // Lighter orange at top
+    #f7580c 50%,     // Primary orange
+    #d55110 100%     // Darker orange at bottom
+  ) !important;
   color: white !important;
   opacity: 1 !important;
-  box-shadow: var(--jensify-shadow-card-glow);
-  
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: var(--jensify-radius-md) !important; // 8px - consistent with all buttons
+
+  // Premium shadow with orange glow
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    0 4px 12px rgba(247, 88, 12, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+
+  // Smooth transition
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
   &:hover {
-    background-color: var(--jensify-primary-hover) !important;
-    box-shadow: var(--jensify-shadow-focus-glow);
+    background: linear-gradient(
+      180deg,
+      #ff7a33 0%,
+      #ff6a1a 50%,
+      #f7580c 100%
+    ) !important;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.15),
+      0 8px 24px rgba(247, 88, 12, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    transform: translateY(-1px);
   }
-  
+
   &:active {
-    box-shadow: var(--jensify-shadow-lg);
+    background: linear-gradient(
+      180deg,
+      #f7580c 0%,
+      #d55110 50%,
+      #c44a0e 100%
+    ) !important;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(247, 88, 12, 0.3),
+      inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(0);
+  }
+
+  // Icon styling
+  .mat-icon {
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  }
+
+  // Disabled state
+  &:disabled, &[disabled] {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 106, 26, 0.5) 0%,
+      rgba(247, 88, 12, 0.5) 100%
+    ) !important;
+    box-shadow: none !important;
+    transform: none !important;
   }
 }
 
@@ -1386,6 +1436,120 @@ textarea.mat-mdc-input-element {
 .mat-mdc-raised-button:not(.mat-primary):not(.mat-accent):not(.mat-warn) {
   background-color: var(--jensify-surface-card) !important;
   color: var(--jensify-text-strong) !important;
+}
+
+// ============================================================================
+// STROKED BUTTON DARK MODE FIX
+// Improves readability of outlined buttons in dark mode
+// ============================================================================
+.mat-mdc-outlined-button,
+.mat-mdc-stroked-button {
+  // Consistent border radius across all buttons (matches filled buttons)
+  border-radius: var(--jensify-radius-md) !important; // 8px - standard for interactive elements
+
+  // LIGHT MODE - Explicit styling to prevent white-on-white issues
+  background-color: transparent !important; // Prevent Angular Material from adding white background
+  border: 2px solid var(--jensify-primary) !important; // Thicker border for visibility
+  color: var(--jensify-primary) !important;
+  font-weight: 600;
+
+  // Ensure inner text elements get the color in light mode too
+  .mdc-button__label,
+  span {
+    color: var(--jensify-primary) !important;
+  }
+
+  &:hover {
+    background-color: rgba(247, 88, 12, 0.1) !important; // Subtle orange tint on hover
+    border-color: var(--jensify-primary-hover) !important;
+  }
+
+  &:active {
+    background-color: rgba(247, 88, 12, 0.15) !important;
+  }
+
+  // DARK MODE - Add background and improve contrast significantly
+  @at-root .dark & {
+    background-color: rgba(247, 88, 12, 0.3) !important;
+    border: 2px solid #ff9966 !important;
+    color: #fff0e6 !important; // Very light peach, almost white
+    font-weight: 700 !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6), 0 0 8px rgba(247, 88, 12, 0.3);
+    letter-spacing: 0.03em;
+
+    // Ensure inner text elements also get the color
+    .mdc-button__label,
+    span,
+    * {
+      color: #fff0e6 !important;
+    }
+
+    &:hover {
+      background-color: rgba(247, 88, 12, 0.45) !important;
+      border-color: #ffb380 !important;
+      color: #ffffff !important; // Pure white on hover
+
+      .mdc-button__label,
+      span,
+      * {
+        color: #ffffff !important;
+      }
+    }
+
+    &:active {
+      background-color: rgba(247, 88, 12, 0.55) !important;
+    }
+
+    // Icon inside button
+    .mat-icon {
+      color: inherit !important;
+    }
+  }
+
+  // Warn color variant (for Fix Violations, Unsplit buttons)
+  &.mat-warn {
+    border-color: var(--jensify-danger) !important;
+    color: var(--jensify-danger) !important;
+
+    &:hover {
+      background-color: rgba(239, 68, 68, 0.08) !important;
+    }
+
+    @at-root .dark & {
+      background-color: rgba(239, 68, 68, 0.2) !important;
+      border: 2px solid rgba(248, 113, 113, 0.7) !important;
+      color: #fca5a5 !important; // Lighter red for contrast
+      font-weight: 600 !important;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+      &:hover {
+        background-color: rgba(239, 68, 68, 0.35) !important;
+        border-color: rgba(252, 165, 165, 0.9) !important;
+        color: #fecaca !important;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// TEXT BUTTON DARK MODE FIX
+// Improves readability of text buttons (mat-button) in dark mode
+// ============================================================================
+.mat-mdc-button:not(.mat-mdc-raised-button):not(.mat-mdc-outlined-button):not(.mat-mdc-unelevated-button) {
+  // DARK MODE - Improve text button visibility
+  @at-root .dark & {
+    color: #ffd4b3 !important; // Bright peach color
+    font-weight: 600 !important;
+
+    &:hover {
+      background-color: rgba(247, 88, 12, 0.15) !important;
+      color: #fff0e6 !important;
+    }
+
+    .mat-icon {
+      color: inherit !important;
+    }
+  }
 }
 
 // ENHANCED GLOW & INPUT FIXES
@@ -1410,5 +1574,567 @@ textarea.mat-mdc-input-element {
 .mdc-dialog__surface {
   background-color: var(--jensify-surface-card) !important;
   opacity: 1 !important;
+}
+
+// ============================================================================
+// MENU PANEL BACKGROUND FIX
+// ============================================================================
+.mat-mdc-menu-panel,
+.cdk-overlay-pane .mat-mdc-menu-panel {
+  background-color: var(--jensify-surface-card) !important;
+  border: 1px solid var(--jensify-border-medium) !important;
+  border-radius: var(--jensify-radius-lg) !important;
+  box-shadow: var(--jensify-shadow-lg) !important;
+  opacity: 1 !important;
+
+  // DARK MODE
+  @at-root .dark &,
+  .dark & {
+    background: #1e293b !important; // Slate 800
+    border: 1px solid rgba(247, 88, 12, 0.25) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .mat-mdc-menu-content {
+    background-color: transparent !important;
+    padding: 8px 0 !important;
+  }
+
+  .mat-mdc-menu-item {
+    color: var(--jensify-text-strong) !important;
+
+    &:hover {
+      background-color: rgba(247, 88, 12, 0.1) !important;
+    }
+
+    .mat-icon {
+      color: var(--jensify-icon-muted);
+    }
+
+    // DARK MODE
+    @at-root .dark & {
+      color: rgba(255, 255, 255, 0.9) !important;
+
+      &:hover {
+        background-color: rgba(247, 88, 12, 0.2) !important;
+      }
+
+      .mat-icon {
+        color: rgba(255, 255, 255, 0.7);
+      }
+    }
+  }
+
+  mat-divider, .mat-divider {
+    border-color: var(--jensify-border-subtle) !important;
+
+    @at-root .dark & {
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+  }
+}
+
+// Notification menu specific styling
+.notification-menu.mat-mdc-menu-panel {
+  max-width: 400px !important;
+
+  @at-root .dark &,
+  .dark & {
+    background: #1e293b !important;
+  }
+}
+
+// ============================================================================
+// DARK MODE FIX FOR CDK OVERLAY COMPONENTS
+// CDK overlays are rendered as siblings to body, not children, so we need
+// to use body.dark as the parent selector for overlay-specific dark styles
+// ============================================================================
+
+// Fix dropdown panels (mat-select) in dark mode
+// Multiple selectors to ensure coverage across all Material versions and structures
+body.dark .cdk-overlay-container .mat-mdc-select-panel,
+html.dark .cdk-overlay-container .mat-mdc-select-panel,
+body.dark .cdk-overlay-pane .mat-mdc-select-panel,
+html.dark .cdk-overlay-pane .mat-mdc-select-panel,
+body.dark .mat-mdc-select-panel,
+html.dark .mat-mdc-select-panel {
+  background: #1e293b !important; // Slate 800
+  border: 1px solid rgba(247, 88, 12, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+
+  .mat-mdc-option {
+    color: rgba(255, 255, 255, 0.9) !important;
+    background: transparent !important;
+
+    &:hover,
+    &:focus {
+      background: rgba(255, 122, 51, 0.2) !important;
+    }
+
+    &.mdc-list-item--selected,
+    &.mat-mdc-option-active {
+      background: rgba(255, 89, 0, 0.3) !important;
+      color: #ffffff !important;
+    }
+  }
+}
+
+// Ultra-specific selector for mat-select dropdown panels in dark mode
+// Target the mdc-menu-surface class which provides the actual background
+html.dark .mat-mdc-select-panel.mdc-menu-surface,
+html.dark .mdc-menu-surface.mat-mdc-select-panel,
+.dark .mat-mdc-select-panel.mdc-menu-surface {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+
+  .mat-mdc-option {
+    color: rgba(255, 255, 255, 0.9) !important;
+    background: transparent !important;
+
+    &.mdc-list-item--selected {
+      background: rgba(255, 89, 0, 0.3) !important;
+    }
+  }
+}
+
+// Direct targeting of mdc-menu-surface when in dark mode
+html.dark .mdc-menu-surface {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+}
+
+// Ultra-aggressive fix for CDK overlay panels that are outside the DOM hierarchy
+// These selectors target the panels directly when body has dark class attribute
+// or when html has dark class
+.cdk-overlay-container .mat-mdc-select-panel,
+.cdk-overlay-pane .mat-mdc-select-panel {
+  html.dark & {
+    background: #1e293b !important;
+    background-color: #1e293b !important;
+  }
+}
+
+// Force dark mode on all mat-select panels when dark mode is active
+// Using :root selector which is equivalent to html
+:root.dark .cdk-overlay-container .mat-mdc-select-panel {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+  border: 1px solid rgba(247, 88, 12, 0.3) !important;
+
+  .mat-mdc-option {
+    color: rgba(255, 255, 255, 0.9) !important;
+    background-color: transparent !important;
+
+    .mdc-list-item__primary-text {
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    &:hover, &:focus, &.mat-mdc-option-active {
+      background-color: rgba(255, 122, 51, 0.2) !important;
+    }
+
+    &.mdc-list-item--selected {
+      background-color: rgba(255, 89, 0, 0.3) !important;
+
+      .mdc-list-item__primary-text {
+        color: #ffffff !important;
+      }
+    }
+  }
+}
+
+// Direct panel selector without parent dependency - applied globally with specificity
+.mat-mdc-select-panel.mdc-menu-surface {
+  html.dark & {
+    background: #1e293b !important;
+    background-color: #1e293b !important;
+  }
+}
+
+// Fix autocomplete panels in dark mode
+body.dark .cdk-overlay-container .mat-mdc-autocomplete-panel,
+html.dark .cdk-overlay-container .mat-mdc-autocomplete-panel {
+  background: #1e293b !important;
+  border: 1px solid rgba(247, 88, 12, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+
+  .mat-mdc-option {
+    color: rgba(255, 255, 255, 0.9) !important;
+
+    &:hover {
+      background: rgba(255, 122, 51, 0.2) !important;
+    }
+  }
+}
+
+// Fix datepicker in dark mode
+body.dark .cdk-overlay-container .mat-datepicker-content,
+html.dark .cdk-overlay-container .mat-datepicker-content {
+  background: #1e293b !important;
+  border: 1px solid rgba(247, 88, 12, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+
+  .mat-calendar {
+    background: transparent !important;
+  }
+
+  .mat-calendar-body-cell-content {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .mat-calendar-body-selected {
+    background-color: var(--jensify-primary) !important;
+    color: white !important;
+  }
+
+  .mat-calendar-body-today:not(.mat-calendar-body-selected) {
+    border-color: var(--jensify-primary) !important;
+  }
+}
+
+// ============================================================================
+// GLOBAL TAB STYLING FIX FOR DARK MODE
+// Fix white background on active tabs in dark mode
+// ============================================================================
+
+.mat-mdc-tab-group,
+.mat-mdc-tab-nav-bar {
+  // Tab header background
+  .mat-mdc-tab-header {
+    background: transparent;
+  }
+
+  // Individual tab styling
+  .mat-mdc-tab,
+  .mat-mdc-tab-link {
+    background: transparent !important;
+    opacity: 1 !important;
+
+    .mdc-tab__text-label {
+      color: var(--jensify-text-medium);
+    }
+
+    // Reset any default backgrounds
+    &::before,
+    .mdc-tab__ripple::before {
+      background: transparent !important;
+    }
+  }
+
+  // Active tab - LIGHT MODE
+  .mat-mdc-tab.mdc-tab--active,
+  .mat-mdc-tab-link.mdc-tab--active {
+    background: rgba(247, 88, 12, 0.1) !important;
+    border-radius: var(--jensify-radius-md) var(--jensify-radius-md) 0 0;
+
+    .mdc-tab__text-label {
+      color: var(--jensify-primary) !important;
+      font-weight: 600 !important;
+    }
+  }
+
+  // Underline indicator
+  .mdc-tab-indicator__content--underline {
+    border-color: var(--jensify-primary) !important;
+  }
+}
+
+// DARK MODE tab overrides
+body.dark,
+html.dark {
+  .mat-mdc-tab-group,
+  .mat-mdc-tab-nav-bar {
+    .mat-mdc-tab,
+    .mat-mdc-tab-link {
+      .mdc-tab__text-label {
+        color: rgba(255, 255, 255, 0.7) !important;
+      }
+    }
+
+    .mat-mdc-tab.mdc-tab--active,
+    .mat-mdc-tab-link.mdc-tab--active {
+      background: rgba(247, 88, 12, 0.25) !important;
+
+      .mdc-tab__text-label {
+        color: #ff8a4d !important;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// GLOBAL DISABLED BUTTON STYLING
+// Maintain orange brand color even when buttons are disabled
+// ============================================================================
+
+// Primary flat/raised buttons - maintain orange color when disabled
+html.dark {
+  .mat-mdc-raised-button.mat-primary:disabled,
+  .mat-mdc-flat-button.mat-primary:disabled,
+  .mat-mdc-unelevated-button.mat-primary:disabled,
+  button[mat-flat-button][color="primary"]:disabled,
+  button[mat-raised-button][color="primary"]:disabled {
+    background-color: rgba(255, 89, 0, 0.25) !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+    border: 1px solid rgba(255, 89, 0, 0.3) !important;
+    opacity: 1 !important;
+
+    .mat-icon,
+    mat-icon {
+      color: rgba(255, 255, 255, 0.4) !important;
+    }
+  }
+
+  // Enabled state - ensure full orange color
+  .mat-mdc-raised-button.mat-primary:not(:disabled),
+  .mat-mdc-flat-button.mat-primary:not(:disabled),
+  .mat-mdc-unelevated-button.mat-primary:not(:disabled),
+  button[mat-flat-button][color="primary"]:not(:disabled),
+  button[mat-raised-button][color="primary"]:not(:disabled) {
+    background-color: var(--jensify-primary, #ff5900) !important;
+    color: white !important;
+  }
+}
+
+// Light mode disabled button styling (for consistency)
+.mat-mdc-raised-button.mat-primary:disabled,
+.mat-mdc-flat-button.mat-primary:disabled,
+.mat-mdc-unelevated-button.mat-primary:disabled {
+  background-color: rgba(255, 89, 0, 0.3) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  opacity: 1 !important;
+}
+
+// ============================================================================
+// ENHANCED SECONDARY BUTTON STYLING (Dark Mode)
+// Glass-morphism effect with subtle gradients and hover animations
+// ============================================================================
+
+html.dark {
+  // Custom button-like components (chips, toggles, etc.) - glass-morphism style
+  .status-chip:not(.active),
+  .filter-toggle:not(.active),
+  .filter-chip:not(.active) {
+    // Glass-morphism background
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0.02) 100%
+    ) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+    &:hover {
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.04) 100%
+      ) !important;
+      border-color: rgba(247, 88, 12, 0.4) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+                  0 0 16px rgba(247, 88, 12, 0.1),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+      transform: translateY(-1px);
+    }
+  }
+
+  // Secondary/neutral buttons (non-primary) - enhanced glass-morphism style
+  .mat-mdc-button:not(.mat-primary):not(.mat-accent):not(.mat-warn),
+  .mat-mdc-raised-button:not(.mat-primary):not(.mat-accent):not(.mat-warn),
+  .mat-mdc-outlined-button:not(.mat-primary):not(.mat-accent):not(.mat-warn),
+  .mat-mdc-stroked-button:not(.mat-primary):not(.mat-accent):not(.mat-warn),
+  button[mat-button]:not([color]),
+  button[mat-raised-button]:not([color]),
+  button[mat-stroked-button]:not([color]),
+  a[mat-button]:not([color]) {
+    // Glass-morphism background with subtle gradient
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.03) 100%
+    ) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    // Subtle glowing border
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+
+    // Text styling
+    color: rgba(255, 255, 255, 0.9) !important;
+
+    // Smooth transitions
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+    .mat-icon, mat-icon {
+      color: rgba(255, 255, 255, 0.7) !important;
+      transition: color 0.25s ease !important;
+    }
+
+    // Hover state - more prominent glow
+    &:hover:not(:disabled) {
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.12) 0%,
+        rgba(255, 255, 255, 0.06) 100%
+      ) !important;
+      border-color: rgba(247, 88, 12, 0.4) !important;
+      box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.3),
+        0 0 20px rgba(247, 88, 12, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+      transform: translateY(-1px);
+
+      .mat-icon, mat-icon {
+        color: rgba(255, 255, 255, 0.9) !important;
+      }
+    }
+
+    // Active/pressed state
+    &:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow:
+        0 1px 4px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    }
+
+    // Focus state
+    &:focus-visible {
+      outline: 2px solid rgba(247, 88, 12, 0.5);
+      outline-offset: 2px;
+    }
+  }
+
+  // Stroked/outlined buttons - glass-morphism style with subtle background
+  .mat-mdc-outlined-button:not(.mat-primary):not(.mat-accent):not(.mat-warn),
+  .mat-mdc-stroked-button:not(.mat-primary):not(.mat-accent):not(.mat-warn),
+  button[mat-stroked-button]:not([color]),
+  a[mat-stroked-button]:not([color]) {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0.02) 100%
+    ) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.04) 100%
+      ) !important;
+      border-color: rgba(247, 88, 12, 0.5) !important;
+      box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.2),
+        0 0 16px rgba(247, 88, 12, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+      transform: translateY(-1px);
+    }
+  }
+
+  // Link-style buttons (mat-button without raised)
+  .mat-mdc-button:not(.mat-primary):not(.mat-accent):not(.mat-warn):not([mat-raised-button]) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.08) !important;
+      box-shadow: none !important;
+      transform: none;
+    }
+  }
+
+  // ============================================================================
+  // PRIMARY STROKED BUTTONS - Enhanced styling with orange glow
+  // These are secondary CTAs that use the primary color but in stroked style
+  // ============================================================================
+  .mat-mdc-outlined-button.mat-primary,
+  .mat-mdc-stroked-button.mat-primary,
+  button[mat-stroked-button][color="primary"] {
+    // Semi-transparent orange background for better visibility
+    background: linear-gradient(
+      135deg,
+      rgba(247, 88, 12, 0.15) 0%,
+      rgba(247, 88, 12, 0.08) 100%
+    ) !important;
+
+    // Orange border with good visibility
+    border: 1px solid rgba(247, 88, 12, 0.5) !important;
+
+    // Subtle glow effect
+    box-shadow:
+      0 2px 8px rgba(247, 88, 12, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+
+    // Orange text
+    color: rgb(255, 140, 80) !important;
+
+    // Smooth transitions
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+    .mat-icon, mat-icon {
+      color: rgb(255, 140, 80) !important;
+      transition: color 0.25s ease !important;
+    }
+
+    // Hover state - more prominent orange glow
+    &:hover:not(:disabled) {
+      background: linear-gradient(
+        135deg,
+        rgba(247, 88, 12, 0.25) 0%,
+        rgba(247, 88, 12, 0.15) 100%
+      ) !important;
+      border-color: rgba(247, 88, 12, 0.7) !important;
+      box-shadow:
+        0 4px 16px rgba(247, 88, 12, 0.25),
+        0 0 20px rgba(247, 88, 12, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+      transform: translateY(-1px);
+      color: rgb(255, 160, 100) !important;
+
+      .mat-icon, mat-icon {
+        color: rgb(255, 160, 100) !important;
+      }
+    }
+
+    // Active/pressed state
+    &:active:not(:disabled) {
+      transform: translateY(0);
+      background: rgba(247, 88, 12, 0.3) !important;
+      box-shadow:
+        0 1px 4px rgba(247, 88, 12, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    }
+
+    // Focus state
+    &:focus-visible {
+      outline: 2px solid rgba(247, 88, 12, 0.5);
+      outline-offset: 2px;
+    }
+
+    // Disabled state
+    &:disabled {
+      background: rgba(247, 88, 12, 0.08) !important;
+      border-color: rgba(247, 88, 12, 0.2) !important;
+      color: rgba(255, 140, 80, 0.4) !important;
+      box-shadow: none !important;
+
+      .mat-icon, mat-icon {
+        color: rgba(255, 140, 80, 0.4) !important;
+      }
+    }
+  }
 }
 
