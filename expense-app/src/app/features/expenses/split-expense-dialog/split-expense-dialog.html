@@ -1,0 +1,180 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon class="title-icon">call_split</mat-icon>
+  Split Expense
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  <!-- Expense Summary -->
+  <div class="expense-summary">
+    <div class="summary-row">
+      <span class="label">Merchant</span>
+      <span class="value">{{ expense.merchant }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">Total Amount</span>
+      <span class="value total-amount">{{ formatCurrency(expense.amount) }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">Date</span>
+      <span class="value">{{ expense.expense_date | date:'mediumDate' }}</span>
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="splitHalf()"
+      matTooltip="Split evenly into 2 items"
+    >
+      <mat-icon>vertical_split</mat-icon>
+      50/50 Split
+    </button>
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="distributeEvenly()"
+      matTooltip="Distribute amount evenly across all items"
+    >
+      <mat-icon>view_column</mat-icon>
+      Even Distribution
+    </button>
+  </div>
+
+  <!-- Split Items -->
+  <div class="split-items" [formGroup]="splitForm">
+    <div class="items-header">
+      <h3>Line Items</h3>
+      <button
+        mat-icon-button
+        color="primary"
+        (click)="addItem()"
+        matTooltip="Add another line item"
+      >
+        <mat-icon>add_circle</mat-icon>
+      </button>
+    </div>
+
+    <div formArrayName="items" class="items-list">
+      @for (item of items.controls; track $index; let i = $index) {
+        <div class="item-row" [formGroupName]="i">
+          <span class="item-number">{{ i + 1 }}</span>
+
+          <mat-form-field appearance="outline" class="description-field">
+            <mat-label>Description</mat-label>
+            <input
+              matInput
+              formControlName="description"
+              placeholder="e.g., Room charge, Room service"
+            />
+            @if (item.get('description')?.hasError('required') && item.get('description')?.touched) {
+              <mat-error>Description is required</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="amount-field">
+            <mat-label>Amount</mat-label>
+            <span matPrefix>$&nbsp;</span>
+            <input
+              matInput
+              type="number"
+              formControlName="amount"
+              step="0.01"
+              min="0.01"
+              placeholder="0.00"
+            />
+            @if (item.get('amount')?.hasError('required') && item.get('amount')?.touched) {
+              <mat-error>Amount required</mat-error>
+            }
+            @if (item.get('amount')?.hasError('min')) {
+              <mat-error>Min $0.01</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="category-field">
+            <mat-label>Category</mat-label>
+            <mat-select formControlName="category">
+              @for (category of categories; track category) {
+                <mat-option [value]="category">{{ category }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="item-actions">
+            <button
+              mat-icon-button
+              type="button"
+              (click)="fillRemaining(i)"
+              [disabled]="remainingAmount <= 0"
+              matTooltip="Fill with remaining amount"
+            >
+              <mat-icon>auto_fix_high</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              color="warn"
+              type="button"
+              (click)="removeItem(i)"
+              [disabled]="items.length <= 2"
+              matTooltip="Remove item"
+            >
+              <mat-icon>remove_circle</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Split Summary -->
+  <mat-divider></mat-divider>
+
+  <div class="split-summary">
+    <div class="summary-line">
+      <span>Items Total:</span>
+      <span [class.valid]="totalMatchesExpense" [class.invalid]="!totalMatchesExpense">
+        {{ formatCurrency(itemsTotal) }}
+      </span>
+    </div>
+    <div class="summary-line remaining" [class.balanced]="totalMatchesExpense">
+      <span>Remaining:</span>
+      <span [class.positive]="remainingAmount > 0.01" [class.negative]="remainingAmount < -0.01" [class.balanced]="totalMatchesExpense">
+        {{ formatCurrency(remainingAmount) }}
+      </span>
+    </div>
+    @if (!totalMatchesExpense && remainingAmount > 0) {
+      <div class="validation-message warning">
+        <mat-icon>warning</mat-icon>
+        {{ formatCurrency(remainingAmount) }} still needs to be allocated
+      </div>
+    }
+    @if (!totalMatchesExpense && remainingAmount < 0) {
+      <div class="validation-message error">
+        <mat-icon>error</mat-icon>
+        Items exceed expense total by {{ formatCurrency(Math.abs(remainingAmount)) }}
+      </div>
+    }
+    @if (totalMatchesExpense) {
+      <div class="validation-message success">
+        <mat-icon>check_circle</mat-icon>
+        Split amounts match expense total
+      </div>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="onSplit()"
+    [disabled]="!isValidSplit"
+  >
+    <mat-icon>call_split</mat-icon>
+    Split Expense
+  </button>
+</mat-dialog-actions>

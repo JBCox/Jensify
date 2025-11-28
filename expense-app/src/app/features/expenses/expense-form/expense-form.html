@@ -42,6 +42,53 @@
         </div>
       </div>
 
+      <!-- Split Suggestion Banner -->
+      <div class="jensify-split-suggestion" *ngIf="showSplitSuggestion()">
+        <div class="split-suggestion-header">
+          <mat-icon>call_split</mat-icon>
+          <div class="split-suggestion-content">
+            <p class="split-suggestion-title">Multiple expense types detected</p>
+            <p class="split-suggestion-hint">
+              This receipt appears to contain items from different categories:
+            </p>
+            <div class="detected-categories">
+              <mat-chip-set>
+                @for (category of uniqueCategories(); track category) {
+                  <mat-chip [highlighted]="true">{{ category }}</mat-chip>
+                }
+              </mat-chip-set>
+            </div>
+          </div>
+          <button mat-icon-button
+                  (click)="dismissSplitSuggestion()"
+                  matTooltip="Dismiss suggestion"
+                  class="dismiss-btn">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="detected-items">
+          <p class="items-label">Detected line items:</p>
+          @for (item of detectedLineItems(); track item.description) {
+            <div class="detected-item">
+              <span class="item-description">{{ item.description }}</span>
+              <span class="item-amount">{{ formatCurrency(item.amount) }}</span>
+              <mat-chip class="item-category" [matTooltip]="'Confidence: ' + (item.confidence * 100 | number:'1.0-0') + '%'">
+                {{ item.suggestedCategory }}
+              </mat-chip>
+            </div>
+          }
+        </div>
+        <div class="split-suggestion-actions">
+          <button mat-stroked-button type="button" (click)="dismissSplitSuggestion()">
+            Keep as single expense
+          </button>
+          <button mat-flat-button color="primary" type="button" (click)="openSplitDialog()">
+            <mat-icon>call_split</mat-icon>
+            Split expense
+          </button>
+        </div>
+      </div>
+
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="jensify-form">
         <div class="jensify-message-error" *ngIf="errorMessage">
           <mat-icon>error</mat-icon>
@@ -80,7 +127,7 @@
         </mat-form-field>
 
         <div class="jensify-form-actions">
-          <a mat-button routerLink="/expenses" class="jensify-button">Cancel</a>
+          <a mat-stroked-button routerLink="/expenses" class="jensify-button">Cancel</a>
           <button mat-raised-button color="primary" [disabled]="loading" class="jensify-button">Save</button>
         </div>
       </form>

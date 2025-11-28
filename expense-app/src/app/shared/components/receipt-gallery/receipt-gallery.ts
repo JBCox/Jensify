@@ -9,6 +9,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { Receipt } from '../../../core/models/receipt.model';
 import { ExpenseReceipt } from '../../../core/models/expense.model';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/confirm-dialog';
 
 /**
  * Receipt Gallery Component
@@ -137,10 +138,24 @@ export class ReceiptGalleryComponent implements OnInit, OnChanges {
   onRemoveReceipt(receiptId: string): void {
     if (!this.canEdit) return;
 
-    // Confirm before removing
-    if (confirm('Remove this receipt from the expense?')) {
-      this.removeReceipt.emit(receiptId);
-    }
+    // Confirm before removing using Material dialog
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Remove Receipt',
+        message: 'Are you sure you want to remove this receipt from the expense?',
+        confirmText: 'Remove',
+        cancelText: 'Cancel',
+        confirmColor: 'warn',
+        icon: 'delete',
+        iconColor: '#f44336',
+      } as ConfirmDialogData,
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.removeReceipt.emit(receiptId);
+      }
+    });
   }
 
   /**

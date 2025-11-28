@@ -1,5 +1,31 @@
 # How to Fix Sync Issues and Prevent Them Forever
 
+## Part 0: Use the Migration Helper Script (RECOMMENDED) 🚀
+
+**NEW**: We've created a PowerShell script that automates the migration workflow and works around slow CLI performance.
+
+```powershell
+cd C:\Jensify\supabase
+powershell -ExecutionPolicy Bypass -File apply-migrations.ps1 -MigrationPattern "202511230*"
+```
+
+**What it does:**
+1. Finds all migrations matching the pattern
+2. Combines them into a single SQL file
+3. Copies SQL to your clipboard
+4. Opens Supabase SQL Editor
+5. Optionally marks migrations as applied in history
+
+**For future migrations**, just run:
+```powershell
+cd C:\Jensify\supabase
+powershell -ExecutionPolicy Bypass -File apply-migrations.ps1
+```
+
+Then paste and run in SQL Editor!
+
+---
+
 ## Part 1: Fix the Current Issue ✅
 
 ### Option A: Try the Repair Commands Again (Simplest)
@@ -21,9 +47,47 @@ supabase db remote commit
 
 **Expected output:** "Local and remote migration history are in sync"
 
-### Option B: Manual Database Fix (If CLI Still Hangs)
+### Option B: Supabase MCP SQL Execution (FASTEST) ⚡
 
-If the CLI keeps hanging, insert the migration records directly via Supabase Dashboard:
+If the CLI is hanging, use the Supabase MCP tool to execute SQL directly:
+
+1. List all local migration files to get their names:
+   ```bash
+   dir "c:\Jensify\supabase\migrations" /b
+   ```
+
+2. Use Supabase MCP to insert all migrations at once:
+   ```typescript
+   mcp__supabase__execute_sql({
+     query: `
+       INSERT INTO supabase_migrations.schema_migrations (version, name)
+       VALUES
+         ('20251113000001', 'phase0_initial_schema'),
+         ('20251113000002', 'storage_policies'),
+         -- ... add all migration files
+         ('20251123000001', 'multi_level_approval_system'),
+         ('20251123000002', 'approval_engine_functions')
+       ON CONFLICT (version) DO NOTHING;
+     `
+   });
+   ```
+
+3. Verify the sync worked:
+   ```typescript
+   mcp__supabase__execute_sql({
+     query: `
+       SELECT version, name
+       FROM supabase_migrations.schema_migrations
+       ORDER BY version;
+     `
+   });
+   ```
+
+**Why this works:** This bypasses the slow CLI entirely and directly updates the migration history table via the Supabase API.
+
+### Option C: Manual Database Fix via Dashboard (If MCP Not Available)
+
+If you don't have MCP access, insert the migration records via Supabase Dashboard:
 
 1. Go to: https://supabase.com/dashboard → Your Jensify Project → SQL Editor
 

@@ -11,8 +11,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, of } from 'rxjs';
+import { takeUntil, switchMap } from 'rxjs/operators';
 import { ExpenseService } from '../../../core/services/expense.service';
 import { Expense, UpdateExpenseDto } from '../../../core/models/expense.model';
 import { ExpenseCategory } from '../../../core/models/enums';
@@ -56,6 +56,7 @@ export class ExpenseEditComponent implements OnInit, OnDestroy {
   expenseId!: string;
   expense = signal<Expense | null>(null);
   attachedReceipt = signal<Receipt | null>(null);
+  originalReceiptId = signal<string | null>(null);  // Track original receipt to detect changes
   loading = signal<boolean>(true);
   saving = signal<boolean>(false);
   error = signal<string | null>(null);
@@ -96,7 +97,13 @@ export class ExpenseEditComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (expense) => {
           this.expense.set(expense);
-          this.attachedReceipt.set(expense.receipt ?? null);
+          // Check expense_receipts junction table first, then fall back to receipt
+          const primaryReceipt = expense.expense_receipts?.find(er => er.is_primary)?.receipt
+            ?? expense.expense_receipts?.[0]?.receipt
+            ?? expense.receipt
+            ?? null;
+          this.attachedReceipt.set(primaryReceipt);
+          this.originalReceiptId.set(primaryReceipt?.id ?? null);
           this.form.patchValue({
             merchant: expense.merchant,
             amount: expense.amount,
@@ -119,14 +126,42 @@ export class ExpenseEditComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const newReceiptId = this.attachedReceipt()?.id ?? null;
+    const oldReceiptId = this.originalReceiptId();
+    const receiptChanged = newReceiptId !== oldReceiptId;
+
     const payload: UpdateExpenseDto = {
       ...this.form.value,
-      receipt_id: this.attachedReceipt()?.id ?? null
+      receipt_id: newReceiptId
     };
 
     this.saving.set(true);
     this.expenses.updateExpense(this.expenseId, payload)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        switchMap((updated) => {
+          // If receipt changed, update the junction table
+          if (receiptChanged) {
+            // Detach old receipt if there was one
+            const detach$ = oldReceiptId
+              ? this.expenses.detachReceipt(this.expenseId, oldReceiptId)
+              : of(void 0);
+
+            return detach$.pipe(
+              switchMap(() => {
+                // Attach new receipt if there is one
+                if (newReceiptId) {
+                  return this.expenses.attachReceipt(this.expenseId, newReceiptId, true).pipe(
+                    switchMap(() => of(updated))
+                  );
+                }
+                return of(updated);
+              })
+            );
+          }
+          return of(updated);
+        })
+      )
       .subscribe({
         next: (updated) => {
           this.saving.set(false);

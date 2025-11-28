@@ -18,7 +18,7 @@ Jensify is a comprehensive expense management solution for tracking all business
 
 ## 🚀 Current Phase: Phase 0 - Expense Receipt MVP
 
-**Timeline**: 2-3 weeks (Started November 13, 2025)
+**Timeline**: 2-3 weeks (Started November 13, 2024)
 **Status**: ✅ **98% Complete** (Ready for Staging Deployment)
 **Initial Focus**: Gas receipts for traveling employees
 **Supports**: All expense categories (gas, hotels, flights, meals, office supplies, etc.)
@@ -28,13 +28,13 @@ Jensify is a comprehensive expense management solution for tracking all business
 - ✅ **Database schema** with Row Level Security policies
 - ✅ **Navigation** with role-based access
 - ✅ **Receipt upload** (mobile camera & desktop drag-drop) - Complete
-- ✅ **OCR** with Google Vision API - **Complete (November 15, 2025)**
+- ✅ **OCR** with Google Vision API - **Complete (November 15, 2024)**
 - ✅ **Expense form** with category selection
 - ✅ **Finance dashboard**
 - ✅ **CSV export** for accounting
 
 ### Recently Completed
-**November 18, 2025**:
+**November 18, 2024**:
 - ✅ **Phase 2: Expense Reports (Expensify-style)** - Group multiple expenses into reports
 - ✅ Report creation with name, description, and date range
 - ✅ "Add to Report" dialog with existing report selection or new report creation
@@ -45,20 +45,20 @@ Jensify is a comprehensive expense management solution for tracking all business
 - ✅ Report status workflow (draft → submitted → approved → rejected → paid)
 - ✅ 207 total tests, 194 passing (93.7% pass rate)
 
-**November 15, 2025**:
+**November 15, 2024**:
 - ✅ **Google Vision OCR Integration** - Real receipt text extraction
 - ✅ OCR Service with automatic field parsing (merchant, amount, date, tax)
 - ✅ Confidence scoring for extracted data
 - ✅ Graceful error handling and fallback
 - ✅ Comprehensive setup guide (docs/GOOGLE_VISION_SETUP.md)
 
-**November 14, 2025**:
+**November 14, 2024**:
 - ✅ Fixed RLS infinite recursion bug
 - ✅ Batch expense submission with parallel processing
 - ✅ Enhanced expense list with filters and search
 - ✅ Finance dashboard with reimbursement queue
 
-**November 13, 2025**:
+**November 13, 2024**:
 - ✅ Login, Register, and Forgot Password components
 - ✅ Auth guards for route protection
 - ✅ Mobile-responsive navigation bar
@@ -364,4 +364,4 @@ For technical support or questions:
 
 **Built with ❤️ for Covaer Manufacturing**
 
-*Last Updated: November 15, 2025*
+*Last Updated: November 27, 2024*

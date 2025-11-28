@@ -1,54 +1,43 @@
-<div class="jensify-container">
-  <!-- Header with Summary -->
-  <div class="jensify-page-header">
-    <div class="jensify-header-content">
-      <h1 class="jensify-page-title">My Expenses</h1>
-      <div class="jensify-summary-metrics">
-        <div class="jensify-metric">
-          <span class="jensify-metric-value">{{ totalCount() }}</span>
-          <span class="jensify-metric-label">{{ totalCount() === 1 ? 'Expense' : 'Expenses' }}</span>
-        </div>
-        <div class="jensify-metric">
-          <span class="jensify-metric-value">{{ formatCurrency(totalAmount()) }}</span>
-          <span class="jensify-metric-label">Total Amount</span>
-        </div>
+<div class="expense-list-container">
+  <!-- Compact Header -->
+  <div class="expense-header">
+    <div class="header-left">
+      <h1>My Expenses</h1>
+      <div class="header-stats">
+        <span class="stat">{{ totalCount() }} {{ totalCount() === 1 ? 'expense' : 'expenses' }}</span>
+        <span class="stat-divider">•</span>
+        <span class="stat">{{ formatCurrency(totalAmount()) }}</span>
         @if (draftExpenses().length > 0) {
-          <div class="jensify-metric">
-            <span class="jensify-metric-value">{{ draftExpenses().length }}</span>
-            <span class="jensify-metric-label">{{ draftExpenses().length === 1 ? 'Draft' : 'Drafts' }}</span>
-          </div>
+          <span class="stat-divider">•</span>
+          <span class="stat draft-count">{{ draftExpenses().length }} {{ draftExpenses().length === 1 ? 'draft' : 'drafts' }}</span>
         }
       </div>
     </div>
     <button
       mat-flat-button
       color="primary"
-      class="jensify-export-btn"
       (click)="exportToCSV()"
       [disabled]="filteredExpenses().length === 0">
       <mat-icon>download</mat-icon>
-      Export to CSV
+      Export
     </button>
   </div>
 
   <!-- Batch Action Bar (appears when expenses are selected) -->
   @if (selectedCount() > 0) {
-    <div class="jensify-batch-action-bar">
-      <div class="jensify-batch-content">
+    <div class="batch-action-bar">
+      <div class="batch-left">
         <mat-checkbox
           [checked]="allDraftsSelected()"
           [indeterminate]="selectedCount() > 0 && !allDraftsSelected()"
           (change)="toggleSelectAll()">
         </mat-checkbox>
-        <span class="jensify-selection-count">
-          {{ selectedCount() }} expense{{ selectedCount() > 1 ? 's' : '' }} selected
+        <span class="selection-count">
+          {{ selectedCount() }} selected
         </span>
       </div>
-      <div class="jensify-batch-actions">
-        <button mat-button (click)="clearSelection()">
-          <mat-icon>clear</mat-icon>
-          Clear Selection
-        </button>
+      <div class="batch-actions">
+        <button mat-button (click)="clearSelection()">Clear</button>
         <button
           mat-flat-button
           color="primary"
@@ -61,105 +50,103 @@
     </div>
   }
 
-  <!-- Filters Section -->
-  <mat-card class="jensify-card jensify-filters-card">
-    <!-- Status Filter Chips -->
-    <div class="jensify-filter-section">
-      <div class="jensify-filter-label">Status</div>
-      <mat-chip-set class="jensify-status-chips">
-        @for (option of statusOptions; track option.value) {
-          <mat-chip
-            [class.selected]="selectedStatus() === option.value"
-            (click)="setStatusFilter(option.value)">
-            {{ option.label }}
-          </mat-chip>
-        }
-      </mat-chip-set>
+  <!-- Compact Filter Bar -->
+  <div class="filter-bar">
+    <!-- Status Chips -->
+    <div class="status-chips">
+      @for (option of statusOptions; track option.value) {
+        <button
+          class="status-chip"
+          [class.active]="selectedStatus() === option.value"
+          (click)="setStatusFilter(option.value)">
+          {{ option.label }}
+        </button>
+      }
     </div>
 
-    <!-- Search and Category -->
-    <div class="jensify-filter-row">
-      <mat-form-field appearance="fill" floatLabel="always">
-        <mat-icon matPrefix>search</mat-icon>
-        <mat-label>Search by merchant or description</mat-label>
-        <input
-          matInput
-          [(ngModel)]="searchQuery"
-          (ngModelChange)="searchQuery.set($event)"
-          placeholder="Enter merchant name...">
-      </mat-form-field>
+    <!-- Search Input -->
+    <div class="search-box">
+      <mat-icon>search</mat-icon>
+      <input
+        type="text"
+        placeholder="Search merchants..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)">
+    </div>
 
-      <mat-form-field appearance="fill" floatLabel="always">
-        <mat-label>Category</mat-label>
-        <mat-select
-          [(ngModel)]="selectedCategory"
-          (ngModelChange)="selectedCategory.set($event)">
+    <!-- Filter Toggle -->
+    <button
+      class="filter-toggle"
+      [class.active]="showAdvancedFilters"
+      (click)="showAdvancedFilters = !showAdvancedFilters">
+      <mat-icon>tune</mat-icon>
+      <span>Filters</span>
+      @if (activeFilterCount() > 0) {
+        <span class="filter-badge">{{ activeFilterCount() }}</span>
+      }
+    </button>
+  </div>
+
+  <!-- Advanced Filters (Collapsible) -->
+  @if (showAdvancedFilters) {
+    <div class="advanced-filters">
+      <div class="filter-group">
+        <label for="category-filter">Category</label>
+        <mat-select id="category-filter" [value]="selectedCategory()" (selectionChange)="selectedCategory.set($event.value)">
           @for (option of categoryOptions; track option.value) {
             <mat-option [value]="option.value">{{ option.label }}</mat-option>
           }
         </mat-select>
-      </mat-form-field>
-    </div>
+      </div>
 
-    <!-- Date Range and Amount Range -->
-    <div class="jensify-filter-row">
-      <mat-form-field appearance="fill" floatLabel="always">
-        <mat-label>From Date</mat-label>
+      <div class="filter-group">
+        <label for="date-from-filter">From</label>
         <input
-          matInput
-          [matDatepicker]="fromPicker"
-          [(ngModel)]="dateFrom"
-          (ngModelChange)="dateFrom.set($event)">
-        <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
-        <mat-datepicker #fromPicker></mat-datepicker>
-      </mat-form-field>
+          id="date-from-filter"
+          type="date"
+          [ngModel]="dateFrom() | date:'yyyy-MM-dd'"
+          (ngModelChange)="setDateFrom($event)">
+      </div>
 
-      <mat-form-field appearance="fill" floatLabel="always">
-        <mat-label>To Date</mat-label>
+      <div class="filter-group">
+        <label for="date-to-filter">To</label>
         <input
-          matInput
-          [matDatepicker]="toPicker"
-          [(ngModel)]="dateTo"
-          (ngModelChange)="dateTo.set($event)">
-        <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
-        <mat-datepicker #toPicker></mat-datepicker>
-      </mat-form-field>
+          id="date-to-filter"
+          type="date"
+          [ngModel]="dateTo() | date:'yyyy-MM-dd'"
+          (ngModelChange)="setDateTo($event)">
+      </div>
 
-      <mat-form-field appearance="fill" floatLabel="always">
-        <mat-label>Min Amount</mat-label>
-        <span matPrefix>$</span>
+      <div class="filter-group">
+        <label for="min-amount-filter">Min $</label>
         <input
-          matInput
+          id="min-amount-filter"
           type="number"
           min="0"
           step="0.01"
-          [(ngModel)]="minAmount"
+          placeholder="0.00"
+          [ngModel]="minAmount()"
           (ngModelChange)="minAmount.set($event)">
-      </mat-form-field>
+      </div>
 
-      <mat-form-field appearance="fill" floatLabel="always">
-        <mat-label>Max Amount</mat-label>
-        <span matPrefix>$</span>
+      <div class="filter-group">
+        <label for="max-amount-filter">Max $</label>
         <input
-          matInput
+          id="max-amount-filter"
           type="number"
           min="0"
           step="0.01"
-          [(ngModel)]="maxAmount"
+          placeholder="0.00"
+          [ngModel]="maxAmount()"
           (ngModelChange)="maxAmount.set($event)">
-      </mat-form-field>
-    </div>
+      </div>
 
-    <!-- Clear Filters Button -->
-    <div class="jensify-flex-end jensify-mt-md">
-      <button
-        mat-button
-        (click)="clearFilters()">
+      <button class="clear-btn" (click)="clearFilters()">
         <mat-icon>clear</mat-icon>
-        Clear Filters
+        Clear
       </button>
     </div>
-  </mat-card>
+  }
 
   <!-- Loading State -->
   @if (loading()) {
@@ -208,67 +195,62 @@
           class="jensify-card jensify-expense-card"
           [class.selected]="isSelected(expense.id)">
           <div class="jensify-expense-card-content">
-            <!-- Selection Checkbox (only for draft expenses) -->
-            @if (expense.status === ExpenseStatus.DRAFT) {
-              <div class="jensify-checkbox-container">
+            <!-- Card Header Row -->
+            <div class="jensify-card-header-row">
+              <!-- Selection Checkbox (only for draft expenses) -->
+              @if (expense.status === ExpenseStatus.DRAFT) {
                 <mat-checkbox
+                  class="jensify-card-checkbox"
                   [checked]="isSelected(expense.id)"
                   (change)="toggleSelection(expense)"
                   (click)="$event.stopPropagation()">
                 </mat-checkbox>
-              </div>
-            }
+              }
 
-            <!-- Receipt Thumbnail -->
-            <div class="jensify-thumbnail-container">
-              @if (getReceiptThumbnail(expense)) {
-                <img
-                  [src]="getReceiptThumbnail(expense)"
-                  [alt]="expense.merchant + ' receipt'"
-                  loading="lazy">
-                <!-- Receipt Count Badge (shows when multiple receipts) -->
-                @if (hasMultipleReceipts(expense)) {
-                  <div class="jensify-receipt-count-badge">
-                    <mat-icon>collections</mat-icon>
-                    <span>{{ getReceiptCount(expense) }}</span>
+              <!-- Receipt Thumbnail -->
+              <div class="jensify-thumbnail-container">
+                @if (getReceiptThumbnail(expense)) {
+                  <img
+                    [src]="getReceiptThumbnail(expense)"
+                    [alt]="expense.merchant + ' receipt'"
+                    loading="lazy">
+                  @if (hasMultipleReceipts(expense)) {
+                    <div class="jensify-receipt-count-badge">
+                      <mat-icon>collections</mat-icon>
+                      <span>{{ getReceiptCount(expense) }}</span>
+                    </div>
+                  }
+                } @else {
+                  <div class="jensify-thumbnail-placeholder">
+                    <mat-icon>receipt</mat-icon>
                   </div>
                 }
-              } @else {
-                <div class="jensify-thumbnail-placeholder">
-                  <mat-icon>receipt</mat-icon>
-                </div>
-              }
+              </div>
+
+              <!-- Status Badge -->
+              <app-status-badge [status]="getStatusBadge(expense.status)" />
             </div>
 
-            <!-- Expense Details -->
-            <div class="jensify-expense-details">
-              <div class="jensify-expense-header">
-                <h3 class="jensify-merchant-name">{{ expense.merchant }}</h3>
-                <app-status-badge [status]="getStatusBadge(expense.status)" />
-              </div>
-
-              <div class="jensify-expense-meta">
-                <div class="jensify-meta-item">
-                  <mat-icon>event</mat-icon>
-                  <span>{{ formatDate(expense.expense_date) }}</span>
-                </div>
-                <div class="jensify-meta-item">
-                  <mat-icon>category</mat-icon>
-                  <span>{{ expense.category }}</span>
-                </div>
-                <div class="jensify-meta-item">
-                  <mat-icon>folder_open</mat-icon>
-                  <span>{{ expense.report_id ? 'In report' : 'Unreported' }}</span>
-                </div>
-              </div>
-
-              @if (expense.notes) {
-                <p class="jensify-expense-notes">{{ expense.notes }}</p>
-              }
-
-              <!-- Amount -->
+            <!-- Merchant & Amount Row -->
+            <div class="jensify-card-main">
+              <h3 class="jensify-merchant-name">{{ expense.merchant }}</h3>
               <span class="jensify-expense-amount">{{ formatCurrency(expense.amount) }}</span>
             </div>
+
+            <!-- Meta Info -->
+            <div class="jensify-expense-meta">
+              <span class="jensify-meta-item">{{ formatDate(expense.expense_date) }}</span>
+              <span class="jensify-meta-divider">•</span>
+              <span class="jensify-meta-item">{{ expense.category }}</span>
+              @if (expense.report_id) {
+                <span class="jensify-meta-divider">•</span>
+                <span class="jensify-meta-item jensify-in-report">In report</span>
+              }
+            </div>
+
+            @if (expense.notes) {
+              <p class="jensify-expense-notes">{{ expense.notes }}</p>
+            }
           </div>
 
             @if (hasViolations(expense)) {

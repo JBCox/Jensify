@@ -366,6 +366,66 @@ export class MileageService {
   }
 
   // ============================================================================
+  // EXPENSE INTEGRATION
+  // ============================================================================
+
+  /**
+   * Convert a mileage trip to an expense record
+   * Uses organization's custom rate if configured, otherwise IRS rate
+   * The expense can then be added to expense reports
+   */
+  convertTripToExpense(tripId: string): Observable<string> {
+    const userId = this.supabase.userId;
+    if (!userId) {
+      return throwError(() => new Error('User not authenticated'));
+    }
+
+    return from(
+      this.supabase.client.rpc('convert_trip_to_expense', {
+        p_trip_id: tripId,
+        p_user_id: userId
+      })
+    ).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        return data as string; // expense_id
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get the effective mileage rate for the current organization
+   * Returns custom rate if configured, otherwise IRS rate
+   */
+  getOrganizationMileageRate(tripDate?: string): Observable<{
+    rate: number;
+    source: 'custom' | 'irs';
+    irs_rate: number;
+  }> {
+    const organizationId = this.organizationService.currentOrganizationId;
+    if (!organizationId) {
+      return throwError(() => new Error('No organization selected'));
+    }
+
+    const date = tripDate || new Date().toISOString().split('T')[0];
+
+    return from(
+      this.supabase.client.rpc('get_org_mileage_rate', {
+        p_organization_id: organizationId,
+        p_trip_date: date,
+        p_category: 'business'
+      })
+    ).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        return data as { rate: number; source: 'custom' | 'irs'; irs_rate: number };
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  // ============================================================================
   // STATISTICS
   // ============================================================================
 

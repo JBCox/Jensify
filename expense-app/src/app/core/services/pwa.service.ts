@@ -1,7 +1,7 @@
 import { Injectable, ApplicationRef, inject } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { concat, interval } from 'rxjs';
-import { filter, first, switchMap, tap } from 'rxjs/operators';
+import { filter, first, switchMap } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { PWA, SNACKBAR_DURATION } from '../../shared/constants/ui.constants';
 

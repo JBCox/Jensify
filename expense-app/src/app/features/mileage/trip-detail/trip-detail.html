@@ -235,6 +235,31 @@
       </mat-card>
     }
 
+    <!-- Linked Expense Card -->
+    @if (hasLinkedExpense()) {
+      <mat-card class="jensify-card linked-expense-card">
+        <div class="jensify-card-header">
+          <h2 class="jensify-card-title">
+            <mat-icon>receipt_long</mat-icon>
+            Linked Expense
+          </h2>
+        </div>
+        <mat-card-content>
+          <p class="jensify-text-muted jensify-mb-md">
+            This trip has been converted to an expense and can be added to expense reports.
+          </p>
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="viewLinkedExpense()"
+            class="jensify-button">
+            <mat-icon>open_in_new</mat-icon>
+            View Linked Expense
+          </button>
+        </mat-card-content>
+      </mat-card>
+    }
+
     <!-- Action Buttons -->
     <div class="jensify-form-actions">
       <button
@@ -255,6 +280,21 @@
             class="jensify-button-danger">
             <mat-icon>delete</mat-icon>
             Delete
+          </button>
+        }
+
+        @if (canConvertToExpense()) {
+          <button
+            mat-raised-button
+            color="accent"
+            (click)="convertToExpense()"
+            [disabled]="converting()"
+            class="jensify-button">
+            @if (converting()) {
+              <ng-container><mat-icon>sync</mat-icon> Converting...</ng-container>
+            } @else {
+              <ng-container><mat-icon>receipt_long</mat-icon> Convert to Expense</ng-container>
+            }
           </button>
         }
 

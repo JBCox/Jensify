@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { take } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
 
 /**
@@ -50,7 +51,7 @@ describe('SupabaseService', () => {
     it('should have currentUser$ observable', (done) => {
       expect(service.currentUser$).toBeDefined();
 
-      service.currentUser$.subscribe(user => {
+      service.currentUser$.pipe(take(1)).subscribe(user => {
         // Should start as null
         expect(user).toBeNull();
         done();
@@ -60,7 +61,7 @@ describe('SupabaseService', () => {
     it('should have session$ observable', (done) => {
       expect(service.session$).toBeDefined();
 
-      service.session$.subscribe(session => {
+      service.session$.pipe(take(1)).subscribe(session => {
         // Should start as null
         expect(session).toBeNull();
         done();

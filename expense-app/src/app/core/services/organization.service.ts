@@ -159,16 +159,16 @@ export class OrganizationService {
 
   /**
    * Get all members of an organization
+   * Note: Uses simplified query without joins due to PostgREST schema cache issues
    */
   getOrganizationMembers(
     organizationId: string,
     activeOnly = true,
   ): Observable<OrganizationMember[]> {
+    // Simplified query - PostgREST schema cache may be stale for joins
     let query = this.supabase.client
       .from("organization_members")
-      .select(
-        "*, user:users!user_id(*), manager:organization_members!manager_id(*)",
-      )
+      .select("*")
       .eq("organization_id", organizationId);
 
     if (activeOnly) {
@@ -186,6 +186,7 @@ export class OrganizationService {
 
   /**
    * Get a specific organization member
+   * Note: Uses simplified query without joins due to PostgREST schema cache issues
    */
   getOrganizationMember(
     organizationId: string,
@@ -194,9 +195,7 @@ export class OrganizationService {
     return from(
       this.supabase.client
         .from("organization_members")
-        .select(
-          "*, user:users!user_id(*), manager:organization_members!manager_id(*)",
-        )
+        .select("*")
         .eq("organization_id", organizationId)
         .eq("user_id", userId)
         .single(),

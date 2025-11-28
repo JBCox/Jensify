@@ -34,3 +34,6 @@ yarn-error.log
 dist/
 .angular/
 coverage/
+
+# Archived files (cleanup)
+_archived/

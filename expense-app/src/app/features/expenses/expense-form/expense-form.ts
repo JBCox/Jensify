@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -8,13 +8,17 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ExpenseService } from '../../../core/services/expense.service';
 import { ExpenseCategory, OcrStatus } from '../../../core/models/enums';
 import { MatDialog } from '@angular/material/dialog';
 import { AttachReceiptDialog } from '../attach-receipt-dialog/attach-receipt-dialog';
+import { SplitExpenseDialog, SplitExpenseDialogData, SplitExpenseDialogResult } from '../split-expense-dialog/split-expense-dialog';
 import { Receipt } from '../../../core/models/receipt.model';
+import { OcrService, DetectedLineItem } from '../../../core/services/ocr.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Subject, interval, takeUntil, switchMap, takeWhile, tap } from 'rxjs';
+import { Subject, interval, takeUntil, switchMap, takeWhile, tap, of } from 'rxjs';
 
 @Component({
   selector: 'app-expense-form',
@@ -29,6 +33,8 @@ import { Subject, interval, takeUntil, switchMap, takeWhile, tap } from 'rxjs';
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
+    MatChipsModule,
+    MatTooltipModule,
     MatSnackBarModule
   ],
   templateUrl: './expense-form.html',
@@ -47,6 +53,23 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   smartScanStatus: OcrStatus | null = null;
   private hasAppliedOcrData = false;
 
+  // Split suggestion state
+  detectedLineItems = signal<DetectedLineItem[]>([]);
+  suggestSplit = signal(false);
+  splitSuggestionDismissed = signal(false);
+
+  // Computed properties for split suggestion
+  uniqueCategories = computed(() => {
+    const items = this.detectedLineItems();
+    return [...new Set(items.filter(i => i.confidence >= 0.5).map(i => i.suggestedCategory))];
+  });
+
+  showSplitSuggestion = computed(() => {
+    return this.suggestSplit() &&
+           !this.splitSuggestionDismissed() &&
+           this.detectedLineItems().length >= 2;
+  });
+
   // Subject for subscription cleanup
   private destroy$ = new Subject<void>();
   private stopPolling$ = new Subject<void>();
@@ -55,6 +78,7 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private expenses = inject(ExpenseService);
+  private ocrService = inject(OcrService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
 
@@ -236,12 +260,136 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
       controls['expense_date'].setValue(receipt.extracted_date);
       updated = true;
     }
+
+    // Extract line items from OCR data for split suggestion
+    this.extractLineItemsFromReceipt(receipt);
+
     if (updated) {
       this.hasAppliedOcrData = true;
       this.snackBar.open('SmartScan pre-filled details. Please review before submitting.', 'Close', {
         duration: 4000
       });
     }
+  }
+
+  /**
+   * Extract line items from receipt OCR data for split suggestions
+   */
+  private extractLineItemsFromReceipt(receipt: Receipt): void {
+    // Check if receipt has stored line items
+    if (receipt.extracted_line_items && receipt.extracted_line_items.length > 0) {
+      // Convert stored format to DetectedLineItem format
+      const items: DetectedLineItem[] = receipt.extracted_line_items.map(item => ({
+        description: item.description,
+        amount: item.amount,
+        suggestedCategory: item.suggested_category,
+        confidence: item.confidence,
+        keywords: item.keywords
+      }));
+      this.detectedLineItems.set(items);
+      this.suggestSplit.set(receipt.suggest_split || false);
+      return;
+    }
+
+    // If no stored line items, extract from raw OCR data
+    const ocrData = receipt.ocr_data as { rawText?: string } | undefined;
+    if (ocrData?.rawText) {
+      const items = this.ocrService.extractLineItems(ocrData.rawText);
+      if (items.length > 0) {
+        this.detectedLineItems.set(items);
+        this.suggestSplit.set(this.ocrService.shouldSuggestSplit(items));
+      }
+    }
+  }
+
+  /**
+   * Dismiss the split suggestion
+   */
+  dismissSplitSuggestion(): void {
+    this.splitSuggestionDismissed.set(true);
+  }
+
+  /**
+   * Open the split expense dialog pre-populated with detected line items
+   */
+  openSplitDialog(): void {
+    // First create the expense, then split it
+    if (this.form.invalid) {
+      Object.values(this.form.controls).forEach(c => c.markAsTouched());
+      this.snackBar.open('Please fill in required fields before splitting', 'Close', { duration: 3000 });
+      return;
+    }
+
+    this.loading = true;
+    const dto = { ...this.form.value, receipt_id: this.receiptId || undefined };
+
+    this.expenses.createExpense(dto as Parameters<typeof this.expenses.createExpense>[0])
+      .pipe(
+        takeUntil(this.destroy$),
+        switchMap((expense) => {
+          // Attach receipt if present
+          if (this.receiptId) {
+            return this.expenses.attachReceipt(expense.id, this.receiptId, true).pipe(
+              switchMap(() => of(expense))
+            );
+          }
+          return of(expense);
+        })
+      )
+      .subscribe({
+        next: (expense) => {
+          this.loading = false;
+
+          // Open split dialog with the created expense
+          const dialogData: SplitExpenseDialogData = { expense };
+          const dialogRef = this.dialog.open(SplitExpenseDialog, {
+            width: '700px',
+            maxWidth: '95vw',
+            data: dialogData,
+            autoFocus: false
+          });
+
+          dialogRef.afterClosed()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((result: SplitExpenseDialogResult | undefined) => {
+              if (result?.items && result.items.length > 0) {
+                // Split the expense with the provided items
+                this.expenses.splitExpense(expense.id, result.items)
+                  .pipe(takeUntil(this.destroy$))
+                  .subscribe({
+                    next: () => {
+                      this.snackBar.open(`Expense split into ${result.items.length} items`, 'View', {
+                        duration: 4000
+                      }).onAction().subscribe(() => {
+                        this.router.navigate(['/expenses', expense.id]);
+                      });
+                      this.router.navigate(['/expenses']);
+                    },
+                    error: (err) => {
+                      this.snackBar.open(err?.message || 'Failed to split expense', 'Close', { duration: 4000 });
+                    }
+                  });
+              } else {
+                // User cancelled split, just navigate to expense
+                this.router.navigate(['/expenses', expense.id]);
+              }
+            });
+        },
+        error: (err) => {
+          this.errorMessage = err?.message || 'Failed to create expense';
+          this.loading = false;
+        }
+      });
+  }
+
+  /**
+   * Format currency for display
+   */
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
   }
 
   get smartScanLabel(): string | null {

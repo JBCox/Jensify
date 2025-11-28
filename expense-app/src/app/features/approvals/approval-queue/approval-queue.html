@@ -1,109 +1,156 @@
 <div class="jensify-container">
-  <div class="jensify-page-header">
+  <!-- Header -->
+  <div class="jensify-header">
     <div class="jensify-header-content">
-      <h1 class="jensify-page-title">Approval Queue</h1>
-      <div class="jensify-summary-metrics">
-        <div class="jensify-metric">
-          <span class="jensify-metric-value">{{ totalPending() }}</span>
-          <span class="jensify-metric-label">Submitted Reports</span>
-        </div>
-        <div class="jensify-metric">
-          <span class="jensify-metric-value">{{ formatCurrency(totalAmount()) }}</span>
-          <span class="jensify-metric-label">Total Amount</span>
-        </div>
-      </div>
+      <h1 class="jensify-title">Approval Queue</h1>
+      <p class="jensify-subtitle">Review and approve pending expenses and reports</p>
     </div>
-
-    @if (selectedCount() > 0) {
-      <div class="jensify-batch-actions">
-        <span class="jensify-selection-count">{{ selectedCount() }} selected</span>
-        <button mat-raised-button class="jensify-approve-btn" (click)="approveSelected()">
-          <mat-icon>done_all</mat-icon>
-          Approve Selected
-        </button>
-        <button mat-stroked-button color="warn" (click)="rejectSelected()">
-          <mat-icon>close</mat-icon>
-          Reject Selected
-        </button>
-      </div>
-    }
   </div>
 
-  <mat-card class="jensify-card jensify-filters-card">
-    <div class="jensify-filter-row">
-      <mat-form-field appearance="fill" floatLabel="always" class="full-width">
-        <mat-icon matPrefix>search</mat-icon>
-        <mat-label>Search by report or employee</mat-label>
-        <input matInput [(ngModel)]="searchQuery" (ngModelChange)="searchQuery.set($event)">
+  <!-- Filters -->
+  <div class="jensify-filters-section">
+    <form [formGroup]="filterForm" class="jensify-filters">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Min Amount ($)</mat-label>
+        <input matInput type="number" formControlName="amount_min">
       </mat-form-field>
-      <button mat-button (click)="clearFilters()">
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Max Amount ($)</mat-label>
+        <input matInput type="number" formControlName="amount_max">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>From Date</mat-label>
+        <input matInput [matDatepicker]="fromPicker" formControlName="date_from">
+        <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+        <mat-datepicker #fromPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>To Date</mat-label>
+        <input matInput [matDatepicker]="toPicker" formControlName="date_to">
+        <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+        <mat-datepicker #toPicker></mat-datepicker>
+      </mat-form-field>
+
+      <button mat-stroked-button type="button" (click)="clearFilters()" class="clear-btn">
         <mat-icon>clear</mat-icon>
         Clear
       </button>
-    </div>
-  </mat-card>
+    </form>
+  </div>
 
-  @if (loading()) {
-    <app-loading-skeleton />
-  }
-
-  @if (error() && !loading()) {
-    <mat-card class="jensify-card error-card">
-      <mat-icon>error</mat-icon>
-      <p>{{ error() }}</p>
-      <button mat-raised-button color="primary" (click)="loadSubmittedReports()">Retry</button>
-    </mat-card>
-  }
-
-  @if (!loading() && !error() && filteredReports().length === 0) {
-    <app-empty-state
-      icon="celebration"
-      title="All caught up!"
-      message="No submitted reports to review.">
-    </app-empty-state>
-  }
-
-  @if (!loading() && !error() && filteredReports().length > 0) {
-    <mat-card class="jensify-card">
-      <div class="jensify-report-list">
-        @for (report of filteredReports(); track trackByReportId($index, report)) {
-          <div class="jensify-report-row" (click)="toggleSelection(report.id)">
-            <mat-checkbox
-              [checked]="isSelected(report.id)"
-              (click)="$event.stopPropagation()"
-              (change)="toggleSelection(report.id)">
-            </mat-checkbox>
-
-            <div class="jensify-report-main">
-              <div class="jensify-report-title">
-                <span class="name">{{ report.name }}</span>
-                <span class="employee" *ngIf="report.user?.full_name">
-                  • {{ report.user?.full_name }} <span class="muted">({{ report.user?.email }})</span>
-                </span>
+  <!-- Content -->
+  @if (approvals$ | async; as approvals) {
+    @if (error) {
+      <!-- Error State -->
+      <app-empty-state
+        icon="error"
+        [title]="error"
+        message="There was a problem loading the approval queue. Please try refreshing the page.">
+      </app-empty-state>
+    } @else if (loading) {
+      <!-- Loading State -->
+      <app-loading-skeleton type="card" [count]="5"></app-loading-skeleton>
+    } @else if (approvals.length === 0) {
+      <!-- Empty State -->
+      <app-empty-state
+        icon="task_alt"
+        title="No Pending Approvals"
+        message="You're all caught up! There are no pending approvals at this time.">
+      </app-empty-state>
+    } @else {
+      <!-- Approvals Table -->
+      <div class="jensify-table-container">
+        <table mat-table [dataSource]="approvals" class="jensify-table">
+          <!-- Submitter Column -->
+          <ng-container matColumnDef="submitter">
+            <th mat-header-cell *matHeaderCellDef>Submitter</th>
+            <td mat-cell *matCellDef="let approval">
+              <div class="submitter-info">
+                <div class="submitter-avatar">
+                  {{getSubmitterName(approval).charAt(0).toUpperCase()}}
+                </div>
+                <div class="submitter-details">
+                  <div class="submitter-name">{{getSubmitterName(approval)}}</div>
+                  <div class="submitter-email">{{approval.expense?.user?.email || approval.report?.user?.email}}</div>
+                </div>
               </div>
-              <div class="jensify-report-meta">
-                <span>Submitted {{ formatDate(report.submitted_at) }}</span>
-                <span *ngIf="report.expense_count">{{ report.expense_count }} expenses</span>
+            </td>
+          </ng-container>
+
+          <!-- Type Column -->
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>Type</th>
+            <td mat-cell *matCellDef="let approval">
+              <mat-chip class="type-chip" [class.expense]="approval.expense_id" [class.report]="approval.report_id">
+                <mat-icon>{{approval.expense_id ? 'receipt' : 'description'}}</mat-icon>
+                {{getApprovalType(approval)}}
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <!-- Amount Column -->
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef>Amount</th>
+            <td mat-cell *matCellDef="let approval">
+              <div class="amount-cell">
+                <span class="amount-value">{{formatCurrency(getAmount(approval))}}</span>
+                <span class="merchant-name">{{getMerchant(approval)}}</span>
               </div>
-            </div>
+            </td>
+          </ng-container>
 
-            <div class="jensify-report-amount">
-              {{ formatCurrency(report.total_amount || 0) }}
-            </div>
+          <!-- Category Column -->
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef>Category</th>
+            <td mat-cell *matCellDef="let approval">{{getCategory(approval)}}</td>
+          </ng-container>
 
-            <div class="jensify-report-actions">
-              <button mat-stroked-button color="warn" (click)="rejectReport(report.id); $event.stopPropagation();">
-                <mat-icon>close</mat-icon>
-                Reject
-              </button>
-              <button mat-raised-button class="jensify-approve-btn" (click)="approveReport(report.id); $event.stopPropagation();">
-                <mat-icon>done</mat-icon>
-                Approve
-              </button>
-            </div>
-          </div>
-        }
+          <!-- Workflow Column -->
+          <ng-container matColumnDef="workflow">
+            <th mat-header-cell *matHeaderCellDef>Workflow</th>
+            <td mat-cell *matCellDef="let approval">
+              <div class="workflow-info">
+                <span class="workflow-name">{{approval.workflow.name}}</span>
+                <span class="workflow-step">Step {{approval.current_step}} of {{approval.total_steps}}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Submitted Column -->
+          <ng-container matColumnDef="submitted">
+            <th mat-header-cell *matHeaderCellDef>Submitted</th>
+            <td mat-cell *matCellDef="let approval">{{formatDate(approval.submitted_at)}}</td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let approval">
+              <div class="action-buttons">
+                <button mat-raised-button color="primary" (click)="onViewDetails(approval)" class="review-btn">
+                  <mat-icon>visibility</mat-icon>
+                  Review
+                </button>
+                <button mat-icon-button [matMenuTriggerFor]="menu" class="more-btn">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu">
+                  <button mat-menu-item (click)="onViewHistory(approval)">
+                    <mat-icon>history</mat-icon>
+                    <span>View History</span>
+                  </button>
+                </mat-menu>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="approval-row"></tr>
+        </table>
       </div>
-    </mat-card>
+    }
   }
 </div>

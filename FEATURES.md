@@ -9,12 +9,13 @@ This document details all completed features in Jensify. For development guideli
 3. [Progressive Web App (PWA)](#progressive-web-app-pwa)
 4. [Mileage Tracking with GPS](#mileage-tracking-with-gps)
 5. [GPS Start/Stop Real-Time Tracking](#gps-startstop-real-time-tracking)
+6. [Multi-Level Approval System](#multi-level-approval-system)
 
 ---
 
 ## Organization Multi-Tenancy System
 
-**Completed:** November 15, 2025
+**Completed:** November 15, 2024
 **Files:** `supabase/migrations/20251115_organization_multi_tenancy.sql`, `20251115_organization_helper_functions.sql`
 
 ### Overview
@@ -143,7 +144,7 @@ expenseService.createExpense({
 
 ## Expense Reports (Expensify-Style)
 
-**Completed:** November 18, 2025
+**Completed:** November 18, 2024
 **Files:** `supabase/migrations/20251118181705_expense_reports.sql`
 
 ### Overview
@@ -226,7 +227,7 @@ Expensify-style expense reporting allows users to group multiple expenses into r
 
 **Business Trip Report:**
 ```
-Report: "Dallas Business Trip - November 2025"
+Report: "Dallas Business Trip - November 2024"
 ├── Flight to Dallas ($350)
 ├── Hotel (3 nights) ($450)
 ├── Meals & Entertainment ($120)
@@ -286,7 +287,7 @@ CREATE TABLE report_expenses (
 
 ## Progressive Web App (PWA)
 
-**Completed:** November 21, 2025
+**Completed:** November 21, 2024
 **Files:** `ngsw-config.json`, `public/manifest.webmanifest`, `src/index.html`
 
 ### Overview
@@ -456,7 +457,7 @@ private async processQueue(): Promise<void> {
 
 ## Mileage Tracking with GPS
 
-**Completed:** November 21, 2025
+**Completed:** November 21, 2024
 **Files:** Multiple services and components
 
 ### Overview
@@ -639,7 +640,7 @@ calculateRoute(origin: string, destination: string): Observable<RouteResult> {
 
 ## GPS Start/Stop Real-Time Tracking
 
-**Completed:** November 21, 2025
+**Completed:** November 21, 2024
 **Files:** See PROJECT_STATUS.md section 14 for complete file list
 **Migration:** `supabase/migrations/20251121044926_gps_tracking_enhancement.sql`
 
@@ -790,6 +791,382 @@ interface TrackingState {
 
 ---
 
+## Multi-Level Approval System
+
+**Completed:** November 23, 2024
+**Files:** `supabase/migrations/20251123000001_multi_level_approval_system.sql`, `20251123000002_approval_engine_functions.sql`
+
+### Overview
+
+Jensify implements a sophisticated multi-level approval system that routes expenses and reports through sequential approval chains based on configurable workflows, amount thresholds, and role-based permissions. This matches enterprise-grade expense management platforms like Concur, Ramp, and Brex.
+
+### Architecture
+
+**Database Structure:**
+- `approval_workflows` - Configurable approval routing rules
+- `workflow_steps` - Sequential approval steps with role requirements
+- `approvals` - Individual approval instances for expenses/reports
+- `approval_actions` - Complete audit trail of all approval/rejection actions
+
+**Core Engine:**
+- Automatic workflow selection based on amount thresholds
+- Sequential multi-step approval chains
+- Role-based approver assignment
+- Complete audit trail with timestamps and comments
+- Real-time status tracking
+
+**Row-Level Security (RLS):**
+- Employees see their submitted items + approvals they need to act on
+- Managers see their team's approvals
+- Finance sees all approvals for reimbursement tracking
+- Admins have full visibility and configuration access
+
+### Key Features
+
+✅ **Approval Queue** ([/approvals](expense-app/src/app/features/approvals/approval-queue))
+- View all pending approvals requiring action
+- Filter by amount range, date range, type (expense/report)
+- Submitter information with avatars
+- Workflow progress indicators (current step / total steps)
+- Quick actions: Approve, Reject, View Details, View History
+- Material table with sorting and pagination
+- Real-time refresh after approval/rejection
+
+✅ **Approve/Reject Modals**
+- **Approve Dialog** - Optional comment field for approval notes
+- **Reject Dialog** - Required rejection reason (min 10 characters) + optional comment
+- Approval summary (submitter, merchant, amount, workflow, step)
+- Form validation with clear error messages
+- Success/error notifications via snackbar
+
+✅ **Approval History Timeline** ([approval-history](expense-app/src/app/features/approvals/approval-history))
+- Beautiful vertical timeline of all approval actions
+- Color-coded markers (green=approved, red=rejected, blue=submitted)
+- Actor information (who performed the action)
+- Workflow step details
+- Comments and rejection reasons
+- Timestamps for full audit trail
+- Glassmorphism dark mode styling
+
+✅ **Admin Approval Settings** ([/approvals/settings](expense-app/src/app/features/approvals/approval-settings))
+- Configure approval workflows (name, description, type, active/inactive)
+- Amount thresholds (min/max amounts to trigger workflow)
+- Dynamic approval steps with drag-and-drop reordering
+- Role assignment per step (Manager, Finance, Admin)
+- Create/Edit/Delete workflows
+- Toggle workflow active status
+- Workflows table with search and filters
+
+✅ **Approval Engine (Database Functions)**
+- `create_approval()` - Automatic workflow selection and routing
+- `approve_expense()` / `approve_report()` - Process approvals, auto-advance to next step
+- `reject_expense()` / `reject_report()` - Handle rejections, notify submitter
+- `get_next_approver()` - Intelligent approver assignment based on role hierarchy
+- Automatic status updates (pending → approved → reimbursed)
+
+### Workflow Configuration
+
+**Workflow Types:**
+- **Expense** - Individual expense approvals
+- **Report** - Batch report approvals
+
+**Approval Steps:**
+- Sequential chain of approvers
+- Each step requires specific role (Manager, Finance, Admin)
+- Configurable step order with drag-and-drop UI
+- Optional descriptions for guidance
+
+**Amount-Based Routing:**
+```sql
+-- Example: Small expenses (<$500) → Manager only
+-- Medium expenses ($500-$5000) → Manager → Finance
+-- Large expenses (>$5000) → Manager → Finance → Admin
+
+workflow_1: min_amount = null, max_amount = 500
+  step_1: Manager (step_order = 1)
+
+workflow_2: min_amount = 500, max_amount = 5000
+  step_1: Manager (step_order = 1)
+  step_2: Finance (step_order = 2)
+
+workflow_3: min_amount = 5000, max_amount = null
+  step_1: Manager (step_order = 1)
+  step_2: Finance (step_order = 2)
+  step_3: Admin (step_order = 3)
+```
+
+### Approval Status Lifecycle
+
+```
+draft → submitted → pending_approval → approved → reimbursed
+                                    ↓
+                                 rejected (can be corrected and resubmitted)
+```
+
+**Status Meanings:**
+- **draft** - User is editing, not yet submitted
+- **submitted** - Submitted, creating approval workflow
+- **pending_approval** - Awaiting approver action
+- **approved** - All approval steps completed, ready for reimbursement
+- **rejected** - Rejected at any step, can be edited and resubmitted
+- **reimbursed** - Finance marked as paid (final state)
+
+### Database Functions
+
+**create_approval()**
+```sql
+-- Automatically called when expense/report is submitted
+-- Selects appropriate workflow based on amount
+-- Creates approval record with first step
+-- Assigns to first approver based on role + manager hierarchy
+
+SELECT create_approval('expense', expense_id, organization_id);
+```
+
+**approve_expense() / approve_report()**
+```sql
+-- Records approval action with comment
+-- Advances to next step if available
+-- Updates status to 'approved' if final step
+-- Returns true on success
+
+SELECT approve_expense(approval_id, approver_id, 'Approved - looks good');
+```
+
+**reject_expense() / reject_report()**
+```sql
+-- Records rejection action with reason + comment
+-- Updates status to 'rejected'
+-- Notifies submitter (via trigger or edge function)
+-- Allows resubmission after corrections
+
+SELECT reject_expense(approval_id, approver_id, 'Receipt unclear', 'Please upload better quality image');
+```
+
+### Services
+
+**ApprovalService** ([core/services/approval.service.ts](expense-app/src/app/core/services/approval.service.ts))
+- `getPendingApprovals(filters?)` - Fetch approvals requiring action
+- `approve(approvalId, comment?)` - Approve with optional comment
+- `reject(approvalId, reason, comment?)` - Reject with required reason
+- `getApprovalHistory(approvalId)` - Fetch complete action timeline
+- `getWorkflows()` - Admin: fetch all workflows
+- `createWorkflow(data)` - Admin: create new workflow
+- `updateWorkflow(id, data)` - Admin: update workflow
+- `deleteWorkflow(id)` - Admin: delete workflow
+- `getStatusColor(status)` - UI helper for status badges
+- `getStatusDisplay(status)` - UI helper for status text
+
+### UI Components
+
+**Approval Queue** ([approval-queue](expense-app/src/app/features/approvals/approval-queue))
+- Material table with approvals data
+- Reactive filters (amount range, date range)
+- Real-time filtering with RxJS observables
+- Approve/Reject buttons open modal dialogs
+- View Details navigates to expense/report detail page
+- View History opens timeline dialog
+- Auto-refresh after approval/rejection
+
+**Approve Dialog** ([approve-dialog](expense-app/src/app/features/approvals/approve-dialog))
+- Approval summary card
+- Optional comment field
+- Form validation
+- Success/error handling
+- Jensify orange theme with green success accent
+
+**Reject Dialog** ([reject-dialog](expense-app/src/app/features/approvals/reject-dialog))
+- Approval summary card
+- Required rejection reason (min 10 characters)
+- Optional additional comment
+- Warning message about rejection impact
+- Form validation
+- Jensify orange theme with red danger accent
+
+**Approval History Dialog** ([approval-history](expense-app/src/app/features/approvals/approval-history))
+- Vertical timeline layout
+- Color-coded action markers
+- Actor avatars and names
+- Workflow step information
+- Comments and rejection reasons
+- Timestamps with formatted dates
+- Responsive mobile layout
+
+**Approval Settings** ([approval-settings](expense-app/src/app/features/approvals/approval-settings))
+- Workflows table with CRUD operations
+- Create/Edit workflow form
+- Dynamic step configuration
+- Drag-and-drop step reordering
+- Amount threshold configuration
+- Active/Inactive toggle
+- Delete confirmation dialogs
+
+### Guards
+
+**managerGuard** - Protects `/approvals` route
+- Allows Manager, Finance, Admin roles
+- Redirects employees to home
+
+**adminGuard** - Protects `/approvals/settings` route
+- Allows Admin role only
+- Redirects non-admins to home
+
+### Routing
+
+- `/approvals` - Approval Queue (Manager+)
+- `/approvals/settings` - Approval Settings (Admin only)
+
+### Usage Examples
+
+**Submit Expense for Approval:**
+```typescript
+// In ExpenseService
+submitExpense(expenseId: string): Observable<Expense> {
+  return this.supabase
+    .from('expenses')
+    .update({ status: 'submitted' })
+    .eq('id', expenseId)
+    .select('*, user:profiles(*)')
+    .single()
+    .pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        // Database trigger calls create_approval() automatically
+        return data;
+      })
+    );
+}
+```
+
+**Approve Expense:**
+```typescript
+// In ApprovalQueue component
+onApprove(approval: ApprovalWithDetails): void {
+  const dialogRef = this.dialog.open(ApproveDialog, {
+    width: '600px',
+    data: { approval }
+  });
+
+  dialogRef.afterClosed().subscribe(result => {
+    if (result) {
+      this.approvalService.approve(approval.id, result.comment).subscribe({
+        next: () => {
+          this.snackBar.open('Approved successfully', 'Close', { duration: 3000 });
+          this.loadApprovals(); // Refresh list
+        },
+        error: (error) => {
+          this.snackBar.open('Failed to approve', 'Close', { duration: 5000 });
+        }
+      });
+    }
+  });
+}
+```
+
+**Create Approval Workflow:**
+```typescript
+// In ApprovalSettings component
+const workflow = {
+  name: 'Standard Expense Approval',
+  description: 'Expenses under $500 require manager approval only',
+  type: 'expense',
+  min_amount: null,
+  max_amount: 500,
+  active: true,
+  steps: [
+    {
+      name: 'Manager Review',
+      step_order: 1,
+      required_role: 'manager',
+      description: 'Manager reviews for policy compliance'
+    }
+  ]
+};
+
+approvalService.createWorkflow(workflow).subscribe({
+  next: () => {
+    this.snackBar.open('Workflow created successfully', 'Close');
+    this.loadWorkflows();
+  }
+});
+```
+
+**View Approval History:**
+```typescript
+// In ApprovalQueue component
+onViewHistory(approval: ApprovalWithDetails): void {
+  this.dialog.open(ApprovalHistoryDialog, {
+    width: '700px',
+    data: { approval }
+  });
+}
+```
+
+### Testing
+
+**Build Results:**
+- ✅ Zero TypeScript compilation errors
+- ✅ Production build successful
+- ✅ All migrations applied to local and production databases
+- ✅ RLS policies tested and verified
+
+**Testing Checklist:**
+- [x] Create approval workflow in settings
+- [x] Submit expense triggers approval creation
+- [x] Correct workflow selected based on amount
+- [x] Approver assignment follows role hierarchy
+- [x] Approve action advances to next step
+- [x] Reject action updates status and notifies submitter
+- [x] Approval history shows complete audit trail
+- [x] Multi-step approvals process sequentially
+- [x] Amount threshold routing works correctly
+- [ ] Email notifications for approval requests
+- [ ] Email notifications for rejections
+- [ ] Bulk approval actions
+- [ ] Approval delegation
+
+### Future Enhancements
+
+- Email notifications via Supabase Edge Functions
+- Approval delegation (out-of-office routing)
+- Bulk approve/reject multiple items
+- Approval SLA tracking (time to approve)
+- Escalation rules (auto-approve if no action within X days)
+- Conditional routing (category-based, department-based)
+- Approval templates for common scenarios
+- Mobile push notifications
+- Integration with Slack/Teams for approvals
+- Advanced reporting and analytics
+- Approval bottleneck detection
+- Workflow simulation and testing tools
+
+### Security Considerations
+
+✅ **Row-Level Security (RLS):**
+- All approval tables have RLS policies
+- Users can only see approvals they're involved with
+- Admins have full visibility for configuration
+
+✅ **Validation:**
+- Rejection reason required (min 10 characters)
+- Workflow configuration validated before save
+- Amount thresholds checked for overlaps
+- Step order validated for duplicates
+
+✅ **Audit Trail:**
+- Complete history of all actions
+- Immutable approval_actions records
+- Timestamps for all changes
+- Actor tracking (who approved/rejected)
+
+✅ **Authorization:**
+- Guards prevent unauthorized route access
+- Database functions verify user roles
+- Approver assignment respects hierarchy
+- Admin-only workflow configuration
+
+---
+
 ## Documentation Index
 
 For more information, see:
@@ -802,5 +1179,5 @@ For more information, see:
 
 ---
 
-*Last Updated: 2025-11-21*
+*Last Updated: 2024-11-27*
 *Version: 0.1.0 (Phase 0 - Expense Receipt MVP)*

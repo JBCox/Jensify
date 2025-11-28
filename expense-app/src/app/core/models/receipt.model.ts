@@ -1,5 +1,16 @@
 import { OcrStatus } from './enums';
 
+/**
+ * Line item detected from OCR analysis
+ */
+export interface ExtractedLineItem {
+  description: string;
+  amount: number;
+  suggested_category: string;
+  confidence: number;
+  keywords: string[];
+}
+
 export interface Receipt {
   id: string;
   organization_id: string;
@@ -22,6 +33,10 @@ export interface Receipt {
   extracted_amount?: number;
   extracted_date?: string;
   extracted_tax?: number;
+
+  // Line item extraction (for split suggestions)
+  extracted_line_items?: ExtractedLineItem[];
+  suggest_split?: boolean;
 
   created_at: string;
 }

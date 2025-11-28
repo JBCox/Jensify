@@ -1,0 +1,71 @@
+<div class="jensify-dialog">
+  <div class="jensify-dialog-header">
+    <div class="header-icon success">
+      <mat-icon>check_circle</mat-icon>
+    </div>
+    <h2 mat-dialog-title>Approve {{getApprovalType()}}</h2>
+    <button mat-icon-button mat-dialog-close class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="jensify-dialog-content">
+    <!-- Approval Summary -->
+    <div class="approval-summary">
+      <div class="summary-row">
+        <span class="label">Submitter:</span>
+        <span class="value">{{getSubmitterName()}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Merchant:</span>
+        <span class="value">{{getMerchant()}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Amount:</span>
+        <span class="value amount">{{formatCurrency(getAmount())}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Workflow:</span>
+        <span class="value">{{approval.workflow.name}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Step:</span>
+        <span class="value">{{approval.current_step}} of {{approval.total_steps}}</span>
+      </div>
+    </div>
+
+    <!-- Comment Form -->
+    <form [formGroup]="approveForm">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Comment (Optional)</mat-label>
+        <textarea 
+          matInput 
+          formControlName="comment"
+          rows="4"
+          placeholder="Add any notes or comments about this approval..."></textarea>
+        <mat-icon matPrefix>comment</mat-icon>
+      </mat-form-field>
+    </form>
+
+    <!-- Warning Message -->
+    <div class="info-message">
+      <mat-icon>info</mat-icon>
+      <span>This approval will move to the next step in the workflow.</span>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="jensify-dialog-actions">
+    <button mat-stroked-button (click)="onCancel()" type="button">
+      Cancel
+    </button>
+    <button 
+      mat-raised-button 
+      color="primary" 
+      (click)="onApprove()" 
+      type="button"
+      class="approve-btn">
+      <mat-icon>check_circle</mat-icon>
+      Approve
+    </button>
+  </mat-dialog-actions>
+</div>

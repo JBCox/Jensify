@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -21,6 +21,7 @@ import { StatusBadge } from '../../../shared/components/status-badge/status-badg
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { CreateReportDialogComponent } from '../create-report-dialog/create-report-dialog';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
 
 /**
  * Report List Component
@@ -199,25 +200,45 @@ export class ReportListComponent implements OnInit, OnDestroy {
       this.snackBar.open('Cannot submit empty report. Add expenses first.', 'Close', { duration: 4000 });
       return;
     }
-    const missingReceipt = report.report_expenses?.some(re => !re.expense?.expense_receipts || re.expense.expense_receipts.length === 0);
+    // Check for missing receipts - support both junction table and legacy receipt_id
+    const missingReceipt = report.report_expenses?.some(re => {
+      const exp = re.expense;
+      const hasJunctionReceipts = exp?.expense_receipts && exp.expense_receipts.length > 0;
+      const hasLegacyReceipt = exp?.receipt_id || exp?.receipt;
+      return !hasJunctionReceipts && !hasLegacyReceipt;
+    });
     if (missingReceipt) {
       this.snackBar.open('All expenses need receipts before submitting.', 'Close', { duration: 4000 });
       return;
     }
 
-    if (confirm(`Submit "${report.name}" for approval?`)) {
-      this.reportService.submitReport(report.id)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.snackBar.open('Report submitted for approval', 'Close', { duration: 3000 });
-            this.loadReports();
-          },
-          error: (err) => {
-            this.snackBar.open(err?.message || 'Failed to submit report', 'Close', { duration: 4000 });
-          }
-        });
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Submit Report',
+        message: `Submit "${report.name}" for approval?`,
+        confirmText: 'Submit',
+        cancelText: 'Cancel',
+        confirmColor: 'primary',
+        icon: 'send',
+        iconColor: '#FF5900',
+      } as ConfirmDialogData,
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.reportService.submitReport(report.id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Report submitted for approval', 'Close', { duration: 3000 });
+              this.loadReports();
+            },
+            error: (err) => {
+              this.snackBar.open(err?.message || 'Failed to submit report', 'Close', { duration: 4000 });
+            }
+          });
+      }
+    });
   }
 
   /**
@@ -231,19 +252,33 @@ export class ReportListComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (confirm(`Delete report "${report.name}"? This cannot be undone.`)) {
-      this.reportService.deleteReport(report.id)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.snackBar.open('Report deleted', 'Close', { duration: 3000 });
-            this.loadReports();
-          },
-          error: (err) => {
-            this.snackBar.open(err?.message || 'Failed to delete report', 'Close', { duration: 4000 });
-          }
-        });
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete Report',
+        message: `Delete report "${report.name}"? This cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        confirmColor: 'warn',
+        icon: 'delete',
+        iconColor: '#f44336',
+      } as ConfirmDialogData,
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.reportService.deleteReport(report.id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Report deleted', 'Close', { duration: 3000 });
+              this.loadReports();
+            },
+            error: (err) => {
+              this.snackBar.open(err?.message || 'Failed to delete report', 'Close', { duration: 4000 });
+            }
+          });
+      }
+    });
   }
 
   /**
@@ -281,7 +316,7 @@ export class ReportListComponent implements OnInit, OnDestroy {
    */
   formatDate(dateString?: string | null): string {
     if (!dateString) {
-      return '—';
+      return 'â€”';
     }
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -366,7 +401,7 @@ export class ReportListComponent implements OnInit, OnDestroy {
       case ReportStatus.REJECTED:
         if (this.notificationService.shouldAlert('approvals')) {
           this.notificationService.showWarning(
-            `"${report.name}" was rejected — review and resubmit`,
+            `"${report.name}" was rejected â€” review and resubmit`,
             'Report rejected'
           );
         }

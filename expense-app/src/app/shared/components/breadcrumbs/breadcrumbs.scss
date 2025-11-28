@@ -4,14 +4,14 @@
  */
 
 .breadcrumbs-container {
-  padding: var(--jensify-spacing-md) var(--jensify-spacing-lg);
-  margin-bottom: var(--jensify-spacing-md);
+  padding: var(--jensify-spacing-xs) var(--jensify-spacing-md);
+  margin-bottom: var(--jensify-spacing-xs);
   border-bottom: 1px solid var(--jensify-border-subtle);
   background: transparent;
 
   @media (max-width: 767px) {
-    padding: var(--jensify-spacing-sm) var(--jensify-spacing-md);
-    margin-bottom: var(--jensify-spacing-sm);
+    padding: var(--jensify-spacing-xs) var(--jensify-spacing-sm);
+    margin-bottom: 0;
   }
 }
 

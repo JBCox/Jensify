@@ -109,6 +109,16 @@ export const routes: Routes = [
         title: "User Management - Jensify",
         data: { breadcrumb: "User Management" },
       },
+      {
+        path: "mileage-settings",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/mileage-settings/mileage-settings.component"
+          ).then((m) => m.MileageSettingsComponent),
+        title: "Mileage Settings - Jensify",
+        data: { breadcrumb: "Mileage Settings" },
+      },
     ],
   },
 
@@ -166,16 +176,32 @@ export const routes: Routes = [
     ],
   },
 
-  // Approvals queue - managers and above can approve
+  // Approvals routes - managers and above can approve, admins can configure
   {
     path: "approvals",
     canActivate: [authGuard, managerGuard],
-    loadComponent: () =>
-      import("./features/approvals/approval-queue/approval-queue").then((m) =>
-        m.ApprovalQueueComponent
-      ),
-    title: "Approvals - Jensify",
     data: { breadcrumb: "Approvals", breadcrumbIcon: "task_alt" },
+    children: [
+      {
+        path: "",
+        loadComponent: () =>
+          import("./features/approvals/approval-queue/approval-queue").then((m) =>
+            m.ApprovalQueue
+          ),
+        title: "Approval Queue - Jensify",
+        data: { breadcrumb: "Queue" },
+      },
+      {
+        path: "settings",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import("./features/approvals/approval-settings/approval-settings").then((m) =>
+            m.ApprovalSettings
+          ),
+        title: "Approval Settings - Jensify",
+        data: { breadcrumb: "Settings" },
+      },
+    ],
   },
 
   // Reports routes - group expenses into reports for batch submission

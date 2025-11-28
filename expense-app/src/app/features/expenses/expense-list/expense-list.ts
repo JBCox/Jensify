@@ -1,38 +1,50 @@
-import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { ScrollingModule } from '@angular/cdk/scrolling';
-import { Subject, forkJoin } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { ExpenseService } from '../../../core/services/expense.service';
-import { SanitizationService } from '../../../core/services/sanitization.service';
-import { SupabaseService } from '../../../core/services/supabase.service';
-import { Expense } from '../../../core/models/expense.model';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { ExpenseStatus, ExpenseCategory } from '../../../core/models/enums';
-import { StatusBadge, ExpenseStatus as BadgeStatus } from '../../../shared/components/status-badge/status-badge';
-import { EmptyState } from '../../../shared/components/empty-state/empty-state';
-import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loading-skeleton';
-import { Router } from '@angular/router';
-import { AddToReportDialogComponent } from '../add-to-report-dialog/add-to-report-dialog';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { MatCardModule } from "@angular/material/card";
+import { MatButtonModule } from "@angular/material/button";
+import { MatIconModule } from "@angular/material/icon";
+import { MatChipsModule } from "@angular/material/chips";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatSelectModule } from "@angular/material/select";
+import { MatDatepickerModule } from "@angular/material/datepicker";
+import { MatNativeDateModule } from "@angular/material/core";
+import { MatCheckboxModule } from "@angular/material/checkbox";
+import { MatDialog, MatDialogModule } from "@angular/material/dialog";
+import { ScrollingModule } from "@angular/cdk/scrolling";
+import { forkJoin, Subject } from "rxjs";
+import { takeUntil } from "rxjs/operators";
+import { ExpenseService } from "../../../core/services/expense.service";
+import { SanitizationService } from "../../../core/services/sanitization.service";
+import { SupabaseService } from "../../../core/services/supabase.service";
+import { Expense } from "../../../core/models/expense.model";
+import { ExpenseReport } from "../../../core/models/report.model";
+import { MatSnackBar } from "@angular/material/snack-bar";
+import { ExpenseCategory, ExpenseStatus } from "../../../core/models/enums";
+import {
+  ExpenseStatus as BadgeStatus,
+  StatusBadge,
+} from "../../../shared/components/status-badge/status-badge";
+import { EmptyState } from "../../../shared/components/empty-state/empty-state";
+import { LoadingSkeleton } from "../../../shared/components/loading-skeleton/loading-skeleton";
+import { Router } from "@angular/router";
+import { AddToReportDialogComponent } from "../add-to-report-dialog/add-to-report-dialog";
 
 /**
  * Expense List Component
  * Displays all expenses for the current user with filtering, search, and summary
  */
 @Component({
-  selector: 'app-expense-list',
+  selector: "app-expense-list",
   imports: [
     CommonModule,
     FormsModule,
@@ -50,12 +62,12 @@ import { AddToReportDialogComponent } from '../add-to-report-dialog/add-to-repor
     ScrollingModule,
     StatusBadge,
     EmptyState,
-    LoadingSkeleton
+    LoadingSkeleton,
   ],
-  templateUrl: './expense-list.html',
-  styleUrl: './expense-list.scss',
+  templateUrl: "./expense-list.html",
+  styleUrl: "./expense-list.scss",
 
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExpenseList implements OnInit, OnDestroy {
   private expenseService = inject(ExpenseService);
@@ -78,9 +90,9 @@ export class ExpenseList implements OnInit, OnDestroy {
   submittingBatch = signal<boolean>(false);
 
   // Filter signals
-  selectedStatus = signal<ExpenseStatus | 'all'>('all');
-  searchQuery = signal<string>('');
-  selectedCategory = signal<string | 'all'>('all');
+  selectedStatus = signal<ExpenseStatus | "all">("all");
+  searchQuery = signal<string>("");
+  selectedCategory = signal<string | "all">("all");
   dateFrom = signal<Date | null>(null);
   dateTo = signal<Date | null>(null);
   minAmount = signal<number | null>(null);
@@ -92,14 +104,14 @@ export class ExpenseList implements OnInit, OnDestroy {
 
     // Filter by status
     const status = this.selectedStatus();
-    if (status !== 'all') {
-      result = result.filter(e => e.status === status);
+    if (status !== "all") {
+      result = result.filter((e) => e.status === status);
     }
 
     // Filter by search query (merchant)
     const query = this.searchQuery().toLowerCase().trim();
     if (query) {
-      result = result.filter(e =>
+      result = result.filter((e) =>
         e.merchant.toLowerCase().includes(query) ||
         e.notes?.toLowerCase().includes(query)
       );
@@ -107,30 +119,30 @@ export class ExpenseList implements OnInit, OnDestroy {
 
     // Filter by category
     const category = this.selectedCategory();
-    if (category !== 'all') {
-      result = result.filter(e => e.category === category);
+    if (category !== "all") {
+      result = result.filter((e) => e.category === category);
     }
 
     // Filter by date range
     const from = this.dateFrom();
     if (from) {
-      result = result.filter(e => new Date(e.expense_date) >= from);
+      result = result.filter((e) => new Date(e.expense_date) >= from);
     }
 
     const to = this.dateTo();
     if (to) {
-      result = result.filter(e => new Date(e.expense_date) <= to);
+      result = result.filter((e) => new Date(e.expense_date) <= to);
     }
 
     // Filter by amount range
     const min = this.minAmount();
     if (min !== null) {
-      result = result.filter(e => e.amount >= min);
+      result = result.filter((e) => e.amount >= min);
     }
 
     const max = this.maxAmount();
     if (max !== null) {
-      result = result.filter(e => e.amount <= max);
+      result = result.filter((e) => e.amount <= max);
     }
 
     return result;
@@ -144,13 +156,27 @@ export class ExpenseList implements OnInit, OnDestroy {
 
   // Computed selection metrics
   draftExpenses = computed(() =>
-    this.filteredExpenses().filter(e => e.status === ExpenseStatus.DRAFT)
+    this.filteredExpenses().filter((e) => e.status === ExpenseStatus.DRAFT)
   );
   selectedCount = computed(() => this.selectedExpenseIds().size);
   allDraftsSelected = computed(() => {
     const drafts = this.draftExpenses();
     if (drafts.length === 0) return false;
-    return drafts.every(e => this.selectedExpenseIds().has(e.id));
+    return drafts.every((e) => this.selectedExpenseIds().has(e.id));
+  });
+
+  // UI state
+  showAdvancedFilters = false;
+
+  // Computed: count of active advanced filters
+  activeFilterCount = computed(() => {
+    let count = 0;
+    if (this.selectedCategory() !== "all") count++;
+    if (this.dateFrom()) count++;
+    if (this.dateTo()) count++;
+    if (this.minAmount() !== null) count++;
+    if (this.maxAmount() !== null) count++;
+    return count;
   });
 
   // Enums for template
@@ -159,25 +185,34 @@ export class ExpenseList implements OnInit, OnDestroy {
 
   // Status options for filter chips
   readonly statusOptions = [
-    { value: 'all' as const, label: 'All' },
-    { value: ExpenseStatus.DRAFT, label: 'Draft' },
-    { value: ExpenseStatus.SUBMITTED, label: 'Pending' },
-    { value: ExpenseStatus.APPROVED, label: 'Approved' },
-    { value: ExpenseStatus.REJECTED, label: 'Rejected' },
-    { value: ExpenseStatus.REIMBURSED, label: 'Reimbursed' }
+    { value: "all" as const, label: "All" },
+    { value: ExpenseStatus.DRAFT, label: "Draft" },
+    { value: ExpenseStatus.SUBMITTED, label: "Pending" },
+    { value: ExpenseStatus.APPROVED, label: "Approved" },
+    { value: ExpenseStatus.REJECTED, label: "Rejected" },
+    { value: ExpenseStatus.REIMBURSED, label: "Reimbursed" },
   ];
 
   // Category options for dropdown
   readonly categoryOptions = [
-    { value: 'all', label: 'All Categories' },
+    { value: "all", label: "All Categories" },
     { value: ExpenseCategory.FUEL, label: ExpenseCategory.FUEL },
     { value: ExpenseCategory.MEALS, label: ExpenseCategory.MEALS },
     { value: ExpenseCategory.LODGING, label: ExpenseCategory.LODGING },
     { value: ExpenseCategory.AIRFARE, label: ExpenseCategory.AIRFARE },
-    { value: ExpenseCategory.GROUND_TRANSPORTATION, label: ExpenseCategory.GROUND_TRANSPORTATION },
-    { value: ExpenseCategory.OFFICE_SUPPLIES, label: ExpenseCategory.OFFICE_SUPPLIES },
+    {
+      value: ExpenseCategory.GROUND_TRANSPORTATION,
+      label: ExpenseCategory.GROUND_TRANSPORTATION,
+    },
+    {
+      value: ExpenseCategory.OFFICE_SUPPLIES,
+      label: ExpenseCategory.OFFICE_SUPPLIES,
+    },
     { value: ExpenseCategory.SOFTWARE, label: ExpenseCategory.SOFTWARE },
-    { value: ExpenseCategory.MISCELLANEOUS, label: ExpenseCategory.MISCELLANEOUS }
+    {
+      value: ExpenseCategory.MISCELLANEOUS,
+      label: ExpenseCategory.MISCELLANEOUS,
+    },
   ];
 
   ngOnInit(): void {
@@ -204,16 +239,16 @@ export class ExpenseList implements OnInit, OnDestroy {
           this.loading.set(false);
         },
         error: (err: Error) => {
-          this.error.set(err.message || 'Failed to load expenses');
+          this.error.set(err.message || "Failed to load expenses");
           this.loading.set(false);
-        }
+        },
       });
   }
 
   /**
    * Set status filter
    */
-  setStatusFilter(status: ExpenseStatus | 'all'): void {
+  setStatusFilter(status: ExpenseStatus | "all"): void {
     this.selectedStatus.set(status);
   }
 
@@ -221,13 +256,28 @@ export class ExpenseList implements OnInit, OnDestroy {
    * Clear all filters
    */
   clearFilters(): void {
-    this.selectedStatus.set('all');
-    this.searchQuery.set('');
-    this.selectedCategory.set('all');
+    this.selectedStatus.set("all");
+    this.searchQuery.set("");
+    this.selectedCategory.set("all");
     this.dateFrom.set(null);
     this.dateTo.set(null);
     this.minAmount.set(null);
     this.maxAmount.set(null);
+    this.showAdvancedFilters = false;
+  }
+
+  /**
+   * Set date from string (for native date input)
+   */
+  setDateFrom(dateString: string): void {
+    this.dateFrom.set(dateString ? new Date(dateString) : null);
+  }
+
+  /**
+   * Set date to string (for native date input)
+   */
+  setDateTo(dateString: string): void {
+    this.dateTo.set(dateString ? new Date(dateString) : null);
   }
 
   /**
@@ -236,28 +286,28 @@ export class ExpenseList implements OnInit, OnDestroy {
   exportToCSV(): void {
     const rows = this.filteredExpenses();
     if (rows.length === 0) {
-      this.snackBar.open('No expenses to export.', 'Close', { duration: 3000 });
+      this.snackBar.open("No expenses to export.", "Close", { duration: 3000 });
       return;
     }
 
     const headers = [
-      'Expense ID',
-      'Merchant',
-      'Amount',
-      'Category',
-      'Expense Date',
-      'Status',
-      'Receipt Attached',
-      'Receipt File Name',
-      'Receipt URL'
+      "Expense ID",
+      "Merchant",
+      "Amount",
+      "Category",
+      "Expense Date",
+      "Status",
+      "Receipt Attached",
+      "Receipt File Name",
+      "Receipt URL",
     ];
 
-    const csvRows = rows.map(expense => {
-      const receiptAttached = expense.receipt_id ? 'Yes' : 'No';
-      const receiptFile = expense.receipt?.file_name || '';
+    const csvRows = rows.map((expense) => {
+      const receiptAttached = expense.receipt_id ? "Yes" : "No";
+      const receiptFile = expense.receipt?.file_name || "";
       const receiptUrl = expense.receipt?.file_path
         ? this.expenseService.getReceiptUrl(expense.receipt.file_path)
-        : '';
+        : "";
 
       return [
         expense.id,
@@ -268,25 +318,30 @@ export class ExpenseList implements OnInit, OnDestroy {
         expense.status,
         receiptAttached,
         receiptFile,
-        receiptUrl
-      ].map(value => this.sanitizationService.sanitizeCsvValue(value ?? '')).join(',');
+        receiptUrl,
+      ].map((value) => this.sanitizationService.sanitizeCsvValue(value ?? ""))
+        .join(",");
     });
 
-    const csvContent = [headers.join(','), ...csvRows].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = [headers.join(","), ...csvRows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
 
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', `expenses-${new Date().toISOString()}.csv`);
+    link.setAttribute("download", `expenses-${new Date().toISOString()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    this.snackBar.open(`Exported ${rows.length} expense${rows.length > 1 ? 's' : ''} to CSV.`, 'Close', {
-      duration: 4000
-    });
+    this.snackBar.open(
+      `Exported ${rows.length} expense${rows.length > 1 ? "s" : ""} to CSV.`,
+      "Close",
+      {
+        duration: 4000,
+      },
+    );
   }
 
   /**
@@ -295,7 +350,8 @@ export class ExpenseList implements OnInit, OnDestroy {
    */
   getReceiptThumbnail(expense: Expense): string | null {
     // Try primary receipt from expense_receipts array first
-    const primaryReceipt = expense.expense_receipts?.find(er => er.is_primary)?.receipt;
+    const primaryReceipt = expense.expense_receipts?.find((er) => er.is_primary)
+      ?.receipt;
     if (primaryReceipt?.file_path) {
       return this.expenseService.getReceiptUrl(primaryReceipt.file_path);
     }
@@ -338,9 +394,9 @@ export class ExpenseList implements OnInit, OnDestroy {
    * Format currency
    */
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   }
 
@@ -348,10 +404,11 @@ export class ExpenseList implements OnInit, OnDestroy {
    * Format date
    */
   formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
     });
   }
 
@@ -360,11 +417,11 @@ export class ExpenseList implements OnInit, OnDestroy {
    */
   getStatusBadge(status: ExpenseStatus): BadgeStatus {
     const statusMap: Record<ExpenseStatus, BadgeStatus> = {
-      [ExpenseStatus.DRAFT]: 'draft',
-      [ExpenseStatus.SUBMITTED]: 'pending',
-      [ExpenseStatus.APPROVED]: 'approved',
-      [ExpenseStatus.REJECTED]: 'rejected',
-      [ExpenseStatus.REIMBURSED]: 'reimbursed'
+      [ExpenseStatus.DRAFT]: "draft",
+      [ExpenseStatus.SUBMITTED]: "pending",
+      [ExpenseStatus.APPROVED]: "approved",
+      [ExpenseStatus.REJECTED]: "rejected",
+      [ExpenseStatus.REIMBURSED]: "reimbursed",
     };
     return statusMap[status];
   }
@@ -374,18 +431,26 @@ export class ExpenseList implements OnInit, OnDestroy {
    */
   async viewReceipt(expense: Expense): Promise<void> {
     if (!expense.receipt?.file_path) {
-      this.snackBar.open('No receipt available for this expense.', 'Close', { duration: 3000 });
+      this.snackBar.open("No receipt available for this expense.", "Close", {
+        duration: 3000,
+      });
       return;
     }
 
     try {
-      const { signedUrl } = await this.supabase.getSignedUrl('receipts', expense.receipt.file_path, 86400); // 24 hours
+      const { signedUrl } = await this.supabase.getSignedUrl(
+        "receipts",
+        expense.receipt.file_path,
+        86400,
+      ); // 24 hours
       if (signedUrl) {
-        window.open(signedUrl, '_blank');
+        window.open(signedUrl, "_blank");
       }
     } catch (error) {
-      console.error('Failed to get receipt URL:', error);
-      this.snackBar.open('Failed to load receipt.', 'Close', { duration: 3000 });
+      console.error("Failed to get receipt URL:", error);
+      this.snackBar.open("Failed to load receipt.", "Close", {
+        duration: 3000,
+      });
     }
   }
 
@@ -394,12 +459,12 @@ export class ExpenseList implements OnInit, OnDestroy {
   }
 
   goToDetails(expense: Expense): void {
-    this.router.navigate(['/expenses', expense.id]);
+    this.router.navigate(["/expenses", expense.id]);
   }
 
   goToEdit(expense: Expense, focusViolations = false): void {
-    this.router.navigate(['/expenses', expense.id, 'edit'], {
-      queryParams: focusViolations ? { focus: 'violations' } : undefined
+    this.router.navigate(["/expenses", expense.id, "edit"], {
+      queryParams: focusViolations ? { focus: "violations" } : undefined,
     });
   }
 
@@ -440,7 +505,7 @@ export class ExpenseList implements OnInit, OnDestroy {
       this.selectedExpenseIds.set(new Set());
     } else {
       // Select all drafts
-      const selected = new Set(drafts.map(e => e.id));
+      const selected = new Set(drafts.map((e) => e.id));
       this.selectedExpenseIds.set(selected);
     }
   }
@@ -465,14 +530,16 @@ export class ExpenseList implements OnInit, OnDestroy {
   submitSelected(): void {
     const selectedIds = Array.from(this.selectedExpenseIds());
     if (selectedIds.length === 0) {
-      this.snackBar.open('No expenses selected.', 'Close', { duration: 3000 });
+      this.snackBar.open("No expenses selected.", "Close", { duration: 3000 });
       return;
     }
 
     this.submittingBatch.set(true);
 
     // Create array of submit observables
-    const submitObs = selectedIds.map(id => this.expenseService.submitExpense(id));
+    const submitObs = selectedIds.map((id) =>
+      this.expenseService.submitExpense(id)
+    );
 
     // Execute all submits in parallel
     forkJoin(submitObs)
@@ -482,9 +549,11 @@ export class ExpenseList implements OnInit, OnDestroy {
           this.submittingBatch.set(false);
           this.clearSelection();
           this.snackBar.open(
-            `Successfully submitted ${selectedIds.length} expense${selectedIds.length > 1 ? 's' : ''} for approval.`,
-            'Close',
-            { duration: 4000 }
+            `Successfully submitted ${selectedIds.length} expense${
+              selectedIds.length > 1 ? "s" : ""
+            } for approval.`,
+            "Close",
+            { duration: 4000 },
           );
           // Reload expenses to reflect new status
           this.loadExpenses();
@@ -492,11 +561,11 @@ export class ExpenseList implements OnInit, OnDestroy {
         error: (err) => {
           this.submittingBatch.set(false);
           this.snackBar.open(
-            err?.message || 'Failed to submit expenses. Please try again.',
-            'Close',
-            { duration: 4000 }
+            err?.message || "Failed to submit expenses. Please try again.",
+            "Close",
+            { duration: 4000 },
           );
-        }
+        },
       });
   }
 
@@ -506,40 +575,52 @@ export class ExpenseList implements OnInit, OnDestroy {
   addToReport(): void {
     const selectedIds = Array.from(this.selectedExpenseIds());
     if (selectedIds.length === 0) {
-      this.snackBar.open('No expenses selected.', 'Close', { duration: 3000 });
+      this.snackBar.open("No expenses selected.", "Close", { duration: 3000 });
       return;
     }
 
     // Calculate total amount of selected expenses
-    const selectedExpenses = this.expenses().filter(e => selectedIds.includes(e.id));
+    const selectedExpenses = this.expenses().filter((e) =>
+      selectedIds.includes(e.id)
+    );
     const totalAmount = selectedExpenses.reduce((sum, e) => sum + e.amount, 0);
 
     // Open dialog
     const dialogRef = this.dialog.open(AddToReportDialogComponent, {
-      width: '600px',
-      maxWidth: '90vw',
+      width: "600px",
+      maxWidth: "90vw",
       data: {
         expenseIds: selectedIds,
-        totalAmount: totalAmount
-      }
+        totalAmount: totalAmount,
+      },
     });
 
-    dialogRef.afterClosed().subscribe((result: { success?: boolean; action?: string; report?: any } | undefined) => {
-      if (result?.success) {
-        this.clearSelection();
-        const action = result.action === 'created' ? 'created new report' : 'added to report';
-        this.snackBar.open(
-          `Successfully ${action} with ${selectedIds.length} expense${selectedIds.length > 1 ? 's' : ''}`,
-          'View Report',
-          { duration: 5000 }
-        ).onAction().subscribe(() => {
-          if (result.report) {
-            this.router.navigate(['/reports', result.report.id]);
-          }
-        });
-        // Reload expenses to reflect any status changes
-        this.loadExpenses();
-      }
-    });
+    dialogRef.afterClosed().subscribe(
+      (
+        result:
+          | { success?: boolean; action?: string; report?: ExpenseReport }
+          | undefined,
+      ) => {
+        if (result?.success) {
+          this.clearSelection();
+          const action = result.action === "created"
+            ? "created new report"
+            : "added to report";
+          this.snackBar.open(
+            `Successfully ${action} with ${selectedIds.length} expense${
+              selectedIds.length > 1 ? "s" : ""
+            }`,
+            "View Report",
+            { duration: 5000 },
+          ).onAction().subscribe(() => {
+            if (result.report) {
+              this.router.navigate(["/reports", result.report.id]);
+            }
+          });
+          // Reload expenses to reflect any status changes
+          this.loadExpenses();
+        }
+      },
+    );
   }
 }

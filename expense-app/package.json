@@ -42,6 +42,7 @@
     "@angular/service-worker": "^20.3.11",
     "@googlemaps/js-api-loader": "^2.0.2",
     "@supabase/supabase-js": "^2.83.0",
+    "@swimlane/ngx-charts": "^23.1.0",
     "@types/uuid": "^10.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

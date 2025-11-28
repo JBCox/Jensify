@@ -3,6 +3,58 @@ import { Receipt } from './receipt.model';
 import { User } from './user.model';
 
 /**
+ * Expense line item for split expenses
+ * Allows a single receipt to be categorized into multiple expense types
+ * e.g., a hotel bill split into lodging + meals
+ */
+export interface ExpenseItem {
+  /** UUID primary key */
+  id: string;
+  /** Parent expense ID */
+  expense_id: string;
+  /** Receipt ID (if item linked to specific receipt) */
+  receipt_id?: string | null;
+  /** Organization ID (tenant isolation) */
+  organization_id: string;
+
+  /** Description of this line item (e.g., "Room charge", "Room service meal") */
+  description: string;
+  /** Amount for this specific line item */
+  amount: number;
+  /** Category for this line item (may differ from parent expense) */
+  category: ExpenseCategory | string;
+  /** Order of items within the expense (1-based) */
+  line_number: number;
+
+  /** Timestamp when item was created */
+  created_at: string;
+  /** Timestamp when item was last updated */
+  updated_at: string;
+
+  // Relations (populated by query)
+  /** Receipt object (populated) */
+  receipt?: Receipt;
+}
+
+/**
+ * DTO for creating a new expense item (for splitting)
+ */
+export interface CreateExpenseItemDto {
+  description: string;
+  amount: number;
+  category: string;
+  receipt_id?: string;
+}
+
+/**
+ * DTO for splitting an expense into multiple items
+ */
+export interface SplitExpenseDto {
+  expense_id: string;
+  items: CreateExpenseItemDto[];
+}
+
+/**
  * Junction table record linking expenses to receipts
  * Supports multiple receipts per expense with ordering
  */
@@ -81,6 +133,10 @@ export interface Expense {
   /** Timestamp when expense was last updated */
   updated_at: string;
 
+  // Split expense support
+  /** True if expense has been split into multiple line items */
+  is_split?: boolean;
+
   // Relations (populated by query)
   /** User object (populated) */
   user?: User;
@@ -88,6 +144,8 @@ export interface Expense {
   receipt?: Receipt;
   /** Multiple receipts linked via junction table */
   expense_receipts?: ExpenseReceipt[];
+  /** Line items for split expenses */
+  expense_items?: ExpenseItem[];
 }
 
 /**

@@ -17,18 +17,18 @@
 .jensify-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: var(--jensify-spacing-lg) var(--jensify-spacing-md);
+  padding: var(--jensify-spacing-sm) var(--jensify-spacing-md);
   position: relative;
 
   @media (max-width: 767px) {
-    padding: var(--jensify-spacing-md) var(--jensify-spacing-sm);
+    padding: var(--jensify-spacing-xs) var(--jensify-spacing-sm);
   }
 }
 
 .jensify-container-sm {
   max-width: 720px;
   margin: 0 auto;
-  padding: var(--jensify-spacing-xl) var(--jensify-spacing-md);
+  padding: var(--jensify-spacing-lg) var(--jensify-spacing-md);
 
   @media (max-width: 767px) {
     padding: var(--jensify-spacing-lg) var(--jensify-spacing-md);
@@ -963,7 +963,7 @@ a.jensify-link {
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--jensify-spacing-md);
-  margin-bottom: var(--jensify-spacing-xl);
+  margin-bottom: var(--jensify-spacing-lg);
 
   @media (max-width: 767px) {
     flex-direction: column;
@@ -1046,7 +1046,7 @@ a.jensify-link {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--jensify-spacing-md);
-  margin-bottom: var(--jensify-spacing-xl);
+  margin-bottom: var(--jensify-spacing-lg);
 
   @media (min-width: 640px) {
     grid-template-columns: repeat(2, 1fr);

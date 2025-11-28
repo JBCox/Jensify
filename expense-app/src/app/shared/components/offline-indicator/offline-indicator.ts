@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { fromEvent, merge, of, Subject, Subscription } from 'rxjs';
+import { fromEvent, merge, of, Subject } from 'rxjs';
 import { map, takeUntil } from 'rxjs/operators';
 
 /**

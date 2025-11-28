@@ -54,6 +54,18 @@
 
         <!-- Actions -->
         <div class="header-actions">
+          @if (canPay()) {
+            <button
+              mat-raised-button
+              color="accent"
+              [disabled]="submitting()"
+              (click)="markAsPaid()"
+              class="jensify-button">
+              <mat-icon>attach_money</mat-icon>
+              Mark as Paid
+            </button>
+          }
+
           @if (canSubmit()) {
             <button
               mat-raised-button
@@ -85,6 +97,67 @@
         }
       </mat-card>
 
+      <!-- Approval Action Card - for managers/finance reviewing -->
+      @if (canApprove()) {
+        <mat-card class="jensify-card approval-action-card">
+          <div class="approval-action-header">
+            <mat-icon color="primary">task_alt</mat-icon>
+            <div>
+              <h3>Awaiting Your Approval</h3>
+              <p>Review the expenses below and approve or reject this report.</p>
+            </div>
+          </div>
+          <div class="approval-action-buttons">
+            <button
+              mat-raised-button
+              color="primary"
+              [disabled]="approving()"
+              (click)="approveReport()"
+              class="approve-btn">
+              <mat-icon>check_circle</mat-icon>
+              Approve Report
+            </button>
+            <button
+              mat-stroked-button
+              color="warn"
+              [disabled]="approving()"
+              (click)="rejectReport()"
+              class="reject-btn">
+              <mat-icon>cancel</mat-icon>
+              Reject
+            </button>
+          </div>
+        </mat-card>
+      }
+
+      <!-- Rejection Reason Card -->
+      @if (isRejected() && report()!.rejection_reason) {
+        <mat-card class="jensify-card rejection-card">
+          <div class="rejection-header">
+            <mat-icon color="warn">cancel</mat-icon>
+            <div>
+              <h3>Report Rejected</h3>
+              <p class="rejection-date">Rejected on {{ formatDate(report()!.rejected_at) }}</p>
+            </div>
+          </div>
+          <div class="rejection-reason">
+            <span class="reason-label">Reason:</span>
+            <p class="reason-text">{{ report()!.rejection_reason }}</p>
+          </div>
+          @if (canResubmit()) {
+            <button
+              mat-raised-button
+              color="primary"
+              [disabled]="submitting()"
+              (click)="resubmitReport()"
+              class="jensify-button resubmit-btn">
+              <mat-icon>send</mat-icon>
+              Resubmit for Approval
+            </button>
+          }
+        </mat-card>
+      }
+
       <!-- Main Content Grid -->
       <div class="content-grid">
         <!-- Expenses List -->
@@ -101,7 +174,7 @@
               <mat-icon>receipt_long</mat-icon>
               <p>No expenses in this report</p>
               @if (canEdit()) {
-                <button mat-raised-button color="primary" class="jensify-button">
+                <button mat-raised-button color="primary" class="jensify-button" (click)="openAddExpensesDialog()">
                   <mat-icon>add</mat-icon>
                   Add Expenses
                 </button>

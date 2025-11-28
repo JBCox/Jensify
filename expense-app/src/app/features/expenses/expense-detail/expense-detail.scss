@@ -175,3 +175,207 @@
   color: var(--jensify-text-muted);
   font-size: 0.875rem;
 }
+
+// Split Badge
+.split-badge {
+  font-size: 0.75rem;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 8px;
+  margin-left: var(--jensify-spacing-sm);
+  background-color: var(--jensify-primary-soft) !important;
+  color: var(--jensify-primary) !important;
+}
+
+// Split Items Card
+.split-items-card {
+  .card-title {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--jensify-spacing-md);
+    margin-bottom: var(--jensify-spacing-md);
+    padding-bottom: var(--jensify-spacing-sm);
+    border-bottom: 2px solid var(--jensify-primary);
+
+    mat-icon {
+      color: var(--jensify-primary);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--jensify-text-strong);
+      margin: 0;
+    }
+
+    p {
+      font-size: 0.875rem;
+      color: var(--jensify-text-muted);
+      margin: 0;
+    }
+  }
+}
+
+// Split Items List
+.split-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jensify-spacing-sm);
+  margin-bottom: var(--jensify-spacing-md);
+}
+
+.split-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jensify-spacing-xs);
+  padding: var(--jensify-spacing-md);
+  background-color: var(--jensify-surface-alt);
+  border-radius: var(--jensify-radius-md);
+  border-left: 3px solid var(--jensify-primary);
+
+  .split-item-header {
+    display: flex;
+    align-items: center;
+    gap: var(--jensify-spacing-sm);
+  }
+
+  .split-item-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    background-color: var(--jensify-primary-soft);
+    color: var(--jensify-primary);
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .split-item-description {
+    flex: 1;
+    font-weight: 500;
+    color: var(--jensify-text-strong);
+  }
+
+  .split-item-amount {
+    font-weight: 600;
+    color: var(--jensify-text-strong);
+    font-size: 1rem;
+  }
+
+  .split-item-category {
+    padding-left: 32px; // Aligns with description
+
+    mat-chip {
+      font-size: 0.75rem;
+      height: 22px;
+      min-height: 22px;
+    }
+  }
+}
+
+// Split Total
+.split-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--jensify-spacing-md) 0 0;
+  margin-top: var(--jensify-spacing-sm);
+
+  .label {
+    font-weight: 600;
+    color: var(--jensify-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .value {
+    font-weight: 700;
+    color: var(--jensify-primary);
+    font-size: 1.125rem;
+  }
+}
+
+// Approval Action Card - for reviewers
+.approval-action-card {
+  background: linear-gradient(135deg, #fff8f0 0%, #fff5eb 100%);
+  border: 1px solid rgba(255, 89, 0, 0.2);
+  border-left: 4px solid var(--jensify-primary);
+
+  .approval-action-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--jensify-spacing-md);
+    margin-bottom: var(--jensify-spacing-lg);
+
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: var(--jensify-primary);
+    }
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--jensify-primary);
+      margin: 0 0 var(--jensify-spacing-xs) 0;
+    }
+
+    p {
+      font-size: 0.875rem;
+      color: var(--jensify-text-muted);
+      margin: 0;
+    }
+  }
+
+  .approval-action-buttons {
+    display: flex;
+    gap: var(--jensify-spacing-md);
+    flex-wrap: wrap;
+
+    .approve-btn {
+      background: linear-gradient(135deg, var(--jensify-primary) 0%, #ff7733 100%);
+      color: white;
+      font-weight: 600;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+
+      &:hover:not(:disabled) {
+        box-shadow: 0 4px 12px rgba(247, 88, 12, 0.4);
+      }
+    }
+
+    .reject-btn {
+      font-weight: 600;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+}
+
+// Dark mode support for approval card
+:host-context(.dark-mode),
+:host-context(.dark) {
+  .approval-action-card {
+    background: linear-gradient(135deg, rgba(255, 89, 0, 0.1) 0%, rgba(255, 89, 0, 0.05) 100%);
+    border-color: rgba(255, 89, 0, 0.3);
+
+    .approval-action-header {
+      h3 {
+        color: #ffab70;
+      }
+    }
+  }
+}

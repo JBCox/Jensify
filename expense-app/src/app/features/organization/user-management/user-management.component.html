@@ -1,15 +1,11 @@
 <div class="user-mgmt-container">
-  <!-- Compact Page Header -->
-  <div class="user-mgmt-header">
-    <div class="header-content">
-      <div class="header-icon">
-        <mat-icon>people</mat-icon>
-      </div>
-      <div class="header-text">
-        <h1 class="jensify-page-title">User Management</h1>
-        <p class="jensify-page-subtitle">Invite and manage team members across your organization</p>
-      </div>
-    </div>
+  <!-- Clean Header (expense-list style) -->
+  <div class="page-header">
+    <h1>User Management</h1>
+    <button mat-flat-button color="primary" (click)="selectedTabIndex = 0">
+      <mat-icon>person_add</mat-icon>
+      Invite User
+    </button>
   </div>
 
   <div class="jensify-tabs">
@@ -17,135 +13,161 @@
       <!-- Invite User Tab -->
       <mat-tab label="Invite User">
         <div class="jensify-tab-content">
-          <mat-card class="jensify-card">
-          <div class="jensify-card-header">
-            <h2 class="jensify-card-title jensify-flex jensify-gap-sm jensify-flex-center">
-              <mat-icon>person_add</mat-icon>
-              Invite New User
-            </h2>
-          </div>
-          <div class="jensify-card-content">
-            <form [formGroup]="inviteForm" (ngSubmit)="inviteUser()" class="jensify-form">
-              <mat-form-field appearance="fill" class="jensify-full-width" floatLabel="always">
-                <mat-label>Email Address</mat-label>
-                <mat-icon matPrefix>email</mat-icon>
-                <input
-                  matInput
-                  type="email"
-                  formControlName="email"
-                  placeholder="user@example.com"
-                  autocomplete="email">
-                @if (getFieldError('email')) {
-                  <mat-error>{{ getFieldError('email') }}</mat-error>
-                }
-              </mat-form-field>
-
-              <mat-form-field appearance="fill" class="jensify-full-width" floatLabel="always">
-                <mat-label>Role</mat-label>
-                <mat-icon matPrefix>badge</mat-icon>
-                <mat-select formControlName="role">
-                  @for (role of roleOptions; track role.value) {
-                    <mat-option [value]="role.value">{{ role.label }}</mat-option>
+          <div class="invite-section">
+            <div class="invite-header">
+              <h2>Send Invitation</h2>
+              <p>Add a new team member to your organization</p>
+            </div>
+            <form [formGroup]="inviteForm" (ngSubmit)="inviteUser()" class="invite-form">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field-lg">
+                  <mat-label>Email Address</mat-label>
+                  <input
+                    matInput
+                    type="email"
+                    formControlName="email"
+                    autocomplete="email">
+                  @if (getFieldError('email')) {
+                    <mat-error>{{ getFieldError('email') }}</mat-error>
                   }
-                </mat-select>
-                <mat-hint>Select the user's role in your organization</mat-hint>
-              </mat-form-field>
+                </mat-form-field>
 
-              <mat-form-field appearance="fill" class="jensify-full-width" floatLabel="always">
-                <mat-label>Department (Optional)</mat-label>
-                <mat-icon matPrefix>business_center</mat-icon>
-                <input
-                  matInput
-                  formControlName="department"
-                  placeholder="e.g., Sales, Engineering"
-                  autocomplete="organization-title">
-              </mat-form-field>
+                <mat-form-field appearance="outline" class="form-field-md">
+                  <mat-label>Role</mat-label>
+                  <mat-select formControlName="role">
+                    @for (role of roleOptions; track role.value) {
+                      <mat-option [value]="role.value">{{ role.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
 
-              <mat-form-field appearance="fill" class="jensify-full-width" floatLabel="always">
-                <mat-label>Manager (Optional)</mat-label>
-                <mat-icon matPrefix>supervisor_account</mat-icon>
-                <mat-select formControlName="manager_id">
-                  <mat-option [value]="''">No Manager</mat-option>
-                  @for (manager of managers(); track manager.id) {
-                    <mat-option [value]="manager.id">
-                      {{ manager.user?.full_name }} ({{ manager.role }})
-                    </mat-option>
-                  }
-                </mat-select>
-                <mat-hint>Assign a manager for approval workflows</mat-hint>
-              </mat-form-field>
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field-md">
+                  <mat-label>Department</mat-label>
+                  <input
+                    matInput
+                    formControlName="department">
+                </mat-form-field>
 
-              <div class="jensify-form-actions">
+                <mat-form-field appearance="outline" class="form-field-md">
+                  <mat-label>Manager</mat-label>
+                  <mat-select formControlName="manager_id">
+                    <mat-option [value]="''">None</mat-option>
+                    @for (manager of managers(); track manager.id) {
+                      <mat-option [value]="manager.id">
+                        {{ manager.user?.full_name }} ({{ manager.role }})
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
                 <button
                   type="submit"
-                  mat-raised-button
+                  mat-flat-button
                   color="primary"
+                  class="submit-btn"
                   [disabled]="isLoading() || inviteForm.invalid">
                   @if (isLoading()) {
                     <mat-spinner diameter="20"></mat-spinner>
                   } @else {
-                    <mat-icon>send</mat-icon>
+                    <ng-container><mat-icon>send</mat-icon> Send Invitation</ng-container>
                   }
-                  Send Invitation
                 </button>
               </div>
             </form>
           </div>
-          </mat-card>
         </div>
       </mat-tab>
 
       <!-- Members Tab -->
       <mat-tab label="Members">
         <div class="jensify-tab-content">
-          <mat-card class="jensify-card">
-            <div class="jensify-card-header">
-              <div class="jensify-flex jensify-flex-between jensify-flex-wrap">
-                <div>
-                  <h2 class="jensify-card-title">Organization Members</h2>
-                  <p class="jensify-text-muted jensify-mb-0">Active and inactive teammates with access</p>
-                </div>
-                <div class="jensify-summary-metrics">
-                  <div class="jensify-metric">
-                    <span class="jensify-metric-value">{{ members().length }}</span>
-                    <span class="jensify-metric-label">Total</span>
-                  </div>
-                  <div class="jensify-metric">
-                    <span class="jensify-metric-value">{{ activeMemberCount() }}</span>
-                    <span class="jensify-metric-label">Active</span>
-                  </div>
-                  <div class="jensify-metric">
-                    <span class="jensify-metric-value">{{ inactiveMemberCount() }}</span>
-                    <span class="jensify-metric-label">Inactive</span>
-                  </div>
-                </div>
-              </div>
+          <!-- Filter Bar -->
+          <div class="filter-bar">
+            <div class="role-chips">
+              <button
+                class="role-chip"
+                [class.active]="memberRoleFilter() === 'all'"
+                (click)="memberRoleFilter.set('all')">
+                All
+              </button>
+              @for (role of roleOptions; track role.value) {
+                <button
+                  class="role-chip"
+                  [class.active]="memberRoleFilter() === role.value"
+                  (click)="memberRoleFilter.set(role.value)">
+                  {{ role.label }}
+                </button>
+              }
             </div>
-            <div class="jensify-card-content">
-              @if (isLoading()) {
-                <div class="jensify-loading-container">
-                  <mat-spinner></mat-spinner>
-                </div>
-              } @else if (members().length === 0) {
-                <div class="jensify-empty-state">
-                  <mat-icon>people_outline</mat-icon>
-                  <h3>No members yet</h3>
-                  <p>Invite users to get started</p>
-                </div>
-              } @else {
-                <div class="jensify-table-container">
-                  <table mat-table [dataSource]="members()" class="jensify-members-table">
+
+            <div class="search-box">
+              <mat-icon>search</mat-icon>
+              <input
+                type="text"
+                placeholder="Search members..."
+                [ngModel]="memberSearchQuery()"
+                (ngModelChange)="memberSearchQuery.set($event)">
+            </div>
+
+            <div class="status-toggle">
+              <button
+                class="status-btn"
+                [class.active]="memberStatusFilter() === 'all'"
+                (click)="memberStatusFilter.set('all')">
+                All
+              </button>
+              <button
+                class="status-btn"
+                [class.active]="memberStatusFilter() === 'active'"
+                (click)="memberStatusFilter.set('active')">
+                Active ({{ activeMemberCount() }})
+              </button>
+              <button
+                class="status-btn"
+                [class.active]="memberStatusFilter() === 'inactive'"
+                (click)="memberStatusFilter.set('inactive')">
+                Inactive ({{ inactiveMemberCount() }})
+              </button>
+            </div>
+          </div>
+
+          <!-- Members Content -->
+          @if (isLoading()) {
+            <app-loading-skeleton type="card" [count]="5"></app-loading-skeleton>
+          } @else if (members().length === 0) {
+            <app-empty-state
+              icon="people_outline"
+              title="No members yet"
+              message="Invite users to get started building your team."
+              actionLabel="Invite User"
+              actionIcon="person_add"
+              (action)="selectedTabIndex = 0">
+            </app-empty-state>
+          } @else if (filteredMembers().length === 0) {
+            <app-empty-state
+              icon="filter_alt_off"
+              title="No members match your filters"
+              message="Try adjusting your filter criteria to see more results."
+              actionLabel="Clear Filters"
+              actionIcon="clear"
+              (action)="clearMemberFilters()">
+            </app-empty-state>
+          } @else {
+            <div class="table-container">
+              <table mat-table [dataSource]="filteredMembers()" class="members-table">
               <!-- User Column -->
               <ng-container matColumnDef="user">
                 <th mat-header-cell *matHeaderCellDef>User</th>
                 <td mat-cell *matCellDef="let member">
-                  <div class="jensify-user-cell">
-                    <div class="jensify-user-avatar">
+                  <div class="user-cell">
+                    <div class="user-avatar">
                       {{ (member.user?.full_name || 'U').charAt(0).toUpperCase() }}
                     </div>
-                    <div class="jensify-user-info">
-                      <div class="jensify-user-name">{{ member.user?.full_name || 'Unknown' }}</div>
-                      <div class="jensify-user-email">{{ member.user?.email }}</div>
+                    <div class="user-info">
+                      <div class="user-name">{{ member.user?.full_name || 'Unknown' }}</div>
+                      <div class="user-email">{{ member.user?.email }}</div>
                     </div>
                   </div>
                 </td>
@@ -155,9 +177,9 @@
               <ng-container matColumnDef="role">
                 <th mat-header-cell *matHeaderCellDef>Role</th>
                 <td mat-cell *matCellDef="let member">
-                  <mat-chip class="jensify-chip" [ngClass]="getRoleChipClass(member.role)">
+                  <span class="role-badge" [ngClass]="'role-' + member.role.toLowerCase()">
                     {{ member.role }}
-                  </mat-chip>
+                  </span>
                 </td>
               </ng-container>
 
@@ -165,7 +187,7 @@
               <ng-container matColumnDef="department">
                 <th mat-header-cell *matHeaderCellDef>Department</th>
                 <td mat-cell *matCellDef="let member">
-                  {{ member.department || '—' }}
+                  <span class="department-text">{{ member.department || '—' }}</span>
                 </td>
               </ng-container>
 
@@ -173,148 +195,180 @@
               <ng-container matColumnDef="status">
                 <th mat-header-cell *matHeaderCellDef>Status</th>
                 <td mat-cell *matCellDef="let member">
-                  <mat-chip
-                    class="jensify-chip"
-                    [ngClass]="member.is_active ? 'chip-active' : 'chip-inactive'">
+                  <span class="status-badge" [ngClass]="member.is_active ? 'status-active' : 'status-inactive'">
                     {{ member.is_active ? 'Active' : 'Inactive' }}
-                  </mat-chip>
+                  </span>
                 </td>
               </ng-container>
 
               <!-- Actions Column -->
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef>Actions</th>
+                <th mat-header-cell *matHeaderCellDef></th>
                 <td mat-cell *matCellDef="let member">
-                  @if (member.is_active) {
-                    <button
-                      mat-icon-button
-                      [matTooltip]="'Deactivate'"
-                      (click)="deactivateMember(member)">
-                      <mat-icon>person_remove</mat-icon>
+                  <button mat-icon-button [matMenuTriggerFor]="memberMenu">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #memberMenu="matMenu">
+                    @if (member.is_active) {
+                      <button mat-menu-item (click)="deactivateMember(member)">
+                        <mat-icon>person_remove</mat-icon>
+                        <span>Deactivate</span>
+                      </button>
+                    } @else {
+                      <button mat-menu-item (click)="reactivateMember(member)">
+                        <mat-icon>person_add</mat-icon>
+                        <span>Reactivate</span>
+                      </button>
+                    }
+                    <button mat-menu-item (click)="editMember(member)">
+                      <mat-icon>edit</mat-icon>
+                      <span>Edit Details</span>
                     </button>
-                  } @else {
-                    <button
-                      mat-icon-button
-                      [matTooltip]="'Reactivate'"
-                      (click)="reactivateMember(member)">
-                      <mat-icon>person_add</mat-icon>
-                    </button>
-                  }
+                  </mat-menu>
                 </td>
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="memberColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: memberColumns;"></tr>
-                  </table>
-                </div>
-              }
+              </table>
             </div>
-          </mat-card>
+          }
         </div>
       </mat-tab>
 
       <!-- Pending Invitations Tab -->
       <mat-tab label="Invitations">
         <div class="jensify-tab-content">
-          <mat-card class="jensify-card">
-            <div class="jensify-card-header">
-              <div class="jensify-flex jensify-flex-between jensify-flex-wrap">
-                <div>
-                  <h2 class="jensify-card-title">Pending Invitations</h2>
-                  <p class="jensify-text-muted jensify-mb-0">Track outstanding invites and follow-ups</p>
-                </div>
-                <div class="jensify-summary-metrics">
-                  <div class="jensify-metric">
-                    <span class="jensify-metric-value">{{ invitations().length }}</span>
-                    <span class="jensify-metric-label">Total</span>
-                  </div>
-                  <div class="jensify-metric">
-                    <span class="jensify-metric-value">{{ pendingInvitationCount() }}</span>
-                    <span class="jensify-metric-label">Pending</span>
-                  </div>
-                </div>
-              </div>
+          <!-- Filter Bar -->
+          <div class="filter-bar">
+            <div class="status-chips">
+              <button
+                class="status-chip"
+                [class.active]="invitationStatusFilter() === 'all'"
+                (click)="invitationStatusFilter.set('all')">
+                All ({{ invitations().length }})
+              </button>
+              <button
+                class="status-chip"
+                [class.active]="invitationStatusFilter() === 'pending'"
+                (click)="invitationStatusFilter.set('pending')">
+                Pending ({{ pendingInvitationCount() }})
+              </button>
+              <button
+                class="status-chip"
+                [class.active]="invitationStatusFilter() === 'accepted'"
+                (click)="invitationStatusFilter.set('accepted')">
+                Accepted
+              </button>
+              <button
+                class="status-chip"
+                [class.active]="invitationStatusFilter() === 'expired'"
+                (click)="invitationStatusFilter.set('expired')">
+                Expired
+              </button>
             </div>
-            <div class="jensify-card-content">
-              @if (invitations().length === 0) {
-                <div class="jensify-empty-state">
-                  <mat-icon>mail_outline</mat-icon>
-                  <h3>No pending invitations</h3>
-                  <p>All invitations have been accepted or expired</p>
-                </div>
-              } @else {
-                <div class="jensify-table-container">
-                  <table mat-table [dataSource]="invitations()" class="jensify-invitations-table">
-              <!-- Email Column -->
-              <ng-container matColumnDef="email">
-                <th mat-header-cell *matHeaderCellDef>Email</th>
-                <td mat-cell *matCellDef="let invitation">
-                  {{ invitation.email }}
-                </td>
-              </ng-container>
 
-              <!-- Role Column -->
-              <ng-container matColumnDef="role">
-                <th mat-header-cell *matHeaderCellDef>Role</th>
-                <td mat-cell *matCellDef="let invitation">
-                  <mat-chip class="jensify-chip" [ngClass]="getRoleChipClass(invitation.role)">
-                    {{ invitation.role }}
-                  </mat-chip>
-                </td>
-              </ng-container>
-
-              <!-- Status Column -->
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>Status</th>
-                <td mat-cell *matCellDef="let invitation">
-                  <mat-chip class="jensify-chip" [ngClass]="getStatusChipClass(invitation.status)">
-                    {{ invitation.status }}
-                  </mat-chip>
-                </td>
-              </ng-container>
-
-              <!-- Created Column -->
-              <ng-container matColumnDef="created">
-                <th mat-header-cell *matHeaderCellDef>Created</th>
-                <td mat-cell *matCellDef="let invitation">
-                  {{ invitation.created_at | date:'short' }}
-                </td>
-              </ng-container>
-
-              <!-- Actions Column -->
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef>Actions</th>
-                <td mat-cell *matCellDef="let invitation">
-                  @if (invitation.status === 'pending') {
-                    <button
-                      mat-icon-button
-                      [matTooltip]="'Copy Link'"
-                      (click)="copyInvitationLink(invitation)">
-                      <mat-icon>content_copy</mat-icon>
-                    </button>
-                    <button
-                      mat-icon-button
-                      [matTooltip]="'Resend'"
-                      (click)="resendInvitation(invitation)">
-                      <mat-icon>send</mat-icon>
-                    </button>
-                    <button
-                      mat-icon-button
-                      [matTooltip]="'Revoke'"
-                      (click)="revokeInvitation(invitation)">
-                      <mat-icon>cancel</mat-icon>
-                    </button>
-                  }
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="invitationColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: invitationColumns;"></tr>
-                  </table>
-                </div>
-              }
+            <div class="search-box">
+              <mat-icon>search</mat-icon>
+              <input
+                type="text"
+                placeholder="Search invitations..."
+                [ngModel]="invitationSearchQuery()"
+                (ngModelChange)="invitationSearchQuery.set($event)">
             </div>
-          </mat-card>
+          </div>
+
+          <!-- Invitations Content -->
+          @if (invitations().length === 0) {
+            <app-empty-state
+              icon="mail_outline"
+              title="No invitations yet"
+              message="Send your first invitation to start building your team."
+              actionLabel="Invite User"
+              actionIcon="person_add"
+              (action)="selectedTabIndex = 0">
+            </app-empty-state>
+          } @else if (filteredInvitations().length === 0) {
+            <app-empty-state
+              icon="filter_alt_off"
+              title="No invitations match your filters"
+              message="Try adjusting your filter criteria to see more results."
+              actionLabel="Clear Filters"
+              actionIcon="clear"
+              (action)="clearInvitationFilters()">
+            </app-empty-state>
+          } @else {
+            <div class="table-container">
+              <table mat-table [dataSource]="filteredInvitations()" class="invitations-table">
+                <!-- Email Column -->
+                <ng-container matColumnDef="email">
+                  <th mat-header-cell *matHeaderCellDef>Email</th>
+                  <td mat-cell *matCellDef="let invitation">
+                    <span class="email-text">{{ invitation.email }}</span>
+                  </td>
+                </ng-container>
+
+                <!-- Role Column -->
+                <ng-container matColumnDef="role">
+                  <th mat-header-cell *matHeaderCellDef>Role</th>
+                  <td mat-cell *matCellDef="let invitation">
+                    <span class="role-badge" [ngClass]="'role-' + invitation.role.toLowerCase()">
+                      {{ invitation.role }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Status Column -->
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>Status</th>
+                  <td mat-cell *matCellDef="let invitation">
+                    <span class="invitation-status" [ngClass]="'inv-' + invitation.status">
+                      {{ invitation.status | titlecase }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Created Column -->
+                <ng-container matColumnDef="created">
+                  <th mat-header-cell *matHeaderCellDef>Created</th>
+                  <td mat-cell *matCellDef="let invitation">
+                    <span class="date-text">{{ invitation.created_at | date:'short' }}</span>
+                  </td>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef></th>
+                  <td mat-cell *matCellDef="let invitation">
+                    @if (invitation.status === 'pending') {
+                      <div class="action-buttons">
+                        <button mat-stroked-button color="primary" (click)="resendInvitation(invitation)">
+                          <mat-icon>send</mat-icon>
+                          Resend
+                        </button>
+                        <button mat-icon-button [matMenuTriggerFor]="invMenu">
+                          <mat-icon>more_vert</mat-icon>
+                        </button>
+                        <mat-menu #invMenu="matMenu">
+                          <button mat-menu-item (click)="copyInvitationLink(invitation)">
+                            <mat-icon>content_copy</mat-icon>
+                            <span>Copy Link</span>
+                          </button>
+                          <button mat-menu-item (click)="revokeInvitation(invitation)" class="danger-item">
+                            <mat-icon>cancel</mat-icon>
+                            <span>Revoke Invitation</span>
+                          </button>
+                        </mat-menu>
+                      </div>
+                    }
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="invitationColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: invitationColumns;"></tr>
+              </table>
+            </div>
+          }
         </div>
       </mat-tab>
     </mat-tab-group>

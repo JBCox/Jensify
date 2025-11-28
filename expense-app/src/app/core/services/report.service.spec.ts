@@ -457,7 +457,7 @@ describe('ReportService', () => {
   // ============================================================================
 
   describe('submitReport', () => {
-    it('should transition from draft to submitted', (done) => {
+    it('should transition from draft to submitted via approval chain', (done) => {
       const reportWithExpenses = {
         ...mockReport,
         report_expenses: [{
@@ -481,33 +481,32 @@ describe('ReportService', () => {
         }]
       };
 
-      const mockQuery = {
-        update: jasmine.createSpy('update').and.returnValue({
-          eq: jasmine.createSpy('eq').and.returnValue({
-            select: jasmine.createSpy('select').and.returnValue({
-              single: jasmine.createSpy('single').and.returnValue(
-                Promise.resolve({
-                  data: { ...reportWithExpenses, status: ReportStatus.SUBMITTED },
-                  error: null
-                })
-              )
-            })
-          })
-        })
-      };
+      const submittedReport = { ...reportWithExpenses, status: ReportStatus.SUBMITTED };
 
-      // Mock getReportById for validation
-      spyOn(service, 'getReportById').and.returnValue(of(reportWithExpenses));
+      // Mock rpc call for create_approval_chain
+      (supabaseServiceMock.client.rpc as jasmine.Spy).and.returnValue(
+        Promise.resolve({ data: null, error: null })
+      );
 
-      (supabaseServiceMock.client.from as jasmine.Spy).and.returnValue(mockQuery);
+      // Mock getReportById for validation and final fetch
+      // First call returns draft, second call returns submitted (after approval chain)
+      let callCount = 0;
+      spyOn(service, 'getReportById').and.callFake(() => {
+        callCount++;
+        if (callCount === 1) {
+          return of(reportWithExpenses);
+        } else {
+          return of(submittedReport);
+        }
+      });
 
       service.submitReport('report-123').subscribe({
         next: (report) => {
           expect(report.status).toBe(ReportStatus.SUBMITTED);
-          expect(mockQuery.update).toHaveBeenCalledWith(jasmine.objectContaining({
-            status: ReportStatus.SUBMITTED,
-            submitted_by: 'user-123'
-          }));
+          expect(supabaseServiceMock.client.rpc).toHaveBeenCalledWith('create_approval_chain', {
+            p_expense_id: null,
+            p_report_id: 'report-123'
+          });
           done();
         },
         error: done.fail

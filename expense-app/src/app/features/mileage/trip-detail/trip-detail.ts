@@ -6,12 +6,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { MileageService } from '../../../core/services/mileage.service';
 import { MileageTrip, MileageStatus, TripCoordinate } from '../../../core/models/mileage.model';
 import { StatusBadge, ExpenseStatus as BadgeStatus } from '../../../shared/components/status-badge/status-badge';
 import { TripMap, TripMapData } from '../../../shared/components/trip-map/trip-map';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
 
 /**
  * Trip Detail Component
@@ -38,6 +40,7 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private mileageService = inject(MileageService);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   private destroy$ = new Subject<void>();
 
@@ -47,6 +50,7 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
   deleting = signal<boolean>(false);
+  converting = signal<boolean>(false);
 
   // Map data (computed from trip)
   mapData = computed((): TripMapData | undefined => {
@@ -153,25 +157,36 @@ export class TripDetailComponent implements OnInit, OnDestroy {
     const trip = this.trip();
     if (!trip) return;
 
-    const confirmMessage = `Delete trip from ${trip.origin_address} to ${trip.destination_address}?`;
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete Trip',
+        message: `Delete trip from ${trip.origin_address} to ${trip.destination_address}? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        confirmColor: 'warn',
+        icon: 'delete',
+        iconColor: '#f44336',
+      } as ConfirmDialogData,
+    });
 
-    this.deleting.set(true);
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.deleting.set(true);
 
-    this.mileageService.deleteTrip(trip.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.snackBar.open('Trip deleted successfully.', 'Close', { duration: 3000 });
-          this.router.navigate(['/mileage']);
-        },
-        error: (err) => {
-          this.deleting.set(false);
-          this.snackBar.open(err?.message || 'Failed to delete trip.', 'Close', { duration: 4000 });
-        }
-      });
+        this.mileageService.deleteTrip(trip.id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Trip deleted successfully.', 'Close', { duration: 3000 });
+              this.router.navigate(['/mileage']);
+            },
+            error: (err) => {
+              this.deleting.set(false);
+              this.snackBar.open(err?.message || 'Failed to delete trip.', 'Close', { duration: 4000 });
+            }
+          });
+      }
+    });
   }
 
   /**
@@ -251,5 +266,62 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   canDelete(): boolean {
     const trip = this.trip();
     return trip?.status === 'draft';
+  }
+
+  /**
+   * Check if trip can be converted to expense
+   * Trip must not already be linked to an expense
+   */
+  canConvertToExpense(): boolean {
+    const trip = this.trip();
+    return trip !== null && !trip.expense_id;
+  }
+
+  /**
+   * Check if trip is already linked to an expense
+   */
+  hasLinkedExpense(): boolean {
+    const trip = this.trip();
+    return trip !== null && !!trip.expense_id;
+  }
+
+  /**
+   * Convert trip to an expense for reporting
+   */
+  convertToExpense(): void {
+    const trip = this.trip();
+    if (!trip) return;
+
+    this.converting.set(true);
+
+    this.mileageService.convertTripToExpense(trip.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (expenseId) => {
+          this.converting.set(false);
+          const snackRef = this.snackBar.open('Trip converted to expense successfully', 'View Expense', {
+            duration: 5000
+          });
+          snackRef.onAction().subscribe(() => {
+            this.router.navigate(['/expenses', expenseId]);
+          });
+          // Reload trip to show linked expense
+          this.loadTrip(trip.id);
+        },
+        error: (err: Error) => {
+          this.converting.set(false);
+          this.snackBar.open(err.message || 'Failed to convert trip', 'Close', { duration: 5000 });
+        }
+      });
+  }
+
+  /**
+   * Navigate to linked expense
+   */
+  viewLinkedExpense(): void {
+    const trip = this.trip();
+    if (trip?.expense_id) {
+      this.router.navigate(['/expenses', trip.expense_id]);
+    }
   }
 }

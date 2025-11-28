@@ -1,12 +1,11 @@
-<!-- Admin Dashboard - Rebuild Trigger -->
-<div class="jensify-dashboard-container">
-  <!-- Header -->
-  <div class="jensify-dashboard-header">
-    <div class="jensify-header-content">
-      <h1 class="jensify-title">Admin Dashboard</h1>
-      <p class="jensify-subtitle">Manage organization, users, and system settings</p>
+<div class="dashboard-container">
+  <!-- Header with integrated stats -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>Admin Dashboard</h1>
+      <p class="subtitle">Manage organization, users, and system settings</p>
     </div>
-    <div class="jensify-header-actions">
+    <div class="header-actions">
       <button mat-raised-button color="primary" (click)="onManageUsers()">
         <mat-icon>people</mat-icon>
         Manage Users
@@ -15,144 +14,208 @@
   </div>
 
   @if (metrics$ | async; as metrics) {
-  <!-- Metrics Row -->
-  <div class="jensify-metrics-grid">
-    <app-metric-card
-      icon="people"
-      label="Total Users"
-      [value]="metrics.totalUsers.toString()"
-      variant="primary">
-    </app-metric-card>
-
-    <app-metric-card
-      icon="person_check"
-      label="Active Users"
-      [value]="metrics.activeUsers.toString()"
-      variant="success">
-    </app-metric-card>
-
-    <app-metric-card
-      icon="mail"
-      label="Pending Invitations"
-      [value]="metrics.pendingInvitations.toString()"
-      variant="warning">
-    </app-metric-card>
-
-    <app-metric-card
-      icon="health_and_safety"
-      label="System Health"
-      [value]="metrics.systemHealth"
-      variant="success">
-    </app-metric-card>
+  <!-- Compact Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <mat-icon>people</mat-icon>
+      <span class="stat-value">{{ metrics.activeUsers }}</span>
+      <span class="stat-label">Active Users</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item" [class.attention]="metrics.pendingApprovals > 0">
+      <mat-icon>pending_actions</mat-icon>
+      <span class="stat-value">{{ metrics.pendingApprovals }}</span>
+      <span class="stat-label">Pending</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <mat-icon>payments</mat-icon>
+      <span class="stat-value">{{ formatCurrency(metrics.monthlySpend) }}</span>
+      <span class="stat-label">MTD Spend</span>
+      @if (metrics.spendChange > 0) {
+        <span class="stat-change" [class.negative]="metrics.spendChangeType === 'negative'" [class.positive]="metrics.spendChangeType === 'positive'">
+          {{ metrics.spendChangeType === 'negative' ? '+' : '-' }}{{ metrics.spendChange }}%
+        </span>
+      }
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <mat-icon>receipt_long</mat-icon>
+      <span class="stat-value">{{ metrics.monthlyExpenseCount }}</span>
+      <span class="stat-label">Expenses</span>
+    </div>
   </div>
 
-  <!-- System Overview -->
-  <div class="jensify-section">
-    <div class="jensify-section-header">
-      <h2 class="jensify-section-title">
-        <mat-icon>analytics</mat-icon>
-        System Overview
-      </h2>
+  <!-- Analytics Section -->
+  <div class="analytics-section">
+    <div class="section-header">
+      <h2><mat-icon>analytics</mat-icon> Organization Analytics</h2>
     </div>
 
-    <div class="jensify-charts-grid">
-      <!-- Total Expenses Line Chart -->
-      <div class="jensify-card chart-card">
+    <div class="charts-row">
+      <!-- Expense Trend -->
+      <div class="chart-card">
         <div class="chart-header">
-          <div class="chart-icon-wrapper">
-            <mat-icon>receipt_long</mat-icon>
+          <div class="chart-title">
+            <mat-icon>show_chart</mat-icon>
+            <span>Expense Trend</span>
           </div>
-          <div class="chart-info">
-            <div class="chart-value">{{ metrics.totalExpenses }}</div>
-            <div class="chart-label">Total Expenses</div>
-          </div>
+          <span class="chart-period">Last 6 Months</span>
         </div>
-        <div class="chart-container line-chart">
-          <!-- CSS/SVG Line Chart Representation -->
-          <svg viewBox="0 0 300 100" preserveAspectRatio="none" class="chart-svg">
-            <path d="M0,80 C50,80 50,30 100,30 C150,30 150,60 200,60 C250,60 250,10 300,10" 
-                  fill="none" stroke="url(#orangeGradient)" stroke-width="3" />
-            <defs>
-              <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style="stop-color:#F7580C;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#FF8A4D;stop-opacity:1" />
-              </linearGradient>
-            </defs>
-            <!-- Area under curve -->
-            <path d="M0,80 C50,80 50,30 100,30 C150,30 150,60 200,60 C250,60 250,10 300,10 V100 H0 Z" 
-                  fill="url(#orangeAreaGradient)" opacity="0.2" />
-            <defs>
-              <linearGradient id="orangeAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:#F7580C;stop-opacity:0.5" />
-                <stop offset="100%" style="stop-color:#F7580C;stop-opacity:0" />
-              </linearGradient>
-            </defs>
-          </svg>
+        <div class="chart-body">
+          @if (expenseTrendData$ | async; as trendData) {
+            @if (hasTrendData(trendData)) {
+              <ngx-charts-line-chart
+                [results]="trendData"
+                [scheme]="lineChartColorScheme"
+                [xAxis]="true"
+                [yAxis]="true"
+                [showXAxisLabel]="false"
+                [showYAxisLabel]="false"
+                [autoScale]="true"
+                [gradient]="true"
+                [animations]="true">
+              </ngx-charts-line-chart>
+            } @else {
+              <div class="chart-empty">
+                <mat-icon>show_chart</mat-icon>
+                <span>No expense data yet</span>
+              </div>
+            }
+          }
         </div>
       </div>
 
-      <!-- Monthly Spend Bar Chart -->
-      <div class="jensify-card chart-card">
+      <!-- Category Breakdown -->
+      <div class="chart-card">
         <div class="chart-header">
-          <div class="chart-icon-wrapper">
-            <mat-icon>payments</mat-icon>
+          <div class="chart-title">
+            <mat-icon>donut_large</mat-icon>
+            <span>By Category</span>
           </div>
-          <div class="chart-info">
-            <div class="chart-value">{{ formatCurrency(metrics.monthlySpend) }}</div>
-            <div class="chart-label">Monthly Spend</div>
-          </div>
+          <span class="chart-period">This Month</span>
         </div>
-        <div class="chart-container bar-chart">
-          <div class="bar-group">
-            <div class="bar" style="height: 40%"></div>
-            <div class="bar active" style="height: 70%"></div>
-            <div class="bar" style="height: 50%"></div>
-            <div class="bar" style="height: 85%"></div>
-            <div class="bar" style="height: 60%"></div>
-            <div class="bar" style="height: 90%"></div>
-            <div class="bar" style="height: 45%"></div>
-          </div>
+        <div class="chart-body">
+          @if (categorySpendData$ | async; as categoryData) {
+            @if (categoryData.length > 0) {
+              <ngx-charts-pie-chart
+                [results]="categoryData"
+                [scheme]="chartColorScheme"
+                [legend]="true"
+                [legendPosition]="legendPosition"
+                [labels]="false"
+                [doughnut]="true"
+                [gradient]="true"
+                [animations]="true">
+              </ngx-charts-pie-chart>
+            } @else {
+              <div class="chart-empty">
+                <mat-icon>pie_chart_outline</mat-icon>
+                <span>No spend data this month</span>
+              </div>
+            }
+          }
         </div>
       </div>
     </div>
   </div>
   }
 
-  <!-- Quick Actions -->
-  <div class="jensify-section">
-    <div class="jensify-section-header">
-      <h2 class="jensify-section-title">
-        <mat-icon>settings</mat-icon>
-        Quick Actions
-      </h2>
+  <!-- Two Column Layout: Top Vendors & Top Spenders -->
+  <div class="content-grid">
+    <!-- Top Vendors -->
+    <div class="activity-section">
+      <div class="section-header">
+        <h2><mat-icon>store</mat-icon> Top Vendors</h2>
+        <span class="period-badge">This Month</span>
+      </div>
+
+      @if (topVendors$ | async; as vendors) {
+        @if (vendors.length > 0) {
+          <div class="ranking-list">
+            @for (vendor of vendors; track vendor.name; let i = $index) {
+              <div class="ranking-row">
+                <div class="rank-badge">{{ i + 1 }}</div>
+                <div class="ranking-info">
+                  <span class="ranking-name">{{ vendor.name }}</span>
+                  <span class="ranking-meta">{{ vendor.count }} expenses</span>
+                </div>
+                <div class="ranking-amount">{{ formatCurrency(vendor.amount) }}</div>
+              </div>
+            }
+          </div>
+        } @else {
+          <app-empty-state
+            icon="store"
+            title="No Vendors Yet"
+            message="Vendor data will appear here when expenses are submitted">
+          </app-empty-state>
+        }
+      }
     </div>
 
-    <div class="jensify-card">
-      <div class="jensify-action-grid">
-        <button mat-raised-button class="jensify-action-card" (click)="onManageUsers()">
-          <mat-icon>people</mat-icon>
-          <div class="action-label">User Management</div>
-          <div class="action-desc">Invite users, manage roles</div>
-        </button>
-
-        <button mat-raised-button class="jensify-action-card" (click)="onViewApprovals()">
-          <mat-icon>task_alt</mat-icon>
-          <div class="action-label">Approvals Queue</div>
-          <div class="action-desc">Review pending expenses</div>
-        </button>
-
-        <button mat-raised-button class="jensify-action-card" (click)="onViewFinance()">
-          <mat-icon>account_balance</mat-icon>
-          <div class="action-label">Finance Dashboard</div>
-          <div class="action-desc">View financial reports</div>
-        </button>
-
-        <button mat-raised-button class="jensify-action-card" routerLink="/expenses">
-          <mat-icon>receipt_long</mat-icon>
-          <div class="action-label">All Expenses</div>
-          <div class="action-desc">Browse all expenses</div>
-        </button>
+    <!-- Top Spenders -->
+    <div class="activity-section">
+      <div class="section-header">
+        <h2><mat-icon>person</mat-icon> Top Spenders</h2>
+        <span class="period-badge">This Month</span>
       </div>
+
+      @if (topSpenders$ | async; as spenders) {
+        @if (spenders.length > 0) {
+          <div class="ranking-list">
+            @for (spender of spenders; track spender.email; let i = $index) {
+              <div class="ranking-row">
+                <div class="rank-badge">{{ i + 1 }}</div>
+                <div class="ranking-info">
+                  <span class="ranking-name">{{ spender.name }}</span>
+                  <span class="ranking-meta">{{ spender.count }} expenses</span>
+                </div>
+                <div class="ranking-amount">{{ formatCurrency(spender.amount) }}</div>
+              </div>
+            }
+          </div>
+        } @else {
+          <app-empty-state
+            icon="person"
+            title="No Spenders Yet"
+            message="Spender data will appear here when expenses are submitted">
+          </app-empty-state>
+        }
+      }
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="actions-section">
+    <div class="section-header">
+      <h2><mat-icon>flash_on</mat-icon> Quick Actions</h2>
+    </div>
+
+    <div class="action-grid">
+      <button mat-raised-button class="action-card" (click)="onManageUsers()">
+        <mat-icon>people</mat-icon>
+        <div class="action-label">User Management</div>
+        <div class="action-desc">Invite users, manage roles</div>
+      </button>
+
+      <button mat-raised-button class="action-card" (click)="onViewApprovals()">
+        <mat-icon>task_alt</mat-icon>
+        <div class="action-label">Approvals Queue</div>
+        <div class="action-desc">Review pending expenses</div>
+      </button>
+
+      <button mat-raised-button class="action-card" (click)="onViewFinance()">
+        <mat-icon>account_balance</mat-icon>
+        <div class="action-label">Finance Dashboard</div>
+        <div class="action-desc">View financial reports</div>
+      </button>
+
+      <button mat-raised-button class="action-card" (click)="onViewExpenses()">
+        <mat-icon>receipt_long</mat-icon>
+        <div class="action-label">All Expenses</div>
+        <div class="action-desc">Browse all expenses</div>
+      </button>
     </div>
   </div>
 </div>

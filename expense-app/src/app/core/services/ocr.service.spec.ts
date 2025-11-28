@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { OcrService, OcrResult } from './ocr.service';
+import { OcrService, OcrResult, DetectedLineItem } from './ocr.service';
 import { SupabaseService } from './supabase.service';
 import { LoggerService } from './logger.service';
 import { environment } from '../../../environments/environment';
@@ -80,11 +80,19 @@ describe('OcrService', () => {
 
       const result = await service.processReceipt(mockFile);
 
-      expect(result).toEqual(mockOcrResult);
+      // Check core OCR fields (result may also have lineItems from extraction)
+      expect(result.merchant).toEqual(mockOcrResult.merchant);
+      expect(result.amount).toEqual(mockOcrResult.amount);
+      expect(result.date).toEqual(mockOcrResult.date);
+      expect(result.tax).toEqual(mockOcrResult.tax);
+      expect(result.confidence).toEqual(mockOcrResult.confidence);
       expect(loggerServiceMock.info).toHaveBeenCalledWith(
         '[OCR] Extraction complete',
         'OcrService',
-        mockOcrResult
+        jasmine.objectContaining({
+          merchant: mockOcrResult.merchant,
+          amount: mockOcrResult.amount
+        })
       );
     });
 
@@ -139,7 +147,10 @@ describe('OcrService', () => {
 
       const result = await service.processReceipt(mockFile);
 
-      expect(result).toEqual(mockOcrResult);
+      // Check core OCR fields (result may also have lineItems from extraction)
+      expect(result.merchant).toEqual(mockOcrResult.merchant);
+      expect(result.amount).toEqual(mockOcrResult.amount);
+      expect(result.date).toEqual(mockOcrResult.date);
     });
 
     it('should return fallback result on OCR failure', async () => {
@@ -552,6 +563,334 @@ describe('OcrService', () => {
 
       expect(result).toBeDefined();
       expect(result.merchant).toBeTruthy();
+    });
+  });
+
+  // ============================================================================
+  // LINE ITEM EXTRACTION TESTS
+  // ============================================================================
+
+  describe('extractLineItems', () => {
+    it('should extract line items from raw text with "Description $XX.XX" pattern', () => {
+      const rawText = `Hyatt Hotel
+Room Charge $150.00
+Room Service $35.50
+Parking $25.00
+Total $210.50`;
+
+      const items = service.extractLineItems(rawText);
+
+      expect(items.length).toBe(3);
+      expect(items[0].amount).toBe(150.00);
+      expect(items[1].amount).toBe(35.50);
+      expect(items[2].amount).toBe(25.00);
+    });
+
+    it('should classify lodging items correctly', () => {
+      const rawText = 'Room Charge $150.00';
+
+      const items = service.extractLineItems(rawText);
+
+      expect(items.length).toBe(1);
+      expect(items[0].suggestedCategory).toBe('Lodging');
+      expect(items[0].confidence).toBeGreaterThanOrEqual(0.5);
+      expect(items[0].keywords).toContain('room');
+    });
+
+    it('should classify meal items correctly', () => {
+      const rawText = 'Room Service Breakfast $25.00';
+
+      const items = service.extractLineItems(rawText);
+
+      expect(items.length).toBe(1);
+      expect(items[0].suggestedCategory).toBe('Meals & Entertainment');
+      expect(items[0].keywords.some(k => ['breakfast', 'room service'].includes(k))).toBeTruthy();
+    });
+
+    it('should classify fuel items correctly', () => {
+      const rawText = 'Regular Unleaded Gas $45.50';
+
+      const items = service.extractLineItems(rawText);
+
+      expect(items.length).toBe(1);
+      expect(items[0].suggestedCategory).toBe('Fuel');
+    });
+
+    it('should classify transportation items correctly', () => {
+      const rawText = 'Uber to Airport $32.00';
+
+      const items = service.extractLineItems(rawText);
+
+      expect(items.length).toBe(1);
+      expect(items[0].suggestedCategory).toBe('Ground Transportation');
+    });
+
+    it('should handle amounts without dollar sign', () => {
+      const rawText = 'Coffee 4.50';
+
+      const items = service.extractLineItems(rawText);
+
+      expect(items.length).toBe(1);
+      expect(items[0].amount).toBe(4.50);
+    });
+
+    it('should handle amounts with commas', () => {
+      const rawText = 'Conference Room Rental $1,250.00';
+
+      const items = service.extractLineItems(rawText);
+
+      expect(items.length).toBe(1);
+      expect(items[0].amount).toBe(1250.00);
+    });
+
+    it('should skip total and tax lines', () => {
+      const rawText = `Room Charge $150.00
+Subtotal $150.00
+Tax $12.38
+Total $162.38`;
+
+      const items = service.extractLineItems(rawText);
+
+      expect(items.length).toBe(1);
+      expect(items[0].description).toContain('Room');
+    });
+
+    it('should return empty array for empty text', () => {
+      const items = service.extractLineItems('');
+
+      expect(items).toEqual([]);
+    });
+
+    it('should return empty array for null/undefined text', () => {
+      const items = service.extractLineItems(null as any);
+
+      expect(items).toEqual([]);
+    });
+
+    it('should clean up descriptions', () => {
+      const rawText = 'Room***Charge!!! $150.00';
+
+      const items = service.extractLineItems(rawText);
+
+      expect(items.length).toBe(1);
+      expect(items[0].description).not.toContain('*');
+      expect(items[0].description).not.toContain('!');
+    });
+
+    it('should limit description length', () => {
+      const longDescription = 'A'.repeat(300);
+      const rawText = `${longDescription} $50.00`;
+
+      const items = service.extractLineItems(rawText);
+
+      if (items.length > 0) {
+        expect(items[0].description.length).toBeLessThanOrEqual(200);
+      }
+    });
+  });
+
+  // ============================================================================
+  // CATEGORY CLASSIFICATION TESTS
+  // ============================================================================
+
+  describe('classifyCategory', () => {
+    it('should classify hotel-related text as Lodging', () => {
+      const result = service.classifyCategory('Deluxe Hotel Room Night');
+
+      expect(result.category).toBe('Lodging');
+      expect(result.confidence).toBeGreaterThan(0.5);
+      expect(result.keywords.length).toBeGreaterThan(0);
+    });
+
+    it('should classify food-related text as Meals & Entertainment', () => {
+      const result = service.classifyCategory('Dinner at Chipotle');
+
+      expect(result.category).toBe('Meals & Entertainment');
+      expect(result.confidence).toBeGreaterThan(0.5);
+    });
+
+    it('should classify gas-related text as Fuel', () => {
+      const result = service.classifyCategory('Shell Premium Gasoline');
+
+      expect(result.category).toBe('Fuel');
+      expect(result.confidence).toBeGreaterThan(0.5);
+    });
+
+    it('should classify ride-share text as Ground Transportation', () => {
+      const result = service.classifyCategory('Lyft Ride Share');
+
+      expect(result.category).toBe('Ground Transportation');
+      expect(result.confidence).toBeGreaterThan(0.5);
+    });
+
+    it('should classify flight-related text as Airfare', () => {
+      const result = service.classifyCategory('Delta Airlines Boarding Pass');
+
+      expect(result.category).toBe('Airfare');
+      expect(result.confidence).toBeGreaterThan(0.5);
+    });
+
+    it('should classify office supply text as Office Supplies', () => {
+      const result = service.classifyCategory('Office Depot Paper and Pens');
+
+      expect(result.category).toBe('Office Supplies');
+      expect(result.confidence).toBeGreaterThan(0.5);
+    });
+
+    it('should classify software text as Software/Subscriptions', () => {
+      const result = service.classifyCategory('Adobe Creative Cloud Subscription');
+
+      expect(result.category).toBe('Software/Subscriptions');
+      expect(result.confidence).toBeGreaterThan(0.5);
+    });
+
+    it('should default to Miscellaneous for unknown text', () => {
+      const result = service.classifyCategory('XYZ123 Unknown Item');
+
+      expect(result.category).toBe('Miscellaneous');
+      expect(result.confidence).toBeLessThanOrEqual(0.5);
+    });
+
+    it('should increase confidence with multiple keyword matches', () => {
+      const singleMatch = service.classifyCategory('hotel');
+      const multipleMatches = service.classifyCategory('hotel room night stay');
+
+      expect(multipleMatches.confidence).toBeGreaterThan(singleMatch.confidence);
+    });
+
+    it('should be case-insensitive', () => {
+      const lowerCase = service.classifyCategory('hotel room');
+      const upperCase = service.classifyCategory('HOTEL ROOM');
+      const mixedCase = service.classifyCategory('HoTeL RoOm');
+
+      expect(lowerCase.category).toBe(upperCase.category);
+      expect(lowerCase.category).toBe(mixedCase.category);
+    });
+  });
+
+  // ============================================================================
+  // SPLIT SUGGESTION TESTS
+  // ============================================================================
+
+  describe('shouldSuggestSplit', () => {
+    it('should suggest split when multiple categories are detected', () => {
+      const items: DetectedLineItem[] = [
+        { description: 'Room', amount: 150, suggestedCategory: 'Lodging', confidence: 0.8, keywords: ['room'] },
+        { description: 'Meal', amount: 25, suggestedCategory: 'Meals & Entertainment', confidence: 0.7, keywords: ['meal'] }
+      ];
+
+      const result = service.shouldSuggestSplit(items);
+
+      expect(result).toBe(true);
+    });
+
+    it('should not suggest split for single category', () => {
+      const items: DetectedLineItem[] = [
+        { description: 'Room 1', amount: 100, suggestedCategory: 'Lodging', confidence: 0.8, keywords: ['room'] },
+        { description: 'Room 2', amount: 100, suggestedCategory: 'Lodging', confidence: 0.7, keywords: ['room'] }
+      ];
+
+      const result = service.shouldSuggestSplit(items);
+
+      expect(result).toBe(false);
+    });
+
+    it('should not suggest split for single item', () => {
+      const items: DetectedLineItem[] = [
+        { description: 'Room', amount: 150, suggestedCategory: 'Lodging', confidence: 0.8, keywords: ['room'] }
+      ];
+
+      const result = service.shouldSuggestSplit(items);
+
+      expect(result).toBe(false);
+    });
+
+    it('should not suggest split for empty items', () => {
+      const items: DetectedLineItem[] = [];
+
+      const result = service.shouldSuggestSplit(items);
+
+      expect(result).toBe(false);
+    });
+
+    it('should ignore low-confidence items when determining split', () => {
+      const items: DetectedLineItem[] = [
+        { description: 'Room', amount: 150, suggestedCategory: 'Lodging', confidence: 0.8, keywords: ['room'] },
+        { description: 'Unknown', amount: 25, suggestedCategory: 'Meals & Entertainment', confidence: 0.3, keywords: [] }
+      ];
+
+      const result = service.shouldSuggestSplit(items);
+
+      expect(result).toBe(false);
+    });
+  });
+
+  // ============================================================================
+  // LINE ITEM EXTRACTION IN PROCESS RECEIPT
+  // ============================================================================
+
+  describe('processReceipt with line items', () => {
+    it('should extract and include line items in result', async () => {
+      const mockFile = new File(['test'], 'receipt.jpg', { type: 'image/jpeg' });
+      // Use clear multi-category receipt: hotel room + gas station
+      const mockResultWithRawText: OcrResult = {
+        ...mockOcrResult,
+        rawText: `Travel Expenses
+Hotel Room Night $150.00
+Shell Gasoline Fill $45.00
+Total $195.00`
+      };
+
+      spyOn(globalThis, 'fetch').and.returnValue(
+        Promise.resolve(new Response(JSON.stringify(mockResultWithRawText), { status: 200 }))
+      );
+
+      const result = await service.processReceipt(mockFile);
+
+      expect(result.lineItems).toBeDefined();
+      expect(result.lineItems!.length).toBe(2);
+      // Both items have different categories (Lodging vs Fuel), so split should be suggested
+      expect(result.suggestSplit).toBe(true);
+    });
+
+    it('should log line items when detected', async () => {
+      const mockFile = new File(['test'], 'receipt.jpg', { type: 'image/jpeg' });
+      const mockResultWithRawText: OcrResult = {
+        ...mockOcrResult,
+        rawText: 'Room Charge $150.00\nBreakfast $25.00'
+      };
+
+      spyOn(globalThis, 'fetch').and.returnValue(
+        Promise.resolve(new Response(JSON.stringify(mockResultWithRawText), { status: 200 }))
+      );
+
+      await service.processReceipt(mockFile);
+
+      expect(loggerServiceMock.info).toHaveBeenCalledWith(
+        '[OCR] Line items detected',
+        'OcrService',
+        jasmine.objectContaining({
+          count: jasmine.any(Number),
+          suggestSplit: jasmine.any(Boolean)
+        })
+      );
+    });
+
+    it('should not include line items when none detected', async () => {
+      const mockFile = new File(['test'], 'receipt.jpg', { type: 'image/jpeg' });
+      const mockResultNoItems: OcrResult = {
+        ...mockOcrResult,
+        rawText: 'Total $45.50\nThank you'
+      };
+
+      spyOn(globalThis, 'fetch').and.returnValue(
+        Promise.resolve(new Response(JSON.stringify(mockResultNoItems), { status: 200 }))
+      );
+
+      const result = await service.processReceipt(mockFile);
+
+      expect(result.lineItems).toBeUndefined();
+      expect(result.suggestSplit).toBeUndefined();
     });
   });
 });

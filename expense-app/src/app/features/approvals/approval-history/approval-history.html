@@ -1,0 +1,107 @@
+<div class="jensify-dialog">
+  <div class="jensify-dialog-header">
+    <div class="header-icon info">
+      <mat-icon>history</mat-icon>
+    </div>
+    <h2 mat-dialog-title>Approval History</h2>
+    <button mat-icon-button mat-dialog-close class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="jensify-dialog-content">
+    <!-- Approval Summary -->
+    <div class="approval-summary">
+      <div class="summary-row">
+        <span class="label">Type:</span>
+        <span class="value">{{getApprovalType()}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Submitter:</span>
+        <span class="value">{{getSubmitterName()}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Merchant:</span>
+        <span class="value">{{getMerchant()}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Amount:</span>
+        <span class="value amount">{{formatCurrency(getAmount())}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Workflow:</span>
+        <span class="value">{{approval.workflow.name}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Current Step:</span>
+        <span class="value">{{approval.current_step}} of {{approval.total_steps}}</span>
+      </div>
+    </div>
+
+    <!-- Approval Timeline -->
+    @if (history$ | async; as history) {
+      @if (history.length > 0) {
+        <div class="timeline">
+          <h3 class="timeline-title">Action History</h3>
+          @for (action of history; track action.id) {
+            <div class="timeline-item" [class.approved]="action.action === 'approved'" [class.rejected]="action.action === 'rejected'">
+              <div class="timeline-marker">
+                <div class="marker-icon" [class.approved]="action.action === 'approved'" [class.rejected]="action.action === 'rejected'">
+                  <mat-icon>{{getActionIcon(action.action)}}</mat-icon>
+                </div>
+                <div class="marker-line"></div>
+              </div>
+              <div class="timeline-content">
+                <div class="action-header">
+                  <span class="action-label">{{getActionLabel(action.action)}}</span>
+                  <span class="action-date">{{formatDate(action.action_at)}}</span>
+                </div>
+                <div class="action-details">
+                  <div class="actor-info">
+                    <mat-icon>person</mat-icon>
+                    <span>{{getActorName(action)}}</span>
+                  </div>
+                  <div class="step-info">
+                    <mat-icon>alt_route</mat-icon>
+                    <span>Step {{action.step_number}}</span>
+                  </div>
+                </div>
+                @if (action.comment) {
+                  <div class="action-comment">
+                    <mat-icon>comment</mat-icon>
+                    <p>{{action.comment}}</p>
+                  </div>
+                }
+                @if (action.rejection_reason) {
+                  <div class="rejection-reason">
+                    <mat-icon>error_outline</mat-icon>
+                    <div>
+                      <strong>Rejection Reason:</strong>
+                      <p>{{action.rejection_reason}}</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="no-history">
+          <mat-icon>history</mat-icon>
+          <p>No approval actions yet</p>
+        </div>
+      }
+    } @else {
+      <div class="loading-state">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading history...</p>
+      </div>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="jensify-dialog-actions">
+    <button mat-raised-button color="primary" (click)="onClose()" type="button">
+      Close
+    </button>
+  </mat-dialog-actions>
+</div>

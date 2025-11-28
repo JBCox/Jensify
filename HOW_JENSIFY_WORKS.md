@@ -2,7 +2,7 @@
 
 Jensify is a modern expense and receipt application, similar to tools like Expensify. Employees upload receipts and create expenses; those expenses are grouped into **expense reports** that are submitted for approval; approvers and finance teams approve/reject reports and then mark them as reimbursed.
 
-This document gives a detailed overview of how Jensify works today for each role, plus a roadmap of upcoming features.
+This document gives a detailed overview of how Jensify works today for each role.
 
 ---
 
@@ -12,25 +12,23 @@ This document gives a detailed overview of how Jensify works today for each role
 
 After logging in, users see a consistent three-part layout:
 
-- **Top bar** – Jensify logo on the left, a central area reserved for search, and a right section with notifications, the user’s name/email, and a Sign Out option.
-- **Sidebar navigation** – A collapsible vertical menu on the left: expanded shows icons and text; collapsed shows icons only.
-- **Main content area** – The central pane where pages (dashboard, expenses, approvals, finance) are displayed.
-
-Forms across the app (login, expense forms, filters) use Material “fill” fields with labels floating cleanly above the inputs—no divider lines cutting through text.
+- **Top bar** - Jensify logo on the left, a central area reserved for search, and a right section with notifications, the user name/email, and a Sign Out option.
+- **Sidebar navigation** - A collapsible vertical menu on the left: expanded shows icons and text; collapsed shows icons only.
+- **Main content area** - The central pane where pages (dashboard, expenses, approvals, finance) are displayed.
 
 ### 1.2 Sidebar Navigation
 
 Common navigation entries:
 
-- **Dashboard** – Home dashboard (`/home`).
-- **Upload Receipt** – Receipt upload screen (`/expenses/upload`).
-- **Receipts** – Personal receipt library (`/receipts`).
-- **My Expenses** – User’s own expenses (`/expenses`).
-- **New Expense** – Create a new expense (`/expenses/new`).
-- **Approvals** – Approval queue (`/approvals`, approvers/finance/admin only).
-- **Finance Dashboard** – Reimbursement dashboard (`/finance/dashboard`, finance/admin only).
-
-The sidebar is about 180px wide when expanded so labels are readable, and snaps down to icons-only when collapsed.
+- **Dashboard** - Home dashboard (/home).
+- **Upload Receipt** - Receipt upload screen (/expenses/upload).
+- **Receipts** - Personal receipt library (/receipts).
+- **My Expenses** - User own expenses (/expenses).
+- **New Expense** - Create a new expense (/expenses/new).
+- **Mileage** - Mileage tracking with GPS (/mileage).
+- **Reports** - Expense reports (/reports).
+- **Approvals** - Approval queue (/approvals, managers/finance/admin only).
+- **Finance Dashboard** - Reimbursement dashboard (/finance/dashboard, finance/admin only).
 
 ---
 
@@ -38,310 +36,149 @@ The sidebar is about 180px wide when expanded so labels are readable, and snaps 
 
 ### 2.1 Employees
 
-- Upload and manage receipts.
-- Create and track their expenses.
+- Upload and manage receipts with automatic OCR extraction.
+- Create and track expenses with multiple receipts per expense.
+- Log mileage trips with GPS tracking.
+- Group expenses into reports for submission.
 - See statuses like Draft, Submitted, Approved, Reimbursed, and Rejected.
 
-### 2.2 Approvers / Finance
+### 2.2 Managers
 
-- Review submitted expenses in a queue.
-- View receipts.
+- Review and approve expenses for their direct reports.
+- Part of the multi-level approval workflow (Manager to Finance to Admin).
+- Can approve or reject with comments.
+
+### 2.3 Finance
+
+- Review submitted expenses after manager approval.
+- View receipts and mileage logs.
 - Approve or reject expenses.
 - Mark approved expenses as reimbursed.
+- Export detailed CSV reports.
 
-### 2.3 Managers (Planned)
+### 2.4 Admins
 
-- Will review and approve expenses for their direct reports before finance sees them.
+- Configure approval workflows and organization settings.
+- Manage users and roles.
+- Access all approval and finance functions.
+- Set up amount-based approval thresholds.
 
 ---
 
 ## 3. Employee Experience
 
-### 3.1 Home Dashboard (`/home`)
+### 3.1 Home Dashboard (/home)
 
-After login, users land on the **Home Dashboard**.
+After login, users land on the Home Dashboard with quick actions, metrics, and recent activity.
 
-They see:
+### 3.2 Uploading Receipts (/expenses/upload)
 
-- A greeting (“Hi, Alex”).
-- **Quick actions**:
-  - **Add Receipt** – Opens the upload screen.
-  - **New Expense** – Opens the expense form.
-  - **Review Approvals** – Only for approvers/finance.
-- **Metrics card** – Counts of:
-  - Drafts.
-  - Submitted.
-  - Reimbursed.
-- **Next Up guidance** – A card that explains the typical flow: upload receipts → create expenses → submit for approval.
-- **Recent activity** – Last few expenses with date, status, and amount.
+Upload flow with automatic OCR:
 
-The dashboard answers “What should I do next?” and offers one-click shortcuts.
+1. Select a file (drag/drop or file picker)
+2. File uploaded to Supabase Storage
+3. Google Vision API extracts merchant, amount, date, tax
+4. Redirects to expense form with auto-filled fields
 
-### 3.2 Uploading Receipts (`/expenses/upload`)
+### 3.3 Creating a New Expense (/expenses/new)
 
-The upload page supports an “upload-first” flow:
+Form fields include:
+- Merchant (auto-filled from OCR)
+- Amount (auto-filled from OCR)
+- Category (Fuel, Meals, Lodging, Airfare, etc.)
+- Date (auto-filled from OCR)
+- Notes (optional)
+- Attached receipts - supports multiple receipts per expense
 
-1. **Open the upload screen**
-   - From the sidebar (**Upload Receipt**) or from a dashboard quick action.
-2. **Select a file**
-   - Drag and drop or use the file picker (camera/capture on some devices).
-3. **Validation**
-   - The app checks the file type (image/PDF) and size.
-4. **Upload**
-   - File is stored in a Supabase Storage bucket named `receipts`.
-   - A `receipts` table row is created with:
-     - File path, name, MIME type, size.
-     - `ocr_status = 'pending'` for future OCR.
-5. **Redirect to New Expense**
-   - On success, Jensify redirects to:
-     - `/expenses/new?receiptId=<new_receipt_id>`
+### 3.4 Expense Reports (/reports)
 
-From the employee’s perspective: they upload a receipt, then are immediately guided into creating an expense using that receipt.
+Expenses are grouped into expense reports (Expensify-style):
+- Auto-creates a draft monthly report for each user
+- Submit entire report for approval
+- Report workflow: Draft to Submitted to Approved to Paid/Reimbursed
 
-### 3.3 Creating a New Expense (`/expenses/new`)
+### 3.5 Mileage Tracking (/mileage)
 
-Users can reach this page from:
+Two modes:
+- **Quick Entry**: Manual entry with origin, destination, distance
+- **GPS Tracking**: Real-time start/stop tracking with live route visualization
 
-- Dashboard quick action (**New Expense**).
-- Sidebar link (**New Expense**).
-- **Create Expense** button in the Receipts list.
-- Automatic redirect after an upload.
-
-#### 3.3.1 Form Fields
-
-The expense form includes:
-
-- Merchant.
-- Amount.
-- Category.
-- Date.
-- Notes (optional).
-- Attached receipt (optional but often required).
-
-#### 3.3.2 With a Linked Receipt
-
-If the URL contains `?receiptId=<id>`:
-
-- The form loads that receipt and shows an **Attached Receipt** card:
-  - File name, type, size.
-  - **View** – Opens the receipt via a secure signed URL.
-  - **Remove** – Unlinks the receipt from this expense (but does not delete it).
-
-#### 3.3.3 Without a Linked Receipt
-
-If there is no `receiptId`:
-
-- The form starts without an attached receipt.
-- Users may:
-  - Create a draft without a receipt, and/or
-  - Attach a receipt via the Attach Receipt dialog.
-
-#### 3.3.4 Saving
-
-- Submitting the form creates a new expense with **status `draft`**.
-- Drafts show on the dashboard and in My Expenses.
-- A separate “Submit for Approval” action will be added later.
-
-### 3.4 Attaching or Changing a Receipt
-
-On the expense form, users can attach or change a receipt via a dialog.
-
-When **Attach receipt** or **Change receipt** is clicked:
-
-1. A dialog opens with two tabs:
-   - **Upload New** – Upload a fresh receipt.
-   - **Choose Existing** – Select from the user’s existing receipts.
-2. Upload New:
-   - Uses the same upload logic as the upload page.
-   - On success, returns the new receipt to the form.
-3. Choose Existing:
-   - Lists all of the user’s receipts (name, type, size).
-   - Selecting one returns it to the form.
-
-Removing a receipt on the form only removes the link; the receipt stays in the user’s library.
-
-### 3.5 Receipts Library (`/receipts`)
-
-This page is a personal library of all the user’s uploaded receipts.
-
-For each receipt, users see:
-
-- File icon, name, type, size.
-- **View** – Opens via signed URL.
-- **Create Expense** – Opens the new expense form with that receipt linked.
-
-It’s ideal for workflows where a user uploads a batch of receipts and later converts them into expenses.
-
-### 3.6 My Expenses (`/expenses`)
-
-The My Expenses page shows all expenses created by the user.
-
-#### 3.6.1 Filtering and Search
-
-Users can filter by:
-
-- Status (Draft, Submitted, Approved, Reimbursed, Rejected).
-- Merchant or notes (search).
-- Category.
-- Date range.
-- Amount range.
-
-#### 3.6.2 Expense Rows
-
-Each expense shows:
-
-- Receipt indicator (thumbnail/icon if attached, placeholder if not).
-- Merchant, date, category, notes.
-- Status badge (Draft/Submitted/Approved/Reimbursed/Rejected).
-- Amount (formatted currency).
-- A “Report” tag showing whether the expense is still **Unreported** or already linked to a named report. This makes it obvious which lines still need to be bundled before submission.
-
-#### 3.6.3 Actions
-
-- **View Receipt**
-  - Opens the receipt via signed URL if present.
-  - Disabled and shows “No Receipt” when none is attached.
-- **View Details**
-  - Placeholder for a future detail page.
-- **Edit**
-  - Placeholder for the future edit flow.
-
-#### 3.6.4 CSV Export
-
-Users can export the filtered list to CSV, with columns:
-
-- Expense ID.
-- Merchant.
-- Amount.
-- Category.
-- Expense date.
-- Status.
-- Receipt attached (Yes/No).
-- Receipt file name (if any).
-- Receipt URL (signed URL).
-
-Jensify also auto-creates a draft “Month Year Expenses” report for each user and drops new draft expenses into that report immediately. Employees can still move expenses to a different report, but nobody has to remember to create the default monthly report manually.
+Features:
+- Google Maps integration for geocoding and routing
+- IRS rate calculation (current federal rate)
+- Trip history with status tracking
 
 ---
 
-## 4. Approver & Finance Experience
+## 4. Approver and Finance Experience
 
-### 4.1 Approval Queue (`/approvals`)
+### 4.1 Multi-Level Approval Workflow
 
-The Approval Queue shows all **Submitted** expenses.
+Configurable multi-level approval workflows:
+1. Manager Approval - Direct manager reviews team expenses
+2. Finance Approval - Finance team reviews after manager approval
+3. Admin Approval - Optional additional approval for high-value expenses
 
-Approvers now see **Submitted reports**, each with:
+Features:
+- Sequential approval steps
+- Amount-based thresholds (e.g., expenses over $500 require additional approval)
+- Role-based routing
+- Complete approval history timeline
 
-- Report name and description.
-- Employee name/email.
-- Submission date.
-- Number of expenses and total amount.
-- Status badge (Draft/Submitted/Approved/Rejected/Paid).
+### 4.2 Approval Queue (/approvals)
 
-They can:
+Shows all submitted reports awaiting approval with batch actions.
 
-- Search/filter by employee or report name.
-- Review summary metrics (count and total amount of submitted reports).
-- Approve or reject reports individually or in bulk.
+### 4.3 Finance Dashboard (/finance/dashboard)
 
-Actions:
-
-- **Approve** – moves the full report (all included expenses) into the finance reimbursement queue.
-- **Reject** – returns the report to the employee as Draft, optionally with a note.
-
-Receipts are already validated at submission time, so approvers focus purely on policy review rather than chasing missing files.
-
-### 4.2 Finance Dashboard (`/finance/dashboard`)
-
-The Finance Dashboard shows all **Approved** expenses that have not yet been reimbursed.
-
-Finance users see:
-
-- Count of approved, unreimbursed expenses.
-- Total amount pending reimbursement.
-- Per-expense details: employee, merchant, category, dates, amount, and status.
-
-Actions:
-
-- **Mark as Reimbursed**
-  - Sets status to **Reimbursed** and removes the expense from the queue.
-- **Mark All as Reimbursed**
-  - Bulk action for all eligible expenses in the current view.
-- **Export to CSV**
-  - Downloads a detailed CSV with one row per expense line (including report info, employee name/email, amounts, and signed receipt URLs).
-- In-app notifications (tied to user preferences) inform employees when their reports are approved, rejected, or reimbursed.
+Shows all approved expenses ready for reimbursement with CSV export.
 
 ---
 
 ## 5. Status Lifecycle
 
-The expense lifecycle uses clear statuses:
-
-- **Draft**
-  - Created by the employee; not yet submitted.
-- **Submitted**
-  - Waiting for approval; appears in the Approval Queue.
-- **Approved**
-  - Approved by an approver; appears in the Finance Dashboard.
-- **Reimbursed**
-  - Paid out; no longer in the reimbursement queue.
-- **Rejected**
-  - Rejected by an approver; visible to the employee for review and later resubmission.
-
-Receipts are separate records linked via `receipt_id`. Unlinking a receipt does not delete it from storage.
-
-Reports follow the same lifecycle (Draft → Submitted → Approved → Paid/Reimbursed → Rejected). When a report changes state, every expense inside inherits that new status automatically.
+- **Draft** - Created by employee; not yet submitted
+- **Submitted** - Waiting for approval
+- **Approved** - Approved by all required approvers
+- **Reimbursed** - Paid out; complete
+- **Rejected** - Returned to employee for revision
 
 ---
 
-## 6. Roadmap & Upcoming Features
+## 6. Key Features Summary
 
-### 6.1 Phase 1 – Core Loop Enhancements
+### Completed Features
 
-- **Expense Detail Page (`/expenses/:id`)**
-  - Full view of a single expense with history, big receipt preview, and role-specific actions.
-- **Edit Expense Flow**
-  - Allow editing drafts (and possibly rejected expenses) using a prefilled form.
-- **Explicit Submit for Approval**
-  - Clear “Save Draft” vs “Submit for Approval” buttons and behavior.
-- **Complete Finance CSV Export**
-  - Detailed CSV including employee data, dates, receipt info, and cost centers.
+| Feature | Description |
+|---------|-------------|
+| OCR and SmartScan | Google Vision API extracts merchant, amount, date, tax from receipts |
+| Multi-Receipt Support | Multiple receipts per expense via junction table |
+| Multi-Level Approvals | Configurable Manager to Finance to Admin workflow |
+| Mileage Tracking | GPS tracking with Google Maps, IRS rate calculation |
+| Expense Reports | Expensify-style batch grouping and submission |
+| Progressive Web App | Installable on mobile/desktop with offline support |
+| Organization Multi-Tenancy | Complete data isolation per organization |
 
-### 6.2 Phase 2 – Manager & Compliance
+### Future Enhancements
 
-- **Manager-Level Approvals**
-  - Separate manager queue; manager approval before finance review.
-- **Missing Receipt Enforcement**
-  - Warnings, filters, and optional blocking rules for expenses without receipts.
-
-### 6.3 Phase 3 – Productivity & Intelligence
-
-- **OCR & Auto-Fill**
-  - Automatic extraction of merchant, date, amount, etc. from receipts.
-- **Multi-Receipt Support**
-  - Support for multiple receipts per expense via an `expense_receipts` join table.
-
-### 6.4 Phase 4 – Polishing
-
-- **Global Search**
-  - Search for expenses and receipts from the top bar.
-- **UI Polish**
-  - Spacing, typography, improved empty/loading states, and better mobile layouts.
+- Global Search - Search expenses and receipts from the top bar
+- Advanced Analytics - Spending insights, trend analysis, budget tracking
+- Integrations - QuickBooks, accounting software connections
+- Corporate Cards - Card transaction import and reconciliation
 
 ---
 
 ## 7. Summary
 
-Jensify already supports a complete expense lifecycle:
+Jensify provides a complete expense management lifecycle:
 
-- Employees upload receipts, create expenses, and track their status.
-- Approvers and finance staff review, approve or reject, and reimburse expenses.
+- **Employees** upload receipts (with OCR auto-fill), create expenses, attach multiple receipts, log mileage with GPS, and submit reports for approval.
+- **Managers** review and approve team expenses as part of the multi-level workflow.
+- **Finance** processes final approvals and marks expenses as reimbursed.
+- **Admins** configure workflows, manage users, and oversee the organization.
 
-The upcoming features focus on:
+The platform includes modern features like AI-powered OCR, GPS mileage tracking, PWA offline support, multi-level approvals, and organization multi-tenancy.
 
-- Making the workflow clearer and more intuitive.
-- Adding manager-level approvals and enforcement for missing receipts.
-- Introducing OCR and multi-receipt support.
-- Improving exports and reports for finance.
+---
 
-Together, these steps will push Jensify to parity—and in many ways beyond—other modern expense tools.
+*Last Updated: November 27, 2024*

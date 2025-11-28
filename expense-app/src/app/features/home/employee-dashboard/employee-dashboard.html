@@ -1,98 +1,165 @@
-<div class="jensify-container">
-  <div class="jensify-hero-surface">
-    <div class="jensify-dashboard-header jensify-animate-slide-down">
-      <div class="header-content">
-        <h1>My Dashboard</h1>
-        <p>Welcome back! Here's your expense overview.</p>
-      </div>
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>My Dashboard</h1>
+      <p class="subtitle">Track your expenses and spending patterns</p>
     </div>
-  </div>
-
-  <!-- KPI Cards -->
-  <div class="jensify-grid-4 jensify-animate-fade" *ngIf="metrics$ | async as metrics">
-    <app-metric-card
-      [value]="formatCurrency(metrics.totalSpend)"
-      label="Total Spend This Month"
-      icon="payments"
-      iconType="spend"
-      [loading]="loading">
-    </app-metric-card>
-
-    <app-metric-card
-      [value]="metrics.pendingCount.toString()"
-      label="Pending Expenses"
-      icon="schedule"
-      iconType="pending"
-      [loading]="loading">
-    </app-metric-card>
-
-    <app-metric-card
-      [value]="metrics.approvedCount.toString()"
-      label="Approved Awaiting Reimbursement"
-      icon="check_circle"
-      iconType="approvals"
-      [loading]="loading">
-    </app-metric-card>
-
-    <app-metric-card
-      [value]="metrics.recentUploads.toString()"
-      label="Recent Uploads (7 days)"
-      icon="receipt"
-      iconType="recent"
-      [loading]="loading">
-    </app-metric-card>
-  </div>
-
-  <!-- Quick Actions -->
-  <div class="jensify-quick-actions">
-    <h2>Quick Actions</h2>
-    <div class="jensify-action-buttons">
-      <button
-        mat-raised-button
-        color="primary"
-        (click)="onUploadReceipt()"
-        class="jensify-button">
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="onUploadReceipt()">
         <mat-icon>camera_alt</mat-icon>
         Upload Receipt
       </button>
-      <button
-        mat-stroked-button
-        (click)="onSubmitExpense()"
-        class="jensify-button">
-        <mat-icon>add_circle_outline</mat-icon>
-        Submit Expense
+      <button mat-stroked-button (click)="onSubmitExpense()">
+        <mat-icon>add</mat-icon>
+        New Expense
       </button>
     </div>
   </div>
 
-  <!-- Recent Activity -->
-  <div class="jensify-recent-activity">
-    <h2>Recent Activity</h2>
+  @if (metrics$ | async; as metrics) {
+  <!-- Compact Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <mat-icon>payments</mat-icon>
+      <span class="stat-value">{{ formatCurrency(metrics.totalSpend) }}</span>
+      <span class="stat-label">This Month</span>
+      @if (metrics.spendChange > 0) {
+        <span class="stat-change" [class.negative]="metrics.spendChangeType === 'negative'" [class.positive]="metrics.spendChangeType === 'positive'">
+          {{ metrics.spendChangeType === 'negative' ? '+' : '-' }}{{ metrics.spendChange }}%
+        </span>
+      }
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item" [class.attention]="metrics.pendingCount > 0">
+      <mat-icon>schedule</mat-icon>
+      <span class="stat-value">{{ metrics.pendingCount }}</span>
+      <span class="stat-label">Pending</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <mat-icon>check_circle</mat-icon>
+      <span class="stat-value">{{ metrics.approvedCount }}</span>
+      <span class="stat-label">Awaiting</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <mat-icon>receipt</mat-icon>
+      <span class="stat-value">{{ metrics.recentUploads }}</span>
+      <span class="stat-label">Recent</span>
+    </div>
+  </div>
 
-    <div class="jensify-activity-list" *ngIf="recentExpenses$ | async as expenses">
-      <app-empty-state
-        *ngIf="expenses.length === 0"
-        icon="receipt_long"
-        title="No expenses yet"
-        message="Upload your first receipt to get started"
-        actionLabel="Upload Receipt"
-        actionIcon="camera_alt">
-      </app-empty-state>
+  <!-- Analytics Section -->
+  <div class="analytics-section">
+    <div class="section-header">
+      <h2><mat-icon>insights</mat-icon> My Spending Analytics</h2>
+    </div>
 
-      <div
-        *ngFor="let expense of expenses; trackBy: trackByExpenseId"
-        class="jensify-expense-item"
-        (click)="onViewExpense(expense)">
-        <div class="jensify-expense-icon">
-          <mat-icon>receipt</mat-icon>
+    <div class="charts-row">
+      <!-- Spending by Category -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">
+            <mat-icon>donut_large</mat-icon>
+            <span>By Category</span>
+          </div>
+          <span class="chart-period">This Month</span>
         </div>
-        <div class="jensify-expense-details">
-          <div class="jensify-expense-merchant">{{ expense.merchant }}</div>
-          <div class="jensify-expense-date">{{ formatDate(expense.expense_date) }}</div>
+        <div class="chart-body">
+          @if (categorySpendData$ | async; as categoryData) {
+            @if (categoryData.length > 0) {
+              <ngx-charts-pie-chart
+                [results]="categoryData"
+                [scheme]="pieColorScheme"
+                [legend]="true"
+                [legendPosition]="legendPosition"
+                [labels]="false"
+                [doughnut]="true"
+                [gradient]="true"
+                [animations]="true">
+              </ngx-charts-pie-chart>
+            } @else {
+              <div class="chart-empty">
+                <mat-icon>pie_chart_outline</mat-icon>
+                <span>No expenses this month</span>
+              </div>
+            }
+          }
         </div>
-        <div class="jensify-expense-amount">{{ formatCurrency(expense.amount) }}</div>
-        <app-status-badge [status]="mapStatus(expense.status)" size="small"></app-status-badge>
+      </div>
+
+      <!-- Monthly Trend -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">
+            <mat-icon>show_chart</mat-icon>
+            <span>Monthly Trend</span>
+          </div>
+          <span class="chart-period">Last 6 Months</span>
+        </div>
+        <div class="chart-body">
+          @if (monthlyTrendData$ | async; as trendData) {
+            @if (hasTrendData(trendData)) {
+              <ngx-charts-bar-vertical
+                [results]="trendData"
+                [scheme]="pieColorScheme"
+                [xAxis]="true"
+                [yAxis]="true"
+                [showXAxisLabel]="false"
+                [showYAxisLabel]="false"
+                [gradient]="true"
+                [animations]="true"
+                [roundEdges]="true">
+              </ngx-charts-bar-vertical>
+            } @else {
+              <div class="chart-empty">
+                <mat-icon>bar_chart</mat-icon>
+                <span>No historical data yet</span>
+              </div>
+            }
+          }
+        </div>
       </div>
     </div>
+  </div>
+  }
+
+  <!-- Recent Activity -->
+  <div class="activity-section">
+    <div class="section-header">
+      <h2><mat-icon>history</mat-icon> Recent Expenses</h2>
+      <button mat-button color="primary" routerLink="/expenses">View All</button>
+    </div>
+
+    @if (recentExpenses$ | async; as expenses) {
+      @if (expenses.length > 0) {
+        <div class="expense-list">
+          @for (expense of expenses; track expense.id) {
+            <div class="expense-row" (click)="onViewExpense(expense)">
+              <div class="expense-icon">
+                <mat-icon>receipt</mat-icon>
+              </div>
+              <div class="expense-info">
+                <span class="merchant">{{ expense.merchant }}</span>
+                <span class="date">{{ formatDate(expense.expense_date) }}</span>
+              </div>
+              <div class="expense-category">{{ expense.category || 'Other' }}</div>
+              <div class="expense-amount">{{ formatCurrency(expense.amount) }}</div>
+              <app-status-badge [status]="mapStatus(expense.status)" size="small"></app-status-badge>
+            </div>
+          }
+        </div>
+      } @else {
+        <app-empty-state
+          icon="receipt_long"
+          title="No expenses yet"
+          message="Upload your first receipt to get started"
+          actionLabel="Upload Receipt"
+          actionIcon="camera_alt"
+          (actionClicked)="onUploadReceipt()">
+        </app-empty-state>
+      }
+    }
   </div>
 </div>

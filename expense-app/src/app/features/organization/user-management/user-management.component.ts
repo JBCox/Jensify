@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,6 +13,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatMenuModule } from '@angular/material/menu';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { OrganizationService } from '../../../core/services/organization.service';
@@ -20,6 +21,10 @@ import { InvitationService } from '../../../core/services/invitation.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { OrganizationMember, Invitation, CreateInvitationDto } from '../../../core/models';
 import { UserRole } from '../../../core/models/enums';
+import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loading-skeleton';
+import { EditMemberDialogComponent, EditMemberDialogData } from './edit-member-dialog.component';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
 
 /**
  * User Management Component
@@ -30,6 +35,7 @@ import { UserRole } from '../../../core/models/enums';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     MatCardModule,
     MatTableModule,
@@ -42,7 +48,10 @@ import { UserRole } from '../../../core/models/enums';
     MatTabsModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
-    MatDialogModule
+    MatDialogModule,
+    MatMenuModule,
+    EmptyState,
+    LoadingSkeleton
   ],
   templateUrl: './user-management.component.html',
   styleUrls: ['./user-management.component.scss']
@@ -70,9 +79,66 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   inactiveMemberCount = computed(() => this.members().filter(member => !member.is_active).length);
   pendingInvitationCount = computed(() => this.invitations().filter(invite => invite.status === 'pending').length);
 
+  // Filter signals - Members
+  memberRoleFilter = signal<string>('all');
+  memberStatusFilter = signal<string>('all');
+  memberSearchQuery = signal<string>('');
+
+  // Filter signals - Invitations
+  invitationStatusFilter = signal<string>('all');
+  invitationSearchQuery = signal<string>('');
+
+  // Filtered computed values
+  filteredMembers = computed(() => {
+    let result = this.members();
+
+    // Filter by role
+    if (this.memberRoleFilter() !== 'all') {
+      result = result.filter(m => m.role === this.memberRoleFilter());
+    }
+
+    // Filter by status
+    if (this.memberStatusFilter() === 'active') {
+      result = result.filter(m => m.is_active);
+    } else if (this.memberStatusFilter() === 'inactive') {
+      result = result.filter(m => !m.is_active);
+    }
+
+    // Filter by search
+    const query = this.memberSearchQuery().toLowerCase();
+    if (query) {
+      result = result.filter(m =>
+        m.user?.full_name?.toLowerCase().includes(query) ||
+        m.user?.email?.toLowerCase().includes(query) ||
+        m.department?.toLowerCase().includes(query)
+      );
+    }
+
+    return result;
+  });
+
+  filteredInvitations = computed(() => {
+    let result = this.invitations();
+
+    // Filter by status
+    if (this.invitationStatusFilter() !== 'all') {
+      result = result.filter(inv => inv.status === this.invitationStatusFilter());
+    }
+
+    // Filter by search
+    const query = this.invitationSearchQuery().toLowerCase();
+    if (query) {
+      result = result.filter(inv =>
+        inv.email.toLowerCase().includes(query)
+      );
+    }
+
+    return result;
+  });
+
   // UI State
   isLoading = signal(false);
-  selectedTabIndex = signal(0);
+  selectedTabIndex = 0;
 
   // Table columns
   memberColumns = ['user', 'role', 'department', 'status', 'actions'];
@@ -213,20 +279,32 @@ export class UserManagementComponent implements OnInit, OnDestroy {
    * Deactivate member
    */
   deactivateMember(member: OrganizationMember): void {
-    if (!confirm(`Deactivate ${member.user?.full_name || member.user_id}?`)) {
-      return;
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Deactivate Member',
+        message: `Are you sure you want to deactivate ${member.user?.full_name || member.user_id}? They will lose access to the organization.`,
+        confirmText: 'Deactivate',
+        cancelText: 'Cancel',
+        confirmColor: 'warn',
+        icon: 'person_off',
+        iconColor: '#f44336',
+      } as ConfirmDialogData,
+    });
 
-    this.organizationService.deactivateMember(member.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.loadMembers();
-        },
-        error: () => {
-          this.notificationService.showError('Failed to deactivate member');
-        }
-      });
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.organizationService.deactivateMember(member.id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.loadMembers();
+            },
+            error: () => {
+              this.notificationService.showError('Failed to deactivate member');
+            }
+          });
+      }
+    });
   }
 
   /**
@@ -265,20 +343,32 @@ export class UserManagementComponent implements OnInit, OnDestroy {
    * Revoke invitation
    */
   revokeInvitation(invitation: Invitation): void {
-    if (!confirm(`Revoke invitation for ${invitation.email}?`)) {
-      return;
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Revoke Invitation',
+        message: `Are you sure you want to revoke the invitation for ${invitation.email}? This action cannot be undone.`,
+        confirmText: 'Revoke',
+        cancelText: 'Cancel',
+        confirmColor: 'warn',
+        icon: 'cancel',
+        iconColor: '#f44336',
+      } as ConfirmDialogData,
+    });
 
-    this.invitationService.revokeInvitation(invitation.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.loadInvitations();
-        },
-        error: () => {
-          this.notificationService.showError('Failed to revoke invitation');
-        }
-      });
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.invitationService.revokeInvitation(invitation.id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.loadInvitations();
+            },
+            error: () => {
+              this.notificationService.showError('Failed to revoke invitation');
+            }
+          });
+      }
+    });
   }
 
   /**
@@ -342,5 +432,55 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     navigator.clipboard.writeText(link).then(() => {
       this.notificationService.showSuccess('Invitation link copied to clipboard');
     });
+  }
+
+  /**
+   * Clear member filters
+   */
+  clearMemberFilters(): void {
+    this.memberRoleFilter.set('all');
+    this.memberStatusFilter.set('all');
+    this.memberSearchQuery.set('');
+  }
+
+  /**
+   * Clear invitation filters
+   */
+  clearInvitationFilters(): void {
+    this.invitationStatusFilter.set('all');
+    this.invitationSearchQuery.set('');
+  }
+
+  /**
+   * Edit member details
+   */
+  editMember(member: OrganizationMember): void {
+    const dialogData: EditMemberDialogData = {
+      member,
+      managers: this.managers()
+    };
+
+    const dialogRef = this.dialog.open(EditMemberDialogComponent, {
+      width: '450px',
+      data: dialogData
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(result => {
+        if (result) {
+          this.organizationService.updateOrganizationMember(member.id, result)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: () => {
+                this.notificationService.showSuccess('Member updated successfully');
+                this.loadMembers();
+              },
+              error: () => {
+                this.notificationService.showError('Failed to update member');
+              }
+            });
+        }
+      });
   }
 }

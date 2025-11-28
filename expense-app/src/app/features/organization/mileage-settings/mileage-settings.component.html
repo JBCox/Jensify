@@ -1,0 +1,127 @@
+<div class="jensify-container">
+  <div class="jensify-page-header">
+    <h1 class="jensify-page-title">Mileage Settings</h1>
+    <p class="jensify-page-subtitle">Configure how mileage reimbursements are calculated</p>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <mat-card class="jensify-card">
+      <div class="jensify-loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading settings...</p>
+      </div>
+    </mat-card>
+  }
+
+  <!-- Error State -->
+  @if (error() && !loading()) {
+    <mat-card class="jensify-card jensify-error-card">
+      <mat-icon>error</mat-icon>
+      <p>{{ error() }}</p>
+    </mat-card>
+  }
+
+  <!-- Settings Form -->
+  @if (!loading() && !error()) {
+    <form [formGroup]="settingsForm" (ngSubmit)="onSave()">
+      <!-- Current IRS Rate Info -->
+      <mat-card class="jensify-card info-card">
+        <div class="jensify-card-header">
+          <h2 class="jensify-card-title">
+            <mat-icon>info</mat-icon>
+            Current IRS Standard Rate
+          </h2>
+        </div>
+        <mat-card-content>
+          <div class="irs-rate-display">
+            <span class="rate-value">{{ formatCurrency(currentIrsRate() ?? 0.67) }}</span>
+            <span class="rate-label">per mile (2024 Business Rate)</span>
+          </div>
+          <p class="jensify-text-muted">
+            The IRS standard mileage rate is used by default for all mileage reimbursements.
+            You can override this with a custom rate below.
+          </p>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Custom Rate Settings -->
+      <mat-card class="jensify-card">
+        <div class="jensify-card-header">
+          <h2 class="jensify-card-title">
+            <mat-icon>settings</mat-icon>
+            Rate Configuration
+          </h2>
+        </div>
+        <mat-card-content>
+          <!-- Use Custom Rate Toggle -->
+          <div class="setting-row">
+            <mat-slide-toggle formControlName="use_custom_rate" color="primary">
+              Use custom mileage rate
+            </mat-slide-toggle>
+            <p class="setting-description">
+              When enabled, the custom rate below will be used instead of the IRS standard rate.
+            </p>
+          </div>
+
+          <!-- Custom Rate Input -->
+          @if (settingsForm.get('use_custom_rate')?.value) {
+            <div class="setting-row">
+              <mat-form-field appearance="fill" class="custom-rate-field">
+                <mat-label>Custom Rate (per mile)</mat-label>
+                <span matPrefix>$&nbsp;</span>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="custom_rate_per_mile"
+                  step="0.001"
+                  min="0"
+                  max="10"
+                  placeholder="0.000">
+                <mat-hint>Enter rate between $0.00 and $10.00 per mile</mat-hint>
+                @if (settingsForm.get('custom_rate_per_mile')?.hasError('required')) {
+                  <mat-error>Custom rate is required when enabled</mat-error>
+                }
+                @if (settingsForm.get('custom_rate_per_mile')?.hasError('min')) {
+                  <mat-error>Rate must be greater than $0.00</mat-error>
+                }
+                @if (settingsForm.get('custom_rate_per_mile')?.hasError('max')) {
+                  <mat-error>Rate cannot exceed $10.00</mat-error>
+                }
+              </mat-form-field>
+            </div>
+          }
+
+          <!-- Default Category -->
+          <div class="setting-row">
+            <mat-form-field appearance="fill">
+              <mat-label>Default Mileage Category</mat-label>
+              <mat-select formControlName="mileage_category">
+                @for (option of categoryOptions; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+              <mat-hint>Category used for IRS rate lookup</mat-hint>
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Save Button -->
+      <div class="jensify-form-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="settingsForm.invalid || saving()"
+          class="jensify-button">
+          @if (saving()) {
+            <ng-container><mat-spinner diameter="20"></mat-spinner> Saving...</ng-container>
+          } @else {
+            <ng-container><mat-icon>save</mat-icon> Save Settings</ng-container>
+          }
+        </button>
+      </div>
+    </form>
+  }
+</div>

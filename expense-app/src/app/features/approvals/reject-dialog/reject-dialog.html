@@ -1,0 +1,90 @@
+<div class="jensify-dialog">
+  <div class="jensify-dialog-header">
+    <div class="header-icon danger">
+      <mat-icon>cancel</mat-icon>
+    </div>
+    <h2 mat-dialog-title>Reject {{getApprovalType()}}</h2>
+    <button mat-icon-button mat-dialog-close class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="jensify-dialog-content">
+    <!-- Approval Summary -->
+    <div class="approval-summary">
+      <div class="summary-row">
+        <span class="label">Submitter:</span>
+        <span class="value">{{getSubmitterName()}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Merchant:</span>
+        <span class="value">{{getMerchant()}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Amount:</span>
+        <span class="value amount">{{formatCurrency(getAmount())}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Workflow:</span>
+        <span class="value">{{approval.workflow.name}}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Step:</span>
+        <span class="value">{{approval.current_step}} of {{approval.total_steps}}</span>
+      </div>
+    </div>
+
+    <!-- Rejection Form -->
+    <form [formGroup]="rejectForm">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Rejection Reason *</mat-label>
+        <textarea 
+          matInput 
+          formControlName="rejection_reason"
+          rows="4"
+          placeholder="Explain why this expense is being rejected..." 
+          required></textarea>
+        <mat-icon matPrefix>error_outline</mat-icon>
+        @if (rejectForm.get('rejection_reason')?.touched && getReasonError()) {
+          <mat-error>{{getReasonError()}}</mat-error>
+        }
+        <mat-hint>Minimum 10 characters required</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Additional Comment (Optional)</mat-label>
+        <textarea 
+          matInput 
+          formControlName="comment"
+          rows="3"
+          placeholder="Add any additional notes or guidance..."></textarea>
+        <mat-icon matPrefix>comment</mat-icon>
+      </mat-form-field>
+    </form>
+
+    <!-- Warning Message -->
+    <div class="warning-message">
+      <mat-icon>warning</mat-icon>
+      <div class="warning-content">
+        <strong>This action will reject the {{getApprovalType().toLowerCase()}}.</strong>
+        <p>The submitter will be notified and can make corrections before resubmitting.</p>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="jensify-dialog-actions">
+    <button mat-stroked-button (click)="onCancel()" type="button">
+      Cancel
+    </button>
+    <button 
+      mat-raised-button 
+      color="warn" 
+      (click)="onReject()" 
+      type="button"
+      class="reject-btn"
+      [disabled]="!rejectForm.valid">
+      <mat-icon>cancel</mat-icon>
+      Reject
+    </button>
+  </mat-dialog-actions>
+</div>

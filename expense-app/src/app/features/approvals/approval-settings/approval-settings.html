@@ -1,0 +1,385 @@
+<div class="jensify-container">
+  <div class="jensify-header">
+    <div class="header-content">
+      <h1 class="jensify-title">Approval Settings</h1>
+      <p class="jensify-subtitle">Configure approval workflows and routing rules</p>
+    </div>
+    @if (!showWorkflowForm) {
+      <button mat-raised-button color="primary" (click)="onCreateWorkflow()" class="create-btn">
+        <mat-icon>add</mat-icon>
+        Create Workflow
+      </button>
+    }
+  </div>
+
+  <!-- Workflow Form (Create/Edit) -->
+  @if (showWorkflowForm) {
+    <div class="jensify-card workflow-form-card">
+      <div class="form-header">
+        <h2>{{editingWorkflow ? 'Edit' : 'Create'}} Workflow</h2>
+        <button mat-icon-button (click)="onCancelEdit()" class="close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="workflowForm" class="workflow-form">
+        <!-- Basic Information -->
+        <div class="form-section">
+          <h3><mat-icon>info</mat-icon> Basic Information</h3>
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Workflow Name</mat-label>
+              <input matInput formControlName="name" placeholder="e.g., Manager Approval" required>
+              <mat-icon matPrefix>label</mat-icon>
+              @if (workflowForm.get('name')?.hasError('required') && workflowForm.get('name')?.touched) {
+                <mat-error>Workflow name is required</mat-error>
+              }
+              @if (workflowForm.get('name')?.hasError('minlength')) {
+                <mat-error>Name must be at least 3 characters</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" rows="3" placeholder="Describe when this workflow should be used..."></textarea>
+              <mat-icon matPrefix>description</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row two-columns">
+            <mat-form-field appearance="outline">
+              <mat-label>Priority</mat-label>
+              <input matInput type="number" formControlName="priority" min="1" placeholder="1">
+              <mat-icon matPrefix>priority_high</mat-icon>
+              <mat-hint>Higher priority workflows are evaluated first</mat-hint>
+            </mat-form-field>
+
+            <div class="toggle-field">
+              <mat-slide-toggle formControlName="is_active" color="primary">
+                Active
+              </mat-slide-toggle>
+            </div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Conditions -->
+        <div class="form-section">
+          <h3><mat-icon>tune</mat-icon> Conditions (When to Apply This Workflow)</h3>
+          <p class="section-hint">Define the criteria for when this workflow should be used. Leave empty to match all expenses.</p>
+
+          <div class="form-row two-columns">
+            <mat-form-field appearance="outline">
+              <mat-label>Minimum Amount</mat-label>
+              <input matInput type="number" formControlName="amount_min" min="0" placeholder="0">
+              <span matPrefix>$&nbsp;</span>
+              <mat-hint>Minimum expense amount</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Maximum Amount</mat-label>
+              <input matInput type="number" formControlName="amount_max" min="0" placeholder="1000">
+              <span matPrefix>$&nbsp;</span>
+              <mat-hint>Maximum expense amount</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Categories</mat-label>
+              <mat-select formControlName="categories" multiple>
+                @for (category of expenseCategories; track category) {
+                  <mat-option [value]="category">{{category}}</mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>category</mat-icon>
+              <mat-hint>Leave empty to match all categories</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Specific Submitters</mat-label>
+              <mat-select formControlName="submitter_ids" multiple>
+                @for (member of members(); track member.user_id) {
+                  <mat-option [value]="member.user_id">
+                    {{member.user?.full_name}} ({{member.role}})
+                  </mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>person</mat-icon>
+              <mat-hint>Leave empty to match all users</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Approval Steps -->
+        <div class="form-section">
+          <div class="section-header">
+            <h3><mat-icon>approval</mat-icon> Approval Steps</h3>
+            <button mat-stroked-button type="button" (click)="addStep()" color="primary">
+              <mat-icon>add</mat-icon>
+              Add Step
+            </button>
+          </div>
+          <p class="section-hint">Define the approval chain. Expenses will be routed through these steps in order.</p>
+
+          @if (stepsFormArray.length === 0) {
+            <div class="empty-steps">
+              <mat-icon>info</mat-icon>
+              <p>No steps configured. Add at least one approval step.</p>
+            </div>
+          }
+
+          @for (stepControl of stepsFormArray.controls; track stepControl; let i = $index) {
+            <mat-card class="step-card" [formGroup]="asFormGroup(stepControl)">
+              <mat-card-header>
+                <div class="step-header">
+                  <div class="step-number">Step {{i + 1}}</div>
+                  <div class="step-actions">
+                    <button mat-icon-button type="button" (click)="moveStepUp(i)" [disabled]="i === 0" matTooltip="Move Up">
+                      <mat-icon>arrow_upward</mat-icon>
+                    </button>
+                    <button mat-icon-button type="button" (click)="moveStepDown(i)" [disabled]="i === stepsFormArray.length - 1" matTooltip="Move Down">
+                      <mat-icon>arrow_downward</mat-icon>
+                    </button>
+                    <button mat-icon-button type="button" (click)="removeStep(i)" [disabled]="stepsFormArray.length === 1" color="warn" matTooltip="Remove Step">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="step-form">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Step Type</mat-label>
+                    <mat-select formControlName="step_type" required>
+                      @for (type of stepTypes; track type.value) {
+                        <mat-option [value]="type.value">
+                          <div class="step-type-option">
+                            <strong>{{type.label}}</strong>
+                            <span class="option-desc">{{type.description}}</span>
+                          </div>
+                        </mat-option>
+                      }
+                    </mat-select>
+                    <mat-hint>How should the approver be determined?</mat-hint>
+                  </mat-form-field>
+
+                  <!-- Show role selector if step_type is 'role' -->
+                  @if (stepControl.get('step_type')?.value === 'role') {
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>Approver Role</mat-label>
+                      <mat-select formControlName="approver_role" required>
+                        @for (role of approverRoles; track role.value) {
+                          <mat-option [value]="role.value">{{role.label}}</mat-option>
+                        }
+                      </mat-select>
+                      <mat-icon matPrefix>badge</mat-icon>
+                      <mat-hint>Any active user with this role can approve</mat-hint>
+                    </mat-form-field>
+                  }
+
+                  <!-- Show user selector if step_type is 'specific_user' -->
+                  @if (stepControl.get('step_type')?.value === 'specific_user') {
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>Specific User</mat-label>
+                      <mat-select formControlName="approver_user_id" required>
+                        @for (member of managersAndAbove(); track member.user_id) {
+                          <mat-option [value]="member.user_id">
+                            {{member.user?.full_name}} ({{member.role}})
+                          </mat-option>
+                        }
+                      </mat-select>
+                      <mat-icon matPrefix>person</mat-icon>
+                      <mat-hint>Specific user who must approve</mat-hint>
+                    </mat-form-field>
+                  }
+
+                  <!-- Preview -->
+                  <div class="step-preview">
+                    <mat-icon>arrow_forward</mat-icon>
+                    <span>Will route to: <strong>{{getStepDescription(asFormGroup(stepControl))}}</strong></span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Workflow Testing Tool -->
+        <div class="form-section">
+          <div class="section-header">
+            <h3><mat-icon>science</mat-icon> Test Workflow</h3>
+            <button mat-stroked-button type="button" (click)="testWorkflow()" color="primary" [disabled]="stepsFormArray.length === 0">
+              <mat-icon>play_arrow</mat-icon>
+              Preview Approval Chain
+            </button>
+          </div>
+          <p class="section-hint">Preview how this workflow will route expenses through the approval chain.</p>
+
+          @if (showTestPanel && testResults) {
+            <div class="test-results">
+              <div class="approval-chain">
+                <div class="chain-start">
+                  <mat-icon>assignment</mat-icon>
+                  <strong>Expense Submitted</strong>
+                </div>
+
+                @for (step of testResults.steps; track step.stepNumber) {
+                  <div class="chain-arrow">
+                    <mat-icon>arrow_downward</mat-icon>
+                  </div>
+                  <div class="chain-step">
+                    <div class="step-badge">Step {{step.stepNumber}}</div>
+                    <div class="step-info">
+                      <strong>{{step.approverName}}</strong>
+                      <span class="step-role">{{step.approverRole}}</span>
+                    </div>
+                    @if (step.approverName.includes('⚠️')) {
+                      <mat-icon class="warning-icon" color="warn">warning</mat-icon>
+                    }
+                  </div>
+                }
+
+                <div class="chain-arrow">
+                  <mat-icon>arrow_downward</mat-icon>
+                </div>
+                <div class="chain-end">
+                  <mat-icon>check_circle</mat-icon>
+                  <strong>Approved</strong>
+                </div>
+              </div>
+
+              <div class="test-metadata">
+                <div class="metadata-item">
+                  <mat-icon>layers</mat-icon>
+                  <span><strong>{{testResults.steps.length}}</strong> approval step(s)</span>
+                </div>
+                <div class="metadata-item">
+                  <mat-icon>schedule</mat-icon>
+                  <span>Estimated time: <strong>~{{testResults.estimatedHours}} hours</strong></span>
+                </div>
+              </div>
+
+              <button mat-stroked-button type="button" (click)="resetTest()" class="reset-test-btn">
+                <mat-icon>refresh</mat-icon>
+                Close Preview
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button mat-stroked-button type="button" (click)="onCancelEdit()">
+            Cancel
+          </button>
+          <button mat-raised-button color="primary" type="button" (click)="onSaveWorkflow()" [disabled]="workflowForm.invalid || stepsFormArray.length === 0">
+            <mat-icon>save</mat-icon>
+            {{editingWorkflow ? 'Update' : 'Create'}} Workflow
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- Workflows List -->
+  @if (!showWorkflowForm) {
+    @if (workflows$ | async; as workflows) {
+      @if (workflows.length > 0) {
+        <div class="jensify-table-container">
+          <table mat-table [dataSource]="workflows" class="jensify-table">
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Workflow Name</th>
+              <td mat-cell *matCellDef="let workflow">
+                <div class="workflow-name">
+                  <strong>{{workflow.name}}</strong>
+                  @if (workflow.description) {
+                    <p class="workflow-description">{{workflow.description}}</p>
+                  }
+                  <div class="workflow-meta">
+                    Priority: {{workflow.priority}}
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Conditions Column -->
+            <ng-container matColumnDef="conditions">
+              <th mat-header-cell *matHeaderCellDef>Conditions</th>
+              <td mat-cell *matCellDef="let workflow">
+                <div class="conditions-display">
+                  <mat-icon>tune</mat-icon>
+                  <span>{{formatConditions(workflow)}}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Steps Column -->
+            <ng-container matColumnDef="steps">
+              <th mat-header-cell *matHeaderCellDef>Approval Steps</th>
+              <td mat-cell *matCellDef="let workflow">
+                <div class="steps-display">
+                  <mat-icon>approval</mat-icon>
+                  <span>View workflow to see steps</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Active Column -->
+            <ng-container matColumnDef="active">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let workflow">
+                <mat-chip-set>
+                  <mat-chip [class.active-chip]="workflow.is_active" [class.inactive-chip]="!workflow.is_active">
+                    {{workflow.is_active ? 'Active' : 'Inactive'}}
+                  </mat-chip>
+                </mat-chip-set>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let workflow">
+                <div class="action-buttons">
+                  <button mat-icon-button (click)="onEditWorkflow(workflow)" matTooltip="Edit">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="onToggleActive(workflow)" [matTooltip]="workflow.is_active ? 'Deactivate' : 'Activate'">
+                    <mat-icon>{{workflow.is_active ? 'toggle_on' : 'toggle_off'}}</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="onDeleteWorkflow(workflow)" color="warn" matTooltip="Delete">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </div>
+      } @else {
+        <app-empty-state
+          icon="settings"
+          title="No Approval Workflows"
+          message="Create your first approval workflow to start routing expenses and reports for approval."
+          [actionLabel]="'Create Workflow'"
+          (action)="onCreateWorkflow()">
+        </app-empty-state>
+      }
+    } @else {
+      <app-loading-skeleton type="card" [count]="5"></app-loading-skeleton>
+    }
+  }
+</div>

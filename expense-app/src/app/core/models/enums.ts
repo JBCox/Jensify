@@ -40,6 +40,7 @@ export enum ExpenseCategory {
   GROUND_TRANSPORTATION = 'Ground Transportation',
   OFFICE_SUPPLIES = 'Office Supplies',
   SOFTWARE = 'Software/Subscriptions',
+  MILEAGE = 'Mileage',
   MISCELLANEOUS = 'Miscellaneous'
 }
 

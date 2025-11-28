@@ -83,6 +83,7 @@ export class ReportService {
               added_at,
               expense:expenses(
                 *,
+                receipt:receipts!expenses_receipt_id_fkey(*),
                 expense_receipts(
                   *,
                   receipt:receipts(*)
@@ -164,6 +165,7 @@ export class ReportService {
             added_by,
             expense:expenses(
               *,
+              receipt:receipts!expenses_receipt_id_fkey(*),
               expense_receipts(
                 *,
                 receipt:receipts(*)
@@ -538,7 +540,13 @@ export class ReportService {
         if (!detail.report_expenses?.length) {
           throw new Error('Cannot submit empty report. Add expenses first.');
         }
-        const missingReceipt = detail.report_expenses.some(re => !re.expense?.expense_receipts || re.expense.expense_receipts.length === 0);
+        // Check for missing receipts - support both junction table and legacy receipt_id
+        const missingReceipt = detail.report_expenses.some(re => {
+          const exp = re.expense;
+          const hasJunctionReceipts = exp?.expense_receipts && exp.expense_receipts.length > 0;
+          const hasLegacyReceipt = exp?.receipt_id || exp?.receipt;
+          return !hasJunctionReceipts && !hasLegacyReceipt;
+        });
         if (missingReceipt) {
           throw new Error('All expenses must have receipts before submitting the report.');
         }
@@ -550,25 +558,23 @@ export class ReportService {
           throw new Error('All expenses need merchant, amount, category, and date before submission.');
         }
 
-        const userId = (await this.supabase.client.auth.getUser()).data.user?.id;
+        // Create approval chain for the report
+        const { error: approvalError } = await this.supabase.client.rpc('create_approval_chain', {
+          p_expense_id: null,
+          p_report_id: reportId
+        });
 
-        const { data, error } = await this.supabase.client
-          .from('expense_reports')
-          .update({
-            status: ReportStatus.SUBMITTED,
-            submitted_at: new Date().toISOString(),
-            submitted_by: userId,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', reportId)
-          .select()
-          .single();
-
-        if (error) {
-          throw error;
+        if (approvalError) {
+          throw approvalError;
         }
 
-        return data as ExpenseReport;
+        // Fetch updated report with approval details
+        const updatedReport = await this.getReportById(reportId).toPromise();
+        if (!updatedReport) {
+          throw new Error('Failed to fetch updated report');
+        }
+
+        return updatedReport;
       })()
     ).pipe(
       catchError(err => {

@@ -402,7 +402,7 @@ type(scope): subject
 ### Scope
 - ✅ Employee authentication (Supabase Auth) - **COMPLETE**
 - ✅ Expense receipt upload (photo/PDF, all categories) - **COMPLETE**
-- ✅ OCR extraction (Google Vision API) - **COMPLETE (November 15, 2025)**
+- ✅ OCR extraction (Google Vision API) - **COMPLETE (November 15, 2024)**
 - ✅ Employee verification UI - **COMPLETE (Expense list with filters)**
 - ✅ Finance dashboard - **COMPLETE (With reimbursement queue)**
 - ✅ CSV export - **COMPLETE (UI placeholder, backend ready)**
@@ -417,11 +417,11 @@ type(scope): subject
 - [x] 70%+ test coverage - **Complete (83 test cases, 95%+ passing)**
 - [ ] Deployed to staging - **Pending**
 
-### Completed Components (Updated November 21, 2025)
+### Completed Components (Updated November 27, 2024)
 - ✅ Database schema with RLS policies
 - ✅ Database trigger for automatic user profile creation
 - ✅ Supabase, Auth, and Expense services
-- ✅ **OCR Service (Google Vision API integration)** - November 15, 2025
+- ✅ **OCR Service (Google Vision API integration)** - November 15, 2024
 - ✅ Login component with validation (Orange theme)
 - ✅ Register component with password strength (Orange theme)
 - ✅ Forgot password component (Orange theme)
@@ -438,17 +438,18 @@ type(scope): subject
 - ✅ Shared components library (MetricCard, StatusBadge, EmptyState, LoadingSkeleton)
 - ✅ Brex-inspired orange color palette (#FF5900)
 - ✅ Mobile-responsive design (all components, 320px+)
-- ✅ Comprehensive unit tests (207 test cases, 93.7% passing)
+- ✅ Comprehensive unit tests (232 test cases, 95%+ passing)
 - ✅ Registration bug fix (duplicate profile creation resolved)
-- ✅ RLS infinite recursion fix (November 15, 2025)
-- ✅ **Major UI Redesign Complete** (November 14, 2025)
-- ✅ **Real OCR Integration Complete** (November 15, 2025)
-- ✅ **Organization Multi-Tenancy System** (November 15, 2025)
-- ✅ **Phase 1: Multiple Receipts per Expense** (November 18, 2025)
-- ✅ **Phase 2: Expense Reports (Expensify-style grouping)** (November 18, 2025)
-- ✅ **Progressive Web App (PWA) Enhancement** (November 21, 2025)
-- ✅ **Mileage Tracking with GPS & Google Maps** (November 21, 2025)
-- ✅ **GPS Start/Stop Tracking with Real-time Path Rendering** (November 21, 2025)
+- ✅ RLS infinite recursion fix (November 15, 2024)
+- ✅ **Major UI Redesign Complete** (November 14, 2024)
+- ✅ **Real OCR Integration Complete** (November 15, 2024)
+- ✅ **Organization Multi-Tenancy System** (November 15, 2024)
+- ✅ **Phase 1: Multiple Receipts per Expense** (November 18, 2024)
+- ✅ **Phase 2: Expense Reports (Expensify-style grouping)** (November 18, 2024)
+- ✅ **Progressive Web App (PWA) Enhancement** (November 21, 2024)
+- ✅ **Mileage Tracking with GPS & Google Maps** (November 21, 2024)
+- ✅ **GPS Start/Stop Tracking with Real-time Path Rendering** (November 21, 2024)
+- ✅ **Multi-Level Approval System** (November 23, 2024)
 
 ## Completed Features
 
@@ -456,41 +457,46 @@ Jensify includes several major features completed in Phase 0. For detailed docum
 
 ### Feature Summary
 
-**Organization Multi-Tenancy** (November 15, 2025)
+**Organization Multi-Tenancy** (November 15, 2024)
 - Multi-tenant architecture with complete data isolation
 - 4-tier user roles (Employee, Manager, Finance, Admin)
 - Organization setup wizard and invitation system
 - Bulk CSV user imports
 - Row-Level Security (RLS) at database level
 
-**Expense Reports** (November 18, 2025)
+**Expense Reports** (November 18, 2024)
 - Expensify-style batch expense grouping
 - Status workflow: draft → submitted → approved → rejected → paid
 - Automatic total calculation via database triggers
 - Timeline view for status changes
 - Mobile-responsive UI
 
-**Progressive Web App (PWA)** (November 21, 2025)
+**Progressive Web App (PWA)** (November 21, 2024)
 - Installable on mobile and desktop
 - Offline support with service worker caching
 - Offline action queue with auto-sync
 - Update management with user notifications
 - PWA shortcuts for common actions
 
-**Mileage Tracking with GPS** (November 21, 2025)
+**Mileage Tracking with GPS** (November 21, 2024)
 - One-tap GPS location capture
 - Google Maps integration (geocoding, routing, distance calculation)
 - Interactive route visualization
 - Auto-calculate driving distance and duration
 - Mobile-responsive forms
 
-**GPS Real-Time Tracking** (November 21, 2025)
+**GPS Real-Time Tracking** (November 21, 2024)
 - Start/Stop GPS tracking with live breadcrumbs
 - Dual-mode UI: Quick Entry (manual) vs GPS Tracking (real-time)
-- GPS path visualization with orange polyline
-- Haversine distance calculation
-- localStorage persistence (survives page refresh)
-- 37% cost savings vs manual entry
+
+**Multi-Level Approval System** (November 23, 2024)
+- Sequential approval workflows with configurable steps
+- Role-based approval routing (Manager, Finance, Admin)
+- Amount thresholds and workflow conditions
+- Approval queue with filtering and batch actions
+- Complete approval history timeline
+- Admin settings for workflow configuration
+- Comprehensive unit tests (25 test cases, 100% passing)
 
 For complete documentation including code examples, database schemas, and implementation details, see **[FEATURES.md](FEATURES.md)**.
 
@@ -573,6 +579,40 @@ mcp__chrome-devtools__take_screenshot({})
 - Use **JPEG (quality: 85)** only if storage/bandwidth is a concern
 - Avoid WebP unless targeting modern browsers exclusively
 
+### Disabling Browser Prompts (Password Save, Notifications, etc.)
+
+Chrome prompts like "Save password?" or permission dialogs can interrupt MCP automation. Use these launch flags to suppress them:
+
+**For Puppeteer MCP - Use launchOptions parameter:**
+```typescript
+mcp__puppeteer__puppeteer_navigate({
+  url: "http://localhost:4200",
+  launchOptions: {
+    headless: false,
+    args: [
+      "--disable-save-password-bubble",
+      "--disable-infobars",
+      "--disable-notifications",
+      "--disable-popup-blocking",
+      "--password-store=basic",
+      "--no-default-browser-check"
+    ]
+  },
+  allowDangerous: true
+})
+```
+
+**For Chrome DevTools MCP - Use the batch file:**
+Run `C:\Jensify\launch-chrome-dev.bat` to start Chrome with all prompts disabled and DevTools debugging enabled on port 9222.
+
+**Key Chrome Flags:**
+| Flag | Purpose |
+|------|---------|
+| `--disable-save-password-bubble` | Disables "Save password?" prompt |
+| `--disable-infobars` | Disables info bars at top |
+| `--disable-notifications` | Disables notification prompts |
+| `--password-store=basic` | No OS keychain prompts |
+
 ## Resources & References
 
 - [Angular Documentation](https://angular.io/docs)
@@ -591,5 +631,5 @@ mcp__chrome-devtools__take_screenshot({})
 
 ---
 
-*Last Updated: 2025-11-21*
+*Last Updated: 2024-11-27*
 *Version: 0.1.0 (Phase 0 - Expense Receipt MVP)*

@@ -33,49 +33,49 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--jensify-spacing-3xl) var(--jensify-spacing-xl);
+  padding: var(--jensify-spacing-xl) var(--jensify-spacing-lg);
   text-align: center;
-  min-height: 300px;
+  min-height: 200px;
   animation: fadeIn 0.5s ease-out;
 
   .empty-state-icon {
-    width: 80px;
-    height: 80px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     background: var(--jensify-surface-soft);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: var(--jensify-spacing-lg);
+    margin-bottom: var(--jensify-spacing-md);
     animation: slideUpFade 0.6s ease-out 0.1s backwards, iconBounce 2s ease-in-out 0.7s infinite;
 
     mat-icon {
-      font-size: 40px;
-      width: 40px;
-      height: 40px;
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
       color: var(--jensify-icon-muted);
     }
   }
 
   .empty-state-title {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     color: var(--jensify-text-strong);
-    margin: 0 0 var(--jensify-spacing-sm) 0;
+    margin: 0 0 var(--jensify-spacing-xs) 0;
     animation: slideUpFade 0.6s ease-out 0.2s backwards;
   }
 
   .empty-state-message {
     font-size: 14px;
     color: var(--jensify-text-muted);
-    margin: 0 0 var(--jensify-spacing-lg) 0;
+    margin: 0 0 var(--jensify-spacing-md) 0;
     max-width: 400px;
-    line-height: 1.6;
+    line-height: 1.5;
     animation: slideUpFade 0.6s ease-out 0.3s backwards;
   }
 
   .empty-state-action {
-    margin-top: var(--jensify-spacing-md);
+    margin-top: var(--jensify-spacing-sm);
     animation: slideUpFade 0.6s ease-out 0.4s backwards;
   }
 }

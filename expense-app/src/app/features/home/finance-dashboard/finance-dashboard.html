@@ -1,127 +1,201 @@
-<div class="jensify-dashboard-container">
-  <div class="jensify-hero-surface">
-    <div class="jensify-dashboard-header jensify-animate-slide-down">
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-content">
       <h1>Finance Dashboard</h1>
-      <p class="subtitle">Manage approvals and track company expenses.</p>
+      <p class="subtitle">Manage reimbursements and track company spending</p>
     </div>
-  </div>
-
-  <!-- KPI Cards -->
-  <div class="jensify-metrics-grid jensify-animate-fade" *ngIf="metrics$ | async as metrics">
-    <app-metric-card
-      [value]="metrics.pendingApprovals.toString()"
-      label="Pending Approvals"
-      icon="pending_actions"
-      iconType="approvals"
-      [loading]="loading">
-    </app-metric-card>
-
-    <app-metric-card
-      [value]="formatCurrency(metrics.reimbursementsDue)"
-      label="Total Reimbursements Due"
-      icon="payments"
-      iconType="spend"
-      [loading]="loading">
-    </app-metric-card>
-
-    <app-metric-card
-      [value]="formatCurrency(metrics.monthToDateSpend)"
-      label="Month-to-Date Spend"
-      icon="trending_up"
-      iconType="budget"
-      [loading]="loading">
-    </app-metric-card>
-
-    <app-metric-card
-      [value]="metrics.flaggedExpenses.toString()"
-      label="Policy Violations"
-      icon="flag"
-      iconType="flagged"
-      [loading]="loading">
-    </app-metric-card>
-  </div>
-
-  <!-- Approval Queue -->
-  <div class="jensify-section">
-    <div class="jensify-section-header">
-      <h2>Approval Queue</h2>
-      <button mat-stroked-button (click)="onViewApprovals()" class="jensify-button">
-        View All
-        <mat-icon>arrow_forward</mat-icon>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="onViewApprovals()">
+        <mat-icon>task_alt</mat-icon>
+        Review Queue
       </button>
     </div>
+  </div>
 
-    <div class="jensify-list" *ngIf="pendingApprovals$ | async as approvals">
-      <app-empty-state
-        *ngIf="approvals.length === 0"
-        icon="check_circle"
-        title="All caught up!"
-        message="No pending approvals at this time">
-      </app-empty-state>
+  @if (metrics$ | async; as metrics) {
+  <!-- Compact Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-item" [class.attention]="metrics.pendingApprovals > 0">
+      <mat-icon>pending_actions</mat-icon>
+      <span class="stat-value">{{ metrics.pendingApprovals }}</span>
+      <span class="stat-label">Pending</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <mat-icon>payments</mat-icon>
+      <span class="stat-value">{{ formatCurrency(metrics.reimbursementsDue) }}</span>
+      <span class="stat-label">Due</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <mat-icon>trending_up</mat-icon>
+      <span class="stat-value">{{ formatCurrency(metrics.monthToDateSpend) }}</span>
+      <span class="stat-label">MTD Spend</span>
+      @if (metrics.spendChange > 0) {
+        <span class="stat-change" [class.negative]="metrics.spendChangeType === 'negative'" [class.positive]="metrics.spendChangeType === 'positive'">
+          {{ metrics.spendChangeType === 'negative' ? '+' : '-' }}{{ metrics.spendChange }}%
+        </span>
+      }
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item" [class.flagged]="metrics.flaggedExpenses > 0">
+      <mat-icon>flag</mat-icon>
+      <span class="stat-value">{{ metrics.flaggedExpenses }}</span>
+      <span class="stat-label">Violations</span>
+    </div>
+  </div>
 
-      <div
-        *ngFor="let expense of approvals; trackBy: trackByExpenseId"
-        class="jensify-queue-item"
-        (click)="onViewExpense(expense)">
-        <div class="jensify-queue-info">
-          <div class="jensify-queue-employee">{{ getUserName(expense) }}</div>
-          <div class="jensify-queue-details">
-            <span>{{ expense.merchant }}</span>
-            <span class="jensify-text-muted">•</span>
-            <span>{{ expense.category }}</span>
-            <span class="jensify-text-muted">•</span>
-            <span>{{ formatDate(expense.expense_date) }}</span>
+  <!-- Analytics Section -->
+  <div class="analytics-section">
+    <div class="section-header">
+      <h2><mat-icon>analytics</mat-icon> Financial Analytics</h2>
+    </div>
+
+    <div class="charts-row">
+      <!-- Spending by Category -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">
+            <mat-icon>donut_large</mat-icon>
+            <span>Spend by Category</span>
           </div>
+          <span class="chart-period">This Month</span>
         </div>
-        <div class="jensify-queue-amount">{{ formatCurrency(expense.amount) }}</div>
-        <div class="jensify-queue-actions">
-          <button
-            mat-icon-button
-            color="primary"
-            (click)="onApprove(expense, $event)"
-            matTooltip="Approve"
-            class="jensify-icon-button">
-            <mat-icon>check_circle</mat-icon>
-          </button>
-          <button
-            mat-icon-button
-            color="warn"
-            (click)="onReject(expense, $event)"
-            matTooltip="Reject"
-            class="jensify-icon-button">
-            <mat-icon>cancel</mat-icon>
-          </button>
+        <div class="chart-body">
+          @if (categorySpendData$ | async; as categoryData) {
+            @if (categoryData.length > 0) {
+              <ngx-charts-pie-chart
+                [results]="categoryData"
+                [scheme]="pieColorScheme"
+                [legend]="true"
+                [legendPosition]="legendPosition"
+                [labels]="false"
+                [doughnut]="true"
+                [gradient]="true"
+                [animations]="true">
+              </ngx-charts-pie-chart>
+            } @else {
+              <div class="chart-empty">
+                <mat-icon>pie_chart_outline</mat-icon>
+                <span>No expenses this month</span>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Approval/Reimbursement Trend -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">
+            <mat-icon>show_chart</mat-icon>
+            <span>Reimbursement Trend</span>
+          </div>
+          <span class="chart-period">Last 6 Months</span>
+        </div>
+        <div class="chart-body">
+          @if (spendTrendData$ | async; as trendData) {
+            @if (hasTrendData(trendData)) {
+              <ngx-charts-line-chart
+                [results]="trendData"
+                [scheme]="lineChartColorScheme"
+                [xAxis]="true"
+                [yAxis]="true"
+                [showXAxisLabel]="false"
+                [showYAxisLabel]="false"
+                [legend]="true"
+                [legendPosition]="legendPosition"
+                [autoScale]="true"
+                [gradient]="true"
+                [animations]="true">
+              </ngx-charts-line-chart>
+            } @else {
+              <div class="chart-empty">
+                <mat-icon>trending_up</mat-icon>
+                <span>No historical data yet</span>
+              </div>
+            }
+          }
         </div>
       </div>
     </div>
   </div>
+  }
 
-  <!-- Recent Activity -->
-  <div class="jensify-section">
-    <h2 class="jensify-section-title">Recent Activity</h2>
-
-    <div class="jensify-list" *ngIf="recentActivity$ | async as expenses">
-      <app-empty-state
-        *ngIf="expenses.length === 0"
-        icon="history"
-        title="No recent activity"
-        message="Recent approvals and reimbursements will appear here">
-      </app-empty-state>
-
-      <div
-        *ngFor="let expense of expenses; trackBy: trackByExpenseId"
-        class="jensify-expense-item"
-        (click)="onViewExpense(expense)">
-        <div class="jensify-expense-icon">
-          <mat-icon>receipt</mat-icon>
-        </div>
-        <div class="jensify-expense-info">
-          <div class="jensify-expense-merchant">{{ expense.merchant }}</div>
-          <div class="jensify-expense-meta">{{ getUserName(expense) }} • {{ formatDate(expense.expense_date) }}</div>
-        </div>
-        <div class="jensify-expense-amount">{{ formatCurrency(expense.amount) }}</div>
-        <app-status-badge [status]="mapStatus(expense.status)" size="small"></app-status-badge>
+  <!-- Two Column Layout: Pending & Recent Activity -->
+  <div class="content-grid">
+    <!-- Pending Approvals -->
+    <div class="activity-section">
+      <div class="section-header">
+        <h2><mat-icon>pending_actions</mat-icon> Pending Review</h2>
+        <button mat-button color="primary" (click)="onViewApprovals()">View All</button>
       </div>
+
+      @if (pendingApprovals$ | async; as approvals) {
+        @if (approvals.length > 0) {
+          <div class="expense-list">
+            @for (expense of approvals; track expense.id) {
+              <div class="expense-row" (click)="onViewExpense(expense)">
+                <div class="expense-icon user-icon">
+                  <mat-icon>account_circle</mat-icon>
+                </div>
+                <div class="expense-info">
+                  <span class="submitter">{{ getUserName(expense) }}</span>
+                  <span class="merchant">{{ expense.merchant || 'No merchant' }}</span>
+                </div>
+                <div class="expense-amount">{{ formatCurrency(expense.amount) }}</div>
+                <div class="expense-actions">
+                  <button mat-button color="primary" (click)="onViewExpense(expense)" title="Review expense details">
+                    <mat-icon>open_in_new</mat-icon>
+                    Review
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <app-empty-state
+            icon="check_circle"
+            title="All Caught Up"
+            message="No expenses pending review">
+          </app-empty-state>
+        }
+      }
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="activity-section">
+      <div class="section-header">
+        <h2><mat-icon>history</mat-icon> Recent Activity</h2>
+        <button mat-button color="primary" routerLink="/expenses">View All</button>
+      </div>
+
+      @if (recentActivity$ | async; as expenses) {
+        @if (expenses.length > 0) {
+          <div class="expense-list">
+            @for (expense of expenses; track expense.id) {
+              <div class="expense-row" (click)="onViewExpense(expense)">
+                <div class="expense-icon">
+                  <mat-icon>receipt</mat-icon>
+                </div>
+                <div class="expense-info">
+                  <span class="merchant">{{ expense.merchant || 'No merchant' }}</span>
+                  <span class="date">{{ getUserName(expense) }} - {{ formatDate(expense.expense_date) }}</span>
+                </div>
+                <div class="expense-amount">{{ formatCurrency(expense.amount) }}</div>
+                <app-status-badge [status]="mapStatus(expense.status)" size="small"></app-status-badge>
+              </div>
+            }
+          </div>
+        } @else {
+          <app-empty-state
+            icon="history"
+            title="No Recent Activity"
+            message="Recent approvals and reimbursements will appear here">
+          </app-empty-state>
+        }
+      }
     </div>
   </div>
 </div>

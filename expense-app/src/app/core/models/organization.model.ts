@@ -21,6 +21,19 @@ export interface Organization {
 }
 
 /**
+ * Mileage settings for organization
+ * Controls rate used for mileage reimbursement
+ */
+export interface MileageSettings {
+  /** Whether to use custom rate instead of IRS rate */
+  use_custom_rate: boolean;
+  /** Custom rate per mile (used when use_custom_rate is true) */
+  custom_rate_per_mile: number;
+  /** Default mileage category */
+  mileage_category: 'business' | 'medical' | 'charity' | 'moving';
+}
+
+/**
  * Organization settings and policies
  * Stored as JSONB in database
  */
@@ -41,6 +54,8 @@ export interface OrganizationSettings {
     /** Whether finance approval is required */
     require_finance_approval: boolean;
   };
+  /** Mileage reimbursement settings */
+  mileage_settings?: MileageSettings;
 }
 
 /**

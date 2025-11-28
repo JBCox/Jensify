@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output, signal, inject } from "@angular/core";
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output, signal, inject, ViewChild, AfterViewInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { NavigationEnd, Router, RouterModule } from "@angular/router";
 import { MatIconModule } from "@angular/material/icon";
@@ -9,8 +9,10 @@ import { AuthService } from "../../services/auth.service";
 import { OrganizationService } from "../../services/organization.service";
 import { ExpenseService } from "../../services/expense.service";
 import { ReportService } from "../../services/report.service";
+import { ApprovalService } from "../../services/approval.service";
 import { ThemeService } from "../../services/theme.service";
-import { filter, map, Observable, shareReplay, Subject, takeUntil } from "rxjs";
+import { OrgSwitcher } from "../org-switcher/org-switcher";
+import { BehaviorSubject, filter, map, Observable, of, shareReplay, Subject, switchMap, takeUntil, catchError } from "rxjs";
 import { Expense } from "../../models/expense.model";
 import { ExpenseReport, ReportStatus } from "../../models/report.model";
 
@@ -30,18 +32,20 @@ interface NavItem {
     MatListModule,
     MatButtonModule,
     MatTooltipModule,
+    OrgSwitcher,
   ],
   templateUrl: "./sidebar-nav.html",
   styleUrl: "./sidebar-nav.scss",
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SidebarNav implements OnDestroy {
+export class SidebarNav implements OnDestroy, AfterViewInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private organizationService = inject(OrganizationService);
   private expenseService = inject(ExpenseService);
   private reportService = inject(ReportService);
+  private approvalService = inject(ApprovalService);
   private cdr = inject(ChangeDetectorRef);
   themeService = inject(ThemeService);
 
@@ -54,10 +58,15 @@ export class SidebarNav implements OnDestroy {
   collapsed = signal(false);
   private readonly destroy$ = new Subject<void>();
 
+  @ViewChild(OrgSwitcher) orgSwitcher?: OrgSwitcher;
+
+  // Refresh triggers for badge counts
+  private refreshTrigger$ = new BehaviorSubject<void>(undefined);
+
   // Badge counts
   unreportedCount$: Observable<number>;
   draftReportsCount$: Observable<number>;
-  submittedReportsCount$: Observable<number>;
+  pendingApprovalCount$: Observable<number>;
 
   navItems: NavItem[] = [
     // Dashboard & Admin
@@ -76,6 +85,12 @@ export class SidebarNav implements OnDestroy {
       icon: "people",
       label: "User Management",
       route: "/organization/users",
+      requiredRole: "admin",
+    },
+    {
+      icon: "speed",
+      label: "Mileage Settings",
+      route: "/organization/mileage-settings",
       requiredRole: "admin",
     },
     // Natural expense workflow: Upload → Receipts → Create → View → Report → Mileage
@@ -112,27 +127,39 @@ export class SidebarNav implements OnDestroy {
   ];
 
   constructor() {
-    this.unreportedCount$ = this.expenseService.getMyExpenses().pipe(
-      map((list: Expense[]) =>
-        list.filter((e: Expense) => !e.is_reported).length
-      ),
+    // Unreported expenses count - refreshes on navigation
+    this.unreportedCount$ = this.refreshTrigger$.pipe(
+      switchMap(() => this.expenseService.getMyExpenses().pipe(
+        map((list: Expense[]) =>
+          list.filter((e: Expense) => !e.is_reported).length
+        ),
+        catchError(() => of(0)),
+      )),
       shareReplay(1),
     );
 
-    this.draftReportsCount$ = this.reportService.getReports().pipe(
-      map((list: ExpenseReport[]) =>
-        list.filter((r) => r.status === ReportStatus.DRAFT).length
-      ),
+    // Draft reports count - refreshes on navigation
+    this.draftReportsCount$ = this.refreshTrigger$.pipe(
+      switchMap(() => this.reportService.getReports().pipe(
+        map((list: ExpenseReport[]) =>
+          list.filter((r) => r.status === ReportStatus.DRAFT).length
+        ),
+        catchError(() => of(0)),
+      )),
       shareReplay(1),
     );
 
-    this.submittedReportsCount$ = this.reportService.getReports({
-      status: ReportStatus.SUBMITTED,
-    }).pipe(
-      map((list: ExpenseReport[]) => list.length),
+    // Pending approvals count from expense_approvals table - refreshes on navigation
+    // This is the count of items waiting for the current user to approve
+    this.pendingApprovalCount$ = this.refreshTrigger$.pipe(
+      switchMap(() => this.approvalService.getPendingApprovals().pipe(
+        map((approvals) => approvals.length),
+        catchError(() => of(0)),
+      )),
       shareReplay(1),
     );
 
+    // Refresh badge counts on every navigation
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd =>
@@ -140,12 +167,35 @@ export class SidebarNav implements OnDestroy {
         ),
         takeUntil(this.destroy$),
       )
-      .subscribe(() => this.cdr.markForCheck());
+      .subscribe(() => {
+        this.refreshBadgeCounts();
+        this.cdr.markForCheck();
+      });
+  }
+
+  /**
+   * Refresh all badge counts
+   * Called on navigation and can be called manually
+   */
+  refreshBadgeCounts(): void {
+    this.refreshTrigger$.next();
+  }
+
+  ngAfterViewInit(): void {
+    // Sync initial collapsed state with org switcher
+    this.syncOrgSwitcherCollapsed();
   }
 
   toggleCollapse(): void {
     this.collapsed.update((value) => !value);
     this.collapsedChange.emit(this.collapsed());
+    this.syncOrgSwitcherCollapsed();
+  }
+
+  private syncOrgSwitcherCollapsed(): void {
+    if (this.orgSwitcher) {
+      this.orgSwitcher.setCollapsed(this.collapsed());
+    }
   }
 
   /**

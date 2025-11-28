@@ -29,6 +29,12 @@
       <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
     </button>
   </div>
+
+  <!-- Organization Switcher -->
+  <div class="sidebar-org-switcher">
+    <app-org-switcher></app-org-switcher>
+  </div>
+
   <nav class="sidebar-nav">
     <div
       *ngFor="let item of filteredNavItems; trackBy: trackByNavItemRoute"
@@ -52,7 +58,7 @@
             </ng-container>
           </ng-container>
           <ng-container *ngSwitchCase="'/approvals'">
-            <ng-container *ngIf="(submittedReportsCount$ | async) as count">
+            <ng-container *ngIf="(pendingApprovalCount$ | async) as count">
               <span class="badge" *ngIf="count > 0">{{ count }}</span>
             </ng-container>
           </ng-container>

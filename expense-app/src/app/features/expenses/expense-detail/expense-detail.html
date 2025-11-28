@@ -47,6 +47,29 @@
               <mat-icon>edit</mat-icon>
               Edit Expense
             </button>
+            @if (canSplit()) {
+              <button
+                mat-stroked-button
+                (click)="openSplitDialog()"
+                [disabled]="splittingInProgress()"
+                matTooltip="Split this expense into multiple categories"
+                class="jensify-button">
+                <mat-icon>call_split</mat-icon>
+                Split Expense
+              </button>
+            }
+            @if (canUnsplit()) {
+              <button
+                mat-stroked-button
+                color="warn"
+                (click)="unsplitExpense()"
+                [disabled]="splittingInProgress()"
+                matTooltip="Remove split and restore single category"
+                class="jensify-button">
+                <mat-icon>merge_type</mat-icon>
+                Unsplit
+              </button>
+            }
             <button
               mat-raised-button
               color="primary"
@@ -94,6 +117,39 @@
         </mat-card>
       }
 
+      <!-- Approval Action Card - for managers/finance reviewing -->
+      @if (canApprove()) {
+        <mat-card class="jensify-card approval-action-card">
+          <div class="approval-action-header">
+            <mat-icon color="primary">task_alt</mat-icon>
+            <div>
+              <h3>Awaiting Your Approval</h3>
+              <p>Review the expense details and receipts below, then approve or reject.</p>
+            </div>
+          </div>
+          <div class="approval-action-buttons">
+            <button
+              mat-raised-button
+              color="primary"
+              [disabled]="approving()"
+              (click)="approveExpense()"
+              class="approve-btn">
+              <mat-icon>check_circle</mat-icon>
+              Approve Expense
+            </button>
+            <button
+              mat-stroked-button
+              color="warn"
+              [disabled]="approving()"
+              (click)="rejectExpense()"
+              class="reject-btn">
+              <mat-icon>cancel</mat-icon>
+              Reject
+            </button>
+          </div>
+        </mat-card>
+      }
+
       <div class="detail-grid">
         <mat-card class="jensify-card">
           <h3>Expense Details</h3>
@@ -103,7 +159,12 @@
           </div>
           <div class="detail-row">
             <span class="label">Category</span>
-            <span class="value">{{ expense()!.category }}</span>
+            <span class="value">
+              {{ expense()!.category }}
+              @if (isSplit()) {
+                <mat-chip class="split-badge">Split</mat-chip>
+              }
+            </span>
           </div>
           <div class="detail-row">
             <span class="label">Expense Date</span>
@@ -115,10 +176,42 @@
           </div>
         </mat-card>
 
+        <!-- Split Items Section -->
+        @if (isSplit() && expenseItems().length > 0) {
+          <mat-card class="jensify-card split-items-card">
+            <div class="card-title">
+              <mat-icon>call_split</mat-icon>
+              <div>
+                <h3>Split Breakdown</h3>
+                <p>This expense is split into {{ expenseItems().length }} categories</p>
+              </div>
+            </div>
+            <div class="split-items-list">
+              @for (item of expenseItems(); track item.id) {
+                <div class="split-item">
+                  <div class="split-item-header">
+                    <span class="split-item-number">{{ item.line_number }}</span>
+                    <span class="split-item-description">{{ item.description }}</span>
+                    <span class="split-item-amount">{{ formatCurrency(item.amount) }}</span>
+                  </div>
+                  <div class="split-item-category">
+                    <mat-chip>{{ item.category }}</mat-chip>
+                  </div>
+                </div>
+              }
+            </div>
+            <mat-divider></mat-divider>
+            <div class="split-total">
+              <span class="label">Total</span>
+              <span class="value">{{ formatCurrency(expense()!.amount) }}</span>
+            </div>
+          </mat-card>
+        }
+
         <!-- Receipt Gallery -->
         <mat-card class="jensify-card">
           <app-receipt-gallery
-            [expenseReceipts]="expense()!.expense_receipts || []"
+            [expenseReceipts]="allReceipts()"
             [canEdit]="canEditReceipts()"
             [showAddButton]="canEditReceipts()"
             (setPrimary)="onSetPrimaryReceipt($event)"

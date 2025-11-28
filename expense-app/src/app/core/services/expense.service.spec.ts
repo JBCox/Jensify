@@ -56,10 +56,11 @@ describe('ExpenseService', () => {
     ], {
       userId: mockUserId,
       client: {
-        from: jasmine.createSpy('from')
+        from: jasmine.createSpy('from'),
+        rpc: jasmine.createSpy('rpc')
       }
     });
-    const notificationSpy = jasmine.createSpyObj('NotificationService', ['notify', 'shouldAlert'], {
+    const notificationSpy = jasmine.createSpyObj('NotificationService', ['notify', 'shouldAlert', 'showSuccess', 'showError'], {
       currentPreferences: {
         smartScanUpdates: true,
         receiptIssues: true,
@@ -68,6 +69,8 @@ describe('ExpenseService', () => {
       }
     });
     notificationSpy.shouldAlert.and.returnValue(true);
+    notificationSpy.showSuccess.and.stub();
+    notificationSpy.showError.and.stub();
 
     const organizationSpy = jasmine.createSpyObj('OrganizationService',
       ['getUserOrganizationContext', 'setCurrentOrganization'],
@@ -302,28 +305,49 @@ describe('ExpenseService', () => {
   });
 
   describe('submitExpense', () => {
-    it('should submit expense successfully', (done) => {
+    it('should submit expense successfully via approval chain', (done) => {
       const submittedExpense = { ...mockExpense, status: ExpenseStatus.SUBMITTED };
       const mockResponse = { data: submittedExpense, error: null };
 
-      const selectSpy = jasmine.createSpy('select').and.returnValue({
-        single: jasmine.createSpy('single').and.resolveTo(mockResponse)
-      });
-      const eqSpy = jasmine.createSpy('eq').and.returnValue({ select: selectSpy });
-      const updateSpy = jasmine.createSpy('update').and.returnValue({ eq: eqSpy });
+      // Mock rpc call for create_approval_chain
+      (supabaseServiceSpy.client.rpc as jasmine.Spy).and.returnValue(
+        Promise.resolve({ data: null, error: null })
+      );
+
+      // Mock getExpenseById (from().select().eq().eq().single())
+      const singleSpy = jasmine.createSpy('single').and.resolveTo(mockResponse);
+      const eqSpy2 = jasmine.createSpy('eq').and.returnValue({ single: singleSpy });
+      const eqSpy1 = jasmine.createSpy('eq').and.returnValue({ eq: eqSpy2 });
+      const selectSpy = jasmine.createSpy('select').and.returnValue({ eq: eqSpy1 });
       supabaseServiceSpy.client.from = jasmine.createSpy('from').and.returnValue({
-        update: updateSpy
+        select: selectSpy
       }) as any;
 
       service.submitExpense('expense-1').subscribe({
         next: (expense) => {
           expect(expense.status).toBe(ExpenseStatus.SUBMITTED);
-          expect(updateSpy).toHaveBeenCalledWith(jasmine.objectContaining({
-            status: ExpenseStatus.SUBMITTED
-          }));
+          expect(supabaseServiceSpy.client.rpc).toHaveBeenCalledWith('create_approval_chain', {
+            p_expense_id: 'expense-1',
+            p_report_id: null
+          });
           done();
         },
         error: done.fail
+      });
+    });
+
+    it('should return error if user not authenticated', (done) => {
+      Object.defineProperty(supabaseServiceSpy, 'userId', {
+        get: () => null,
+        configurable: true
+      });
+
+      service.submitExpense('expense-1').subscribe({
+        next: () => done.fail('Should have thrown error'),
+        error: (error) => {
+          expect(error.message).toBe('User not authenticated');
+          done();
+        }
       });
     });
   });

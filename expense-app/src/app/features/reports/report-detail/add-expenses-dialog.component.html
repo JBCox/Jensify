@@ -1,0 +1,64 @@
+<h2 mat-dialog-title>Add Expenses to Report</h2>
+
+<mat-dialog-content class="dialog-container">
+    @if (loading()) {
+        <div class="jensify-loading">
+            <mat-progress-spinner
+                mode="indeterminate"
+                diameter="40"
+            ></mat-progress-spinner>
+            <p>Loading expenses...</p>
+        </div>
+    } @else {
+        @if (expenses().length === 0) {
+            <div class="empty-state">
+                <mat-icon>receipt_long</mat-icon>
+                <p>No available expenses found.</p>
+                <p class="expense-meta">
+                    Create new expenses first to add them here.
+                </p>
+            </div>
+        } @else {
+            <div class="expenses-list">
+                <mat-selection-list>
+                    @for (expense of expenses(); track expense.id) {
+                        <mat-list-option
+                            [selected]="isSelected(expense.id)"
+                            (click)="toggleSelection(expense.id)"
+                        >
+                            <div class="expense-item">
+                                <div class="expense-details">
+                                    <span class="expense-merchant">{{
+                                            expense.merchant
+                                        }}</span>
+                                    <span class="expense-meta">{{
+                                            formatDate(
+                                                expense.expense_date
+                                            )
+                                        }} • {{ expense.category }}</span>
+                                </div>
+                                <span class="expense-amount">{{
+                                        formatCurrency(
+                                            expense.amount
+                                        )
+                                    }}</span>
+                            </div>
+                        </mat-list-option>
+                    }
+                </mat-selection-list>
+            </div>
+        }
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    <button mat-button (click)="cancel()">Cancel</button>
+    <button
+        mat-raised-button
+        color="primary"
+        [disabled]="selectedExpenses().size === 0"
+        (click)="save()"
+    >
+        Add {{ selectedExpenses().size }} Expenses
+    </button>
+</mat-dialog-actions>

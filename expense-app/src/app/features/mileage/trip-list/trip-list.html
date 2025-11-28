@@ -285,6 +285,18 @@
               <mat-icon>visibility</mat-icon>
               Details
             </button>
+            @if (canConvertToExpense(trip)) {
+              <button mat-button color="accent" (click)="convertToExpense(trip)" class="jensify-button">
+                <mat-icon>receipt_long</mat-icon>
+                To Expense
+              </button>
+            }
+            @if (trip.expense_id) {
+              <button mat-button (click)="viewLinkedExpense(trip)" class="jensify-button">
+                <mat-icon>open_in_new</mat-icon>
+                View Expense
+              </button>
+            }
             @if (trip.status === 'draft') {
               <button mat-button color="primary" (click)="goToEdit(trip)" class="jensify-button">
                 <mat-icon>edit</mat-icon>

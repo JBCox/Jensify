@@ -169,7 +169,7 @@ export class InvitationService {
 
     let query = this.supabase.client
       .from('invitations')
-      .select('*, inviter:users!invited_by(*)')
+      .select('*')
       .eq('organization_id', organizationId);
 
     if (status) {

@@ -78,8 +78,8 @@ export class App implements OnInit, OnDestroy {
     this.vm$ = combineLatest([this.authService.userProfile$, this.authService.session$]).pipe(
       map(([profile, session]): ShellViewModel => {
         const sessionMetadata = (session?.user?.user_metadata ?? {}) as Record<string, unknown>;
-        const email: string = String(profile?.email || session?.user?.email || sessionMetadata['email'] || '');
-        const displayName: string = String(
+        const email = String(profile?.email || session?.user?.email || sessionMetadata['email'] || '');
+        const displayName = String(
           profile?.full_name ||
           sessionMetadata['full_name'] ||
           sessionMetadata['name'] ||

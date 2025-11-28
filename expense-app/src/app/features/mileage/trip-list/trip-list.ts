@@ -11,6 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog } from '@angular/material/dialog';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { Subject, forkJoin } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -23,6 +24,7 @@ import { StatusBadge, ExpenseStatus as BadgeStatus } from '../../../shared/compo
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loading-skeleton';
 import { Router } from '@angular/router';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
 
 /**
  * Trip List Component
@@ -58,6 +60,7 @@ export class TripList implements OnInit, OnDestroy {
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
   private keyboardShortcuts = inject(KeyboardShortcutsService);
+  private dialog = inject(MatDialog);
 
   // Cleanup
   private destroy$ = new Subject<void>();
@@ -382,21 +385,33 @@ export class TripList implements OnInit, OnDestroy {
    * Delete trip
    */
   deleteTrip(trip: MileageTrip): void {
-    if (!confirm(`Delete trip from ${trip.origin_address} to ${trip.destination_address}?`)) {
-      return;
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete Trip',
+        message: `Delete trip from ${trip.origin_address} to ${trip.destination_address}? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        confirmColor: 'warn',
+        icon: 'delete',
+        iconColor: '#f44336',
+      } as ConfirmDialogData,
+    });
 
-    this.mileageService.deleteTrip(trip.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.snackBar.open('Trip deleted successfully.', 'Close', { duration: 3000 });
-          this.loadTrips();
-        },
-        error: (err) => {
-          this.snackBar.open(err?.message || 'Failed to delete trip.', 'Close', { duration: 4000 });
-        }
-      });
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.mileageService.deleteTrip(trip.id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Trip deleted successfully.', 'Close', { duration: 3000 });
+              this.loadTrips();
+            },
+            error: (err) => {
+              this.snackBar.open(err?.message || 'Failed to delete trip.', 'Close', { duration: 4000 });
+            }
+          });
+      }
+    });
   }
 
   /**
@@ -490,5 +505,44 @@ export class TripList implements OnInit, OnDestroy {
           );
         }
       });
+  }
+
+  /**
+   * Convert trip to expense for reporting
+   */
+  convertToExpense(trip: MileageTrip): void {
+    this.mileageService.convertTripToExpense(trip.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (expenseId) => {
+          const snackRef = this.snackBar.open('Trip converted to expense', 'View Expense', {
+            duration: 5000
+          });
+          snackRef.onAction().subscribe(() => {
+            this.router.navigate(['/expenses', expenseId]);
+          });
+          // Reload trips to show linked expense indicator
+          this.loadTrips();
+        },
+        error: (err: Error) => {
+          this.snackBar.open(err.message || 'Failed to convert trip', 'Close', { duration: 5000 });
+        }
+      });
+  }
+
+  /**
+   * Check if trip can be converted to expense (not already linked)
+   */
+  canConvertToExpense(trip: MileageTrip): boolean {
+    return !trip.expense_id;
+  }
+
+  /**
+   * Navigate to linked expense
+   */
+  viewLinkedExpense(trip: MileageTrip): void {
+    if (trip.expense_id) {
+      this.router.navigate(['/expenses', trip.expense_id]);
+    }
   }
 }

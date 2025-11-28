@@ -1,0 +1,153 @@
+.jensify-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--jensify-spacing-md);
+}
+
+.jensify-page-header {
+  margin-bottom: var(--jensify-spacing-lg);
+}
+
+.jensify-page-title {
+  margin: 0 0 var(--jensify-spacing-xs) 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--jensify-text-primary);
+}
+
+.jensify-page-subtitle {
+  margin: 0;
+  color: var(--jensify-text-muted);
+  font-size: 0.875rem;
+}
+
+.jensify-card {
+  margin-bottom: var(--jensify-spacing-md);
+  border-radius: var(--jensify-radius-md);
+}
+
+.jensify-card-header {
+  display: flex;
+  align-items: center;
+  padding: var(--jensify-spacing-md);
+  border-bottom: 1px solid var(--jensify-border);
+}
+
+.jensify-card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--jensify-spacing-sm);
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--jensify-text-primary);
+
+  mat-icon {
+    color: var(--jensify-primary);
+  }
+}
+
+mat-card-content {
+  padding: var(--jensify-spacing-md) !important;
+}
+
+.info-card {
+  background: var(--jensify-surface-alt);
+  border-left: 4px solid var(--jensify-primary);
+}
+
+.irs-rate-display {
+  display: flex;
+  align-items: baseline;
+  gap: var(--jensify-spacing-sm);
+  margin-bottom: var(--jensify-spacing-sm);
+}
+
+.rate-value {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--jensify-primary);
+}
+
+.rate-label {
+  font-size: 0.875rem;
+  color: var(--jensify-text-muted);
+}
+
+.setting-row {
+  margin-bottom: var(--jensify-spacing-lg);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.setting-description {
+  margin: var(--jensify-spacing-xs) 0 0 0;
+  color: var(--jensify-text-muted);
+  font-size: 0.813rem;
+}
+
+.custom-rate-field {
+  width: 200px;
+}
+
+mat-form-field {
+  width: 100%;
+  max-width: 300px;
+}
+
+.jensify-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--jensify-spacing-lg);
+}
+
+.jensify-button {
+  display: flex;
+  align-items: center;
+  gap: var(--jensify-spacing-xs);
+
+  mat-spinner {
+    margin-right: var(--jensify-spacing-xs);
+  }
+}
+
+.jensify-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--jensify-spacing-xl);
+  gap: var(--jensify-spacing-md);
+
+  p {
+    margin: 0;
+    color: var(--jensify-text-muted);
+  }
+}
+
+.jensify-error-card {
+  display: flex;
+  align-items: center;
+  gap: var(--jensify-spacing-md);
+  padding: var(--jensify-spacing-md);
+  background: var(--jensify-error-bg);
+  border-left: 4px solid var(--jensify-error);
+
+  mat-icon {
+    color: var(--jensify-error);
+  }
+
+  p {
+    margin: 0;
+    color: var(--jensify-error);
+  }
+}
+
+// Dark mode adjustments
+:host-context(.dark-theme) {
+  .info-card {
+    background: rgba(255, 89, 0, 0.08);
+  }
+}

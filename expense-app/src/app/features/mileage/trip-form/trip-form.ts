@@ -15,12 +15,14 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatDialog } from '@angular/material/dialog';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged, interval } from 'rxjs';
 import { MileageService } from '../../../core/services/mileage.service';
 import { MileageCategory, CreateMileageTripDto, UpdateMileageTripDto, TripCoordinate } from '../../../core/models/mileage.model';
 import { GeolocationService, GeolocationPosition } from '../../../core/services/geolocation.service';
 import { GoogleMapsService } from '../../../core/services/google-maps.service';
 import { TripTrackingService } from '../../../core/services/trip-tracking.service';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
 
 /**
  * Trip Form Component
@@ -93,6 +95,7 @@ export class TripForm implements OnInit, OnDestroy {
   private geolocation = inject(GeolocationService);
   private googleMaps = inject(GoogleMapsService);
   private trackingService = inject(TripTrackingService);
+  private dialog = inject(MatDialog);
 
   ngOnInit(): void {
     // Initialize form
@@ -526,14 +529,28 @@ export class TripForm implements OnInit, OnDestroy {
    * Cancel GPS tracking
    */
   cancelGPSTracking(): void {
-    if (confirm('Cancel tracking? All GPS data will be lost.')) {
-      this.trackingService.stopTracking();
-      this.isTracking.set(false);
-      this.trackingDistance.set(0);
-      this.trackingDuration.set(0);
-      this.trackedCoordinates = [];
-      this.snackBar.open('Tracking cancelled', 'Close', { duration: 2000 });
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Cancel Tracking',
+        message: 'Cancel tracking? All GPS data will be lost.',
+        confirmText: 'Cancel Tracking',
+        cancelText: 'Keep Tracking',
+        confirmColor: 'warn',
+        icon: 'warning',
+        iconColor: '#ff9800',
+      } as ConfirmDialogData,
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.trackingService.stopTracking();
+        this.isTracking.set(false);
+        this.trackingDistance.set(0);
+        this.trackingDuration.set(0);
+        this.trackedCoordinates = [];
+        this.snackBar.open('Tracking cancelled', 'Close', { duration: 2000 });
+      }
+    });
   }
 
   /**

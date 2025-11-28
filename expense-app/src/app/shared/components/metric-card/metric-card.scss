@@ -72,8 +72,8 @@
     margin-bottom: var(--jensify-spacing-sm);
 
     .metric-icon {
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       border-radius: 12px;
       display: flex;
       align-items: center;
@@ -87,11 +87,11 @@
       :host-context(.dark) & {
         background: linear-gradient(135deg, rgba(247, 88, 12, 0.2) 0%, rgba(247, 88, 12, 0.05) 100%);
         color: #F7580C;
-        box-shadow: 
-          0 0 15px rgba(247, 88, 12, 0.2),
-          inset 0 0 10px rgba(247, 88, 12, 0.1);
-        border: 1px solid rgba(247, 88, 12, 0.2);
-        
+        box-shadow:
+          0 0 15px rgba(247, 88, 12, 0.3),
+          inset 0 0 10px rgba(247, 88, 12, 0.15);
+        border: 1px solid rgba(247, 88, 12, 0.3);
+
         // Inner highlight
         &::after {
           content: '';
@@ -104,9 +104,9 @@
       }
 
       mat-icon {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
       }
 
       // Variant overrides for light mode (keep existing logic)
@@ -153,7 +153,7 @@
     flex-direction: column;
 
     .metric-value {
-      font-size: 28px;
+      font-size: 36px;
       font-weight: 700;
       color: var(--jensify-text-strong);
       line-height: 1.1;
@@ -162,7 +162,7 @@
 
       :host-context(.dark) & {
         color: #FFFFFF;
-        text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
       }
     }
 
