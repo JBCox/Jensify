@@ -119,6 +119,16 @@ export const routes: Routes = [
         title: "Mileage Settings - Jensify",
         data: { breadcrumb: "Mileage Settings" },
       },
+      {
+        path: "budgets",
+        canActivate: [financeGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/budget-management/budget-management.component"
+          ).then((m) => m.BudgetManagementComponent),
+        title: "Budget Management - Jensify",
+        data: { breadcrumb: "Budgets" },
+      },
     ],
   },
 

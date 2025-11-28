@@ -1,0 +1,146 @@
+<div class="budget-management">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Budget Management</h1>
+      <p class="subtitle">Set spending limits and track expenses against budgets</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="openCreateDialog()">
+      <mat-icon>add</mat-icon>
+      Create Budget
+    </button>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <mat-card class="summary-card">
+      <div class="summary-value">{{ summary().total }}</div>
+      <div class="summary-label">Total Budgets</div>
+    </mat-card>
+    <mat-card class="summary-card status-under">
+      <div class="summary-value">{{ summary().under }}</div>
+      <div class="summary-label">Under Budget</div>
+    </mat-card>
+    <mat-card class="summary-card status-warning">
+      <div class="summary-value">{{ summary().warning }}</div>
+      <div class="summary-label">At Warning</div>
+    </mat-card>
+    <mat-card class="summary-card status-exceeded">
+      <div class="summary-value">{{ summary().exceeded }}</div>
+      <div class="summary-label">Exceeded</div>
+    </mat-card>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <mat-form-field appearance="outline" class="type-filter">
+      <mat-label>Filter by Type</mat-label>
+      <mat-select [(ngModel)]="selectedType" (ngModelChange)="selectedType.set($event)">
+        @for (type of budgetTypes; track type.value) {
+          <mat-option [value]="type.value">{{ type.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && filteredBudgets().length === 0) {
+    <app-empty-state
+      icon="account_balance_wallet"
+      title="No budgets yet"
+      message="Create your first budget to start tracking spending limits."
+      actionLabel="Create Budget"
+      (actionClick)="openCreateDialog()">
+    </app-empty-state>
+  }
+
+  <!-- Budget List -->
+  @if (!loading() && filteredBudgets().length > 0) {
+    <div class="budget-grid">
+      @for (budget of filteredBudgets(); track trackByBudgetId($index, budget)) {
+        <mat-card class="budget-card" [class]="getStatusClass(budget)">
+          <mat-card-header>
+            <mat-icon mat-card-avatar class="type-icon">{{ getBudgetTypeIcon(budget.budget_type) }}</mat-icon>
+            <mat-card-title>{{ budget.name }}</mat-card-title>
+            <mat-card-subtitle>{{ formatScope(budget) }} · {{ formatPeriod(budget) }}</mat-card-subtitle>
+            <button mat-icon-button [matMenuTriggerFor]="budgetMenu" class="menu-button">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #budgetMenu="matMenu">
+              <button mat-menu-item (click)="openEditDialog(budget)">
+                <mat-icon>edit</mat-icon>
+                <span>Edit</span>
+              </button>
+              <button mat-menu-item (click)="deleteBudget(budget)" class="delete-action">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </mat-card-header>
+
+          <mat-card-content>
+            <!-- Progress Bar -->
+            <div class="progress-section">
+              <div class="progress-header">
+                <span class="used-amount">{{ formatCurrency(budget.total_used) }}</span>
+                <span class="budget-amount">of {{ formatCurrency(budget.amount) }}</span>
+              </div>
+              <mat-progress-bar
+                [mode]="'determinate'"
+                [value]="budget.percent_used"
+                [color]="getProgressColor(budget)">
+              </mat-progress-bar>
+              <div class="progress-footer">
+                <span class="percent">{{ budget.percent_used }}% used</span>
+                <span class="remaining" [class.negative]="budget.remaining_amount < 0">
+                  {{ formatCurrency(budget.remaining_amount) }} remaining
+                </span>
+              </div>
+            </div>
+
+            <!-- Status Badge -->
+            <div class="status-badge" [class]="getStatusClass(budget)">
+              <mat-icon>{{ getStatusIcon(budget) }}</mat-icon>
+              @switch (budget.status) {
+                @case ('exceeded') {
+                  <span>Budget Exceeded</span>
+                }
+                @case ('warning') {
+                  <span>Approaching Limit</span>
+                }
+                @default {
+                  <span>On Track</span>
+                }
+              }
+            </div>
+
+            <!-- Details -->
+            <div class="budget-details">
+              @if (budget.tracking) {
+                <div class="detail-row">
+                  <span class="label">Approved:</span>
+                  <span class="value">{{ formatCurrency(budget.tracking.spent_amount) }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Pending:</span>
+                  <span class="value">{{ formatCurrency(budget.tracking.pending_amount) }}</span>
+                </div>
+              }
+              <div class="detail-row">
+                <span class="label">Alert at:</span>
+                <span class="value">{{ budget.alert_threshold_percent }}%</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  }
+</div>

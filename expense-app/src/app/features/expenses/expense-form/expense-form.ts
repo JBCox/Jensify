@@ -17,6 +17,8 @@ import { AttachReceiptDialog } from '../attach-receipt-dialog/attach-receipt-dia
 import { SplitExpenseDialog, SplitExpenseDialogData, SplitExpenseDialogResult } from '../split-expense-dialog/split-expense-dialog';
 import { Receipt } from '../../../core/models/receipt.model';
 import { OcrService, DetectedLineItem } from '../../../core/services/ocr.service';
+import { BudgetService } from '../../../core/services/budget.service';
+import { BudgetCheckResult } from '../../../core/models/budget.model';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Subject, interval, takeUntil, switchMap, takeWhile, tap, of } from 'rxjs';
 
@@ -57,6 +59,7 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   detectedLineItems = signal<DetectedLineItem[]>([]);
   suggestSplit = signal(false);
   splitSuggestionDismissed = signal(false);
+  budgetWarnings = signal<BudgetCheckResult[]>([]);
 
   // Computed properties for split suggestion
   uniqueCategories = computed(() => {
@@ -81,6 +84,7 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   private ocrService = inject(OcrService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
+  private budgetService = inject(BudgetService);
 
   ngOnInit(): void {
     this.form = this.fb.group({
@@ -95,6 +99,10 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
     if (this.receiptId) {
       this.loadAttachedReceipt(this.receiptId);
     }
+
+    // Check budgets when amount/category changes
+    this.form.get('amount')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.checkBudgets());
+    this.form.get('category')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.checkBudgets());
   }
 
   ngOnDestroy(): void {
@@ -102,6 +110,44 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
     this.stopPolling$.next();
     this.stopPolling$.complete();
+  }
+
+
+  /**
+   * Check expense against budgets and show warnings
+   */
+  private checkBudgets(): void {
+    const formValue = this.form.value;
+    if (!formValue.amount || !formValue.category || !formValue.expense_date) return;
+
+    this.budgetService.getBudgetWarnings({
+      amount: formValue.amount,
+      category: formValue.category,
+      expense_date: formValue.expense_date
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (warnings) => {
+        this.budgetWarnings.set(warnings);
+        if (warnings.length > 0) {
+          const exceededCount = warnings.filter(w => w.status === 'exceeded').length;
+          const warningCount = warnings.filter(w => w.status === 'warning').length;
+
+          let message = '';
+          if (exceededCount > 0) {
+            message = exceededCount + ' budget(s) will be exceeded';
+          } else if (warningCount > 0) {
+            message = warningCount + ' budget(s) nearing limit';
+          }
+
+          if (message) {
+            this.snackBar.open(message, 'Details', { duration: 5000 })
+              .onAction().subscribe(() => {
+                const details = warnings.map(w => w.message).join('\n');
+                alert(details);
+              });
+          }
+        }
+      }
+    });
   }
 
   onSubmit(): void {

@@ -93,6 +93,12 @@ export class SidebarNav implements OnDestroy, AfterViewInit {
       route: "/organization/mileage-settings",
       requiredRole: "admin",
     },
+    {
+      icon: "account_balance_wallet",
+      label: "Budgets",
+      route: "/organization/budgets",
+      requiredRole: "finance",
+    },
     // Natural expense workflow: Upload → Receipts → Create → View → Report → Mileage
     {
       icon: "receipt_long",
