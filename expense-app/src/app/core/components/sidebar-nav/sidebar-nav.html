@@ -13,26 +13,11 @@
   [class.collapsed]="collapsed()"
   [class.open]="isOpen"
 >
+  <!-- Organization Display -->
   <div class="sidebar-top">
-    <div class="brand">
-      <mat-icon class="brand-icon">receipt_long</mat-icon>
-      <span class="brand-label" *ngIf="!collapsed()">Jensify</span>
+    <div class="sidebar-org-switcher">
+      <app-org-switcher></app-org-switcher>
     </div>
-    <button
-      mat-icon-button
-      class="collapse-toggle"
-      (click)="toggleCollapse()"
-      [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
-      [matTooltip]="collapsed() ? 'Expand' : 'Collapse'"
-      matTooltipPosition="right"
-    >
-      <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
-    </button>
-  </div>
-
-  <!-- Organization Switcher -->
-  <div class="sidebar-org-switcher">
-    <app-org-switcher></app-org-switcher>
   </div>
 
   <nav class="sidebar-nav">
@@ -66,23 +51,25 @@
       </span>
     </div>
   </nav>
-  <div class="sidebar-footer" *ngIf="!collapsed()">
+  <div class="sidebar-footer">
     <button
-      mat-button
-      color="primary"
-      (click)="navigate('/home')"
-      class="home-btn"
+      mat-icon-button
+      class="collapse-toggle"
+      (click)="toggleCollapse()"
+      [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+      [matTooltip]="collapsed() ? 'Expand' : 'Collapse'"
+      matTooltipPosition="right"
     >
-      <mat-icon>home</mat-icon>
-      Home
+      <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
     </button>
     <button
       mat-icon-button
       (click)="themeService.toggleTheme()"
       class="theme-toggle"
+      [matTooltip]="themeService.theme() === 'dark' ? 'Light mode' : 'Dark mode'"
+      matTooltipPosition="right"
     >
-      <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode'
-        }}</mat-icon>
+      <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
     </button>
   </div>
 </aside>

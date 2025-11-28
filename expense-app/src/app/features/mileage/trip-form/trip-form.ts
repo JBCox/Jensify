@@ -15,14 +15,13 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatDialog } from '@angular/material/dialog';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged, interval } from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { MileageService } from '../../../core/services/mileage.service';
 import { MileageCategory, CreateMileageTripDto, UpdateMileageTripDto, TripCoordinate } from '../../../core/models/mileage.model';
 import { GeolocationService, GeolocationPosition } from '../../../core/services/geolocation.service';
 import { GoogleMapsService } from '../../../core/services/google-maps.service';
 import { TripTrackingService } from '../../../core/services/trip-tracking.service';
-import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import { TripGpsTrackingComponent, TrackingResult } from '../trip-gps-tracking/trip-gps-tracking';
 
 /**
  * Trip Form Component
@@ -45,7 +44,8 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/compo
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
-    MatTabsModule
+    MatTabsModule,
+    TripGpsTrackingComponent,
   ],
   templateUrl: './trip-form.html',
   styleUrl: './trip-form.scss',
@@ -69,9 +69,7 @@ export class TripForm implements OnInit, OnDestroy {
 
   // Tracking mode
   trackingMode = signal<'quick' | 'gps'>('quick'); // quick = point-to-point, gps = live tracking
-  isTracking = signal<boolean>(false);
-  trackingDistance = signal<number>(0);
-  trackingDuration = signal<number>(0);
+  isTracking = signal(false);
   trackedCoordinates: TripCoordinate[] = [];
 
   // Edit mode
@@ -95,7 +93,6 @@ export class TripForm implements OnInit, OnDestroy {
   private geolocation = inject(GeolocationService);
   private googleMaps = inject(GoogleMapsService);
   private trackingService = inject(TripTrackingService);
-  private dialog = inject(MatDialog);
 
   ngOnInit(): void {
     // Initialize form
@@ -453,104 +450,52 @@ export class TripForm implements OnInit, OnDestroy {
   }
 
   /**
-   * Start GPS tracking
+   * Handle GPS tracking completion from child component
    */
-  startGPSTracking(): void {
-    this.trackingService.startTracking().subscribe({
-      next: () => {
-        this.isTracking.set(true);
-        this.trackingMode.set('gps');
-        this.snackBar.open('GPS tracking started', 'Close', { duration: 2000 });
-
-        // Subscribe to tracking updates
-        interval(1000)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe(() => {
-            if (this.trackingService.isTracking()) {
-              this.trackingDistance.set(this.trackingService.distance());
-              this.trackingDuration.set(this.trackingService.duration());
-            }
-          });
-      },
-      error: (err) => {
-        this.snackBar.open(err.message, 'Close', { duration: 4000 });
-      }
-    });
-  }
-
-  /**
-   * Stop GPS tracking
-   */
-  stopGPSTracking(): void {
-    const trackingState = this.trackingService.stopTracking();
-
+  onTrackingComplete(result: TrackingResult): void {
     this.isTracking.set(false);
-    this.trackedCoordinates = trackingState.coordinates;
+    this.trackedCoordinates = result.coordinates;
 
     // Auto-fill form with tracking data
-    if (trackingState.coordinates.length > 0) {
-      const firstCoord = trackingState.coordinates[0];
-      const lastCoord = trackingState.coordinates[trackingState.coordinates.length - 1];
+    if (result.coordinates.length > 0) {
+      const firstCoord = result.coordinates[0];
+      const lastCoord = result.coordinates[result.coordinates.length - 1];
+
+      // Set distance immediately
+      this.form.patchValue({ distance_miles: Math.round(result.distance * 100) / 100 });
 
       // Reverse geocode start and end locations
       this.googleMaps.reverseGeocode(firstCoord.latitude, firstCoord.longitude)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (originAddress) => {
-            this.form.patchValue({
-              origin_address: originAddress,
-              distance_miles: Math.round(trackingState.distance * 100) / 100
-            });
+            this.form.patchValue({ origin_address: originAddress });
 
             // Get destination address
             this.googleMaps.reverseGeocode(lastCoord.latitude, lastCoord.longitude)
               .pipe(takeUntil(this.destroy$))
               .subscribe({
-                next: (destAddress) => {
-                  this.form.patchValue({
-                    destination_address: destAddress
-                  });
-
-                  this.snackBar.open(
-                    `Trip tracked: ${trackingState.distance.toFixed(2)} miles in ${this.formatDuration(trackingState.duration)}`,
-                    'Close',
-                    { duration: 5000 }
-                  );
-                }
+                next: (destAddress) => this.form.patchValue({ destination_address: destAddress })
               });
           }
         });
-    } else {
-      this.snackBar.open('No GPS data recorded', 'Close', { duration: 3000 });
     }
   }
 
   /**
-   * Cancel GPS tracking
+   * Handle tracking started from child component
    */
-  cancelGPSTracking(): void {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      data: {
-        title: 'Cancel Tracking',
-        message: 'Cancel tracking? All GPS data will be lost.',
-        confirmText: 'Cancel Tracking',
-        cancelText: 'Keep Tracking',
-        confirmColor: 'warn',
-        icon: 'warning',
-        iconColor: '#ff9800',
-      } as ConfirmDialogData,
-    });
+  onTrackingStarted(): void {
+    this.isTracking.set(true);
+    this.trackingMode.set('gps');
+  }
 
-    dialogRef.afterClosed().subscribe((confirmed) => {
-      if (confirmed) {
-        this.trackingService.stopTracking();
-        this.isTracking.set(false);
-        this.trackingDistance.set(0);
-        this.trackingDuration.set(0);
-        this.trackedCoordinates = [];
-        this.snackBar.open('Tracking cancelled', 'Close', { duration: 2000 });
-      }
-    });
+  /**
+   * Handle tracking cancelled from child component
+   */
+  onTrackingCancelled(): void {
+    this.isTracking.set(false);
+    this.trackedCoordinates = [];
   }
 
   /**
@@ -560,18 +505,6 @@ export class TripForm implements OnInit, OnDestroy {
     const origin = this.form.get('origin_address')?.value;
     const destination = this.form.get('destination_address')?.value;
     return !!(origin && destination && origin.length >= 3 && destination.length >= 3);
-  }
-
-  /**
-   * Format duration in seconds to readable string
-   */
-  formatDuration(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    if (mins > 0) {
-      return `${mins}m ${secs}s`;
-    }
-    return `${secs}s`;
   }
 
   /**

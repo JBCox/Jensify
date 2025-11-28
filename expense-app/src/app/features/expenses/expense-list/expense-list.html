@@ -2,7 +2,7 @@
   <!-- Compact Header -->
   <div class="expense-header">
     <div class="header-left">
-      <h1>My Expenses</h1>
+      <h1>Expenses</h1>
       <div class="header-stats">
         <span class="stat">{{ totalCount() }} {{ totalCount() === 1 ? 'expense' : 'expenses' }}</span>
         <span class="stat-divider">•</span>
@@ -13,14 +13,22 @@
         }
       </div>
     </div>
-    <button
-      mat-flat-button
-      color="primary"
-      (click)="exportToCSV()"
-      [disabled]="filteredExpenses().length === 0">
-      <mat-icon>download</mat-icon>
-      Export
-    </button>
+    <div class="header-actions">
+      <button
+        mat-stroked-button
+        (click)="exportToCSV()"
+        [disabled]="filteredExpenses().length === 0">
+        <mat-icon>download</mat-icon>
+        Export
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="addExpense()">
+        <mat-icon>add</mat-icon>
+        Add Expense
+      </button>
+    </div>
   </div>
 
   <!-- Batch Action Bar (appears when expenses are selected) -->
@@ -50,103 +58,15 @@
     </div>
   }
 
-  <!-- Compact Filter Bar -->
-  <div class="filter-bar">
-    <!-- Status Chips -->
-    <div class="status-chips">
-      @for (option of statusOptions; track option.value) {
-        <button
-          class="status-chip"
-          [class.active]="selectedStatus() === option.value"
-          (click)="setStatusFilter(option.value)">
-          {{ option.label }}
-        </button>
-      }
-    </div>
-
-    <!-- Search Input -->
-    <div class="search-box">
-      <mat-icon>search</mat-icon>
-      <input
-        type="text"
-        placeholder="Search merchants..."
-        [ngModel]="searchQuery()"
-        (ngModelChange)="searchQuery.set($event)">
-    </div>
-
-    <!-- Filter Toggle -->
-    <button
-      class="filter-toggle"
-      [class.active]="showAdvancedFilters"
-      (click)="showAdvancedFilters = !showAdvancedFilters">
-      <mat-icon>tune</mat-icon>
-      <span>Filters</span>
-      @if (activeFilterCount() > 0) {
-        <span class="filter-badge">{{ activeFilterCount() }}</span>
-      }
-    </button>
-  </div>
-
-  <!-- Advanced Filters (Collapsible) -->
-  @if (showAdvancedFilters) {
-    <div class="advanced-filters">
-      <div class="filter-group">
-        <label for="category-filter">Category</label>
-        <mat-select id="category-filter" [value]="selectedCategory()" (selectionChange)="selectedCategory.set($event.value)">
-          @for (option of categoryOptions; track option.value) {
-            <mat-option [value]="option.value">{{ option.label }}</mat-option>
-          }
-        </mat-select>
-      </div>
-
-      <div class="filter-group">
-        <label for="date-from-filter">From</label>
-        <input
-          id="date-from-filter"
-          type="date"
-          [ngModel]="dateFrom() | date:'yyyy-MM-dd'"
-          (ngModelChange)="setDateFrom($event)">
-      </div>
-
-      <div class="filter-group">
-        <label for="date-to-filter">To</label>
-        <input
-          id="date-to-filter"
-          type="date"
-          [ngModel]="dateTo() | date:'yyyy-MM-dd'"
-          (ngModelChange)="setDateTo($event)">
-      </div>
-
-      <div class="filter-group">
-        <label for="min-amount-filter">Min $</label>
-        <input
-          id="min-amount-filter"
-          type="number"
-          min="0"
-          step="0.01"
-          placeholder="0.00"
-          [ngModel]="minAmount()"
-          (ngModelChange)="minAmount.set($event)">
-      </div>
-
-      <div class="filter-group">
-        <label for="max-amount-filter">Max $</label>
-        <input
-          id="max-amount-filter"
-          type="number"
-          min="0"
-          step="0.01"
-          placeholder="0.00"
-          [ngModel]="maxAmount()"
-          (ngModelChange)="maxAmount.set($event)">
-      </div>
-
-      <button class="clear-btn" (click)="clearFilters()">
-        <mat-icon>clear</mat-icon>
-        Clear
-      </button>
-    </div>
-  }
+  <!-- Filters Component -->
+  <app-expense-filters
+    [filters]="filterState()"
+    [showAdvanced]="showAdvancedFilters"
+    [activeFilterCount]="activeFilterCount()"
+    (filtersChange)="onFiltersChange($event)"
+    (toggleAdvanced)="toggleAdvancedFilters()"
+    (clearFilters)="clearFilters()">
+  </app-expense-filters>
 
   <!-- Loading State -->
   @if (loading()) {

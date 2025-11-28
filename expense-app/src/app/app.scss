@@ -145,13 +145,18 @@
   width: auto; // Override 100% to prevent overflow with margin
   // background-color: var(--jensify-surface-soft); // Removed to allow mesh gradient
 
+  // Ensure content area fills remaining space
+  display: flex;
+  flex-direction: column;
+
   &.with-toolbar {
     padding-top: 60px;
+    min-height: calc(100vh); // Ensure full viewport coverage
   }
 
   &.with-sidebar {
     @media (min-width: 768px) {
-      margin-left: 210px;
+      margin-left: 190px;
       transition: margin-left 0.3s ease;
     }
 

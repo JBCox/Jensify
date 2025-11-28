@@ -82,42 +82,20 @@ export class SidebarNav implements OnDestroy, AfterViewInit {
       requiredRole: "manager",
     },
     {
-      icon: "people",
-      label: "User Management",
-      route: "/organization/users",
+      icon: "admin_panel_settings",
+      label: "Admin",
+      route: "/admin",
       requiredRole: "admin",
     },
-    {
-      icon: "speed",
-      label: "Mileage Settings",
-      route: "/organization/mileage-settings",
-      requiredRole: "admin",
-    },
-    {
-      icon: "account_balance_wallet",
-      label: "Budgets",
-      route: "/organization/budgets",
-      requiredRole: "finance",
-    },
-    // Natural expense workflow: Upload → Receipts → Create → View → Report → Mileage
+    // Natural expense workflow: Receipts → Expenses → Reports → Mileage
     {
       icon: "receipt_long",
-      label: "Upload Receipt",
-      route: "/expenses/upload",
-    },
-    {
-      icon: "inventory_2",
       label: "Receipts",
       route: "/receipts",
     },
     {
-      icon: "playlist_add",
-      label: "New Expense",
-      route: "/expenses/new",
-    },
-    {
       icon: "list_alt",
-      label: "My Expenses",
+      label: "Expenses",
       route: "/expenses",
     },
     {

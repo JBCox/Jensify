@@ -85,6 +85,17 @@ export const routes: Routes = [
     ],
   },
 
+  // Admin hub route
+  {
+    path: "admin",
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () =>
+      import("./features/organization/admin-hub/admin-hub.component")
+        .then((m) => m.AdminHubComponent),
+    title: "Admin - Jensify",
+    data: { breadcrumb: "Admin", breadcrumbIcon: "admin_panel_settings" },
+  },
+
   // Organization routes
   {
     path: "organization",
@@ -98,6 +109,16 @@ export const routes: Routes = [
             .then((m) => m.OrganizationSetupComponent),
         title: "Organization Setup - Jensify",
         data: { breadcrumb: "Setup" },
+      },
+      {
+        path: "settings",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/company-settings/company-settings.component"
+          ).then((m) => m.CompanySettingsComponent),
+        title: "Company Settings - Jensify",
+        data: { breadcrumb: "Company Settings" },
       },
       {
         path: "users",
@@ -149,12 +170,8 @@ export const routes: Routes = [
       },
       {
         path: "upload",
-        loadComponent: () =>
-          import("./features/expenses/receipt-upload/receipt-upload").then(
-            (m) => m.ReceiptUpload,
-          ),
-        title: "Upload Receipt - Jensify",
-        data: { breadcrumb: "Upload Receipt" },
+        redirectTo: "/receipts",
+        pathMatch: "full",
       },
       {
         path: "new",

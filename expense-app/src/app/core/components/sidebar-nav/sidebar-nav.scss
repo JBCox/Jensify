@@ -40,8 +40,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 0 0.2rem;
-  padding-left: 0.1rem;
+  padding: 0;
   overflow-x: hidden; // Prevent horizontal scrollbar
 
   // DARK MODE: Brown/orange gradient glass
@@ -57,7 +56,7 @@
   }
 
   &.expanded {
-    width: 210px;
+    width: 190px;
   }
 
   &.collapsed {
@@ -138,7 +137,7 @@
 
 .sidebar.expanded .nav-item {
   justify-content: flex-start;
-  padding: var(--jensify-spacing-sm) calc(var(--jensify-spacing-md) + 0.4rem);
+  padding: var(--jensify-spacing-sm) var(--jensify-spacing-md);
 }
 
 .sidebar.collapsed .nav-item {
@@ -185,70 +184,52 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--jensify-spacing-sm) var(--jensify-spacing-sm);
+  padding: var(--jensify-spacing-sm) var(--jensify-spacing-md);
   border-bottom: 1px solid var(--jensify-border-subtle);
   margin-bottom: 0.5rem;
   position: relative;
-}
+  gap: 0.5rem;
 
-.sidebar-org-switcher {
-  padding: 0 var(--jensify-spacing-sm);
-  margin-bottom: 0.5rem;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.brand-icon {
-  color: var(--jensify-primary);
-}
-
-.brand-label {
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.85rem;
-  color: var(--jensify-text-primary);
+  .sidebar-org-switcher {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+  }
 }
 
 .collapse-toggle {
   color: var(--jensify-text-muted);
-  min-width: 32px;
-  min-height: 32px;
+  min-width: 36px;
+  min-height: 36px;
   padding: 0;
-}
 
-.sidebar.collapsed .collapse-toggle {
-  position: absolute;
-  right: var(--jensify-spacing-sm);
-  top: 50%;
-  transform: translateY(-50%);
+  &:hover {
+    color: var(--jensify-primary);
+    background-color: rgba(255, 89, 0, 0.1);
+  }
 }
 
 .sidebar-footer {
   border-top: 1px solid var(--jensify-border-subtle);
-  padding: var(--jensify-spacing-sm) 0.5rem;
+  padding: var(--jensify-spacing-sm);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--jensify-spacing-xs);
-
-  .home-btn {
-    flex: 1;
-    justify-content: flex-start;
-    padding-left: 0.5rem;
-  }
+  justify-content: center;
+  gap: var(--jensify-spacing-sm);
 
   .theme-toggle {
     color: var(--jensify-text-muted);
     transition: color 0.2s ease;
-    
+
     &:hover {
       color: var(--jensify-primary);
       background-color: rgba(255, 89, 0, 0.1);
     }
   }
+}
+
+.sidebar.collapsed .sidebar-footer {
+  flex-direction: column;
+  gap: var(--jensify-spacing-xs);
 }

@@ -1,6 +1,492 @@
-/**
- * Component-specific styles only
- * Layout, colors, spacing come from global Jensify utilities
- */
+// Compact Upload Bar
+.upload-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--jensify-surface-card, #fff);
+  border: 2px dashed var(--jensify-border-medium, #ddd);
+  border-radius: var(--jensify-radius-lg, 8px);
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
 
-// Add component-specific overrides here if needed
+  &.dragging {
+    border-color: var(--jensify-primary, #ff5900);
+    background: rgba(255, 89, 0, 0.05);
+  }
+
+  .upload-bar-icon {
+    color: var(--jensify-text-muted, #666);
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .upload-bar-text {
+    color: var(--jensify-text-medium, #444);
+    font-size: 0.875rem;
+  }
+
+  .upload-bar-btn {
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      margin-right: 4px;
+    }
+  }
+
+  .upload-bar-hint {
+    color: var(--jensify-text-muted, #999);
+    font-size: 0.75rem;
+    margin-left: auto;
+  }
+
+  // Desktop-only elements (hidden on mobile)
+  .desktop-only {
+    @media (max-width: 767px) {
+      display: none !important;
+    }
+  }
+
+  // Camera button - primary on mobile
+  .camera-btn {
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  :host-context(.dark) & {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border-color: rgba(247, 88, 12, 0.2);
+  }
+}
+
+// Upload Card (file selected state)
+.upload-card {
+  margin-bottom: 16px;
+
+  .upload-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .upload-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: var(--jensify-radius-md, 6px);
+    border: 1px solid var(--jensify-border-subtle, #eee);
+
+    &.pdf-thumb {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--jensify-surface-soft, #f5f5f5);
+      mat-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+        color: #dc2626;
+      }
+    }
+  }
+
+  .upload-file-info {
+    flex: 1;
+
+    .upload-file-name {
+      font-weight: 500;
+      color: var(--jensify-text-strong, #1a1a1a);
+      margin: 0 0 4px 0;
+      word-break: break-all;
+    }
+
+    .upload-file-size {
+      font-size: 0.8125rem;
+      color: var(--jensify-text-muted, #666);
+      margin: 0;
+    }
+  }
+
+  .upload-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .upload-progress {
+    margin-top: 12px;
+
+    .upload-progress-text {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--jensify-text-muted, #666);
+      margin-top: 4px;
+      text-align: center;
+    }
+  }
+
+  .upload-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: rgba(220, 38, 38, 0.1);
+    border-radius: var(--jensify-radius-md, 6px);
+    color: #dc2626;
+    font-size: 0.875rem;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+// Upload Success Card
+.upload-success-card {
+  margin-bottom: 16px;
+  border-left: 4px solid #22c55e;
+
+  .upload-success-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #22c55e;
+    margin-bottom: 12px;
+
+    .success-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .ocr-processing {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--jensify-surface-soft, #f5f5f5);
+    border-radius: var(--jensify-radius-md, 6px);
+    color: var(--jensify-text-medium, #444);
+    font-size: 0.875rem;
+  }
+
+  .ocr-results {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+
+    .ocr-field {
+      flex: 1;
+      min-width: 120px;
+
+      label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--jensify-text-muted, #666);
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+
+      input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--jensify-border-medium, #ddd);
+        border-radius: var(--jensify-radius-md, 6px);
+        font-size: 0.875rem;
+        background: var(--jensify-surface-card, #fff);
+        color: var(--jensify-text-strong, #1a1a1a);
+
+        &:focus {
+          outline: none;
+          border-color: var(--jensify-primary, #ff5900);
+        }
+      }
+
+      .amount-input {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--jensify-border-medium, #ddd);
+        border-radius: var(--jensify-radius-md, 6px);
+        overflow: hidden;
+
+        span {
+          padding: 8px 10px;
+          background: var(--jensify-surface-soft, #f5f5f5);
+          color: var(--jensify-text-muted, #666);
+          font-size: 0.875rem;
+        }
+
+        input {
+          border: none;
+          border-radius: 0;
+          flex: 1;
+        }
+      }
+    }
+  }
+
+  .ocr-failed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: var(--jensify-radius-md, 6px);
+    color: #f59e0b;
+    font-size: 0.875rem;
+    margin-bottom: 12px;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .upload-success-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--jensify-border-subtle, #eee);
+  }
+}
+
+// Receipts Section
+.receipts-section {
+  .receipts-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--jensify-text-strong, #1a1a1a);
+    margin: 0 0 12px 0;
+  }
+
+  .receipts-loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+    color: var(--jensify-text-muted, #666);
+    font-size: 0.875rem;
+  }
+
+  .receipts-empty {
+    text-align: center;
+    padding: 48px 24px;
+    background: var(--jensify-surface-soft, #fafafa);
+    border-radius: var(--jensify-radius-lg, 8px);
+    border: 1px dashed var(--jensify-border-medium, #ddd);
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: var(--jensify-text-muted, #ccc);
+      margin-bottom: 12px;
+    }
+
+    p {
+      margin: 0;
+      color: var(--jensify-text-medium, #666);
+    }
+
+    .receipts-empty-hint {
+      font-size: 0.875rem;
+      color: var(--jensify-text-muted, #999);
+      margin-top: 4px;
+    }
+  }
+
+  .receipts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+// Receipt Row
+.receipt-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--jensify-surface-card, #fff);
+  border: 1px solid var(--jensify-border-subtle, #eee);
+  border-radius: var(--jensify-radius-md, 6px);
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--jensify-border-medium, #ddd);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .receipt-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+
+    .receipt-icon {
+      color: var(--jensify-text-muted, #999);
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+
+    .receipt-details {
+      min-width: 0;
+
+      .receipt-name {
+        font-weight: 500;
+        color: var(--jensify-text-strong, #1a1a1a);
+        margin: 0 0 2px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .receipt-meta {
+        font-size: 0.8125rem;
+        color: var(--jensify-text-muted, #666);
+        margin: 0;
+      }
+    }
+  }
+
+  .receipt-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: var(--jensify-radius-full, 9999px);
+    font-size: 0.75rem;
+    font-weight: 500;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+
+    &.status-completed {
+      background: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+    }
+
+    &.status-processing, &.status-pending {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
+
+    &.status-failed {
+      background: rgba(220, 38, 38, 0.1);
+      color: #dc2626;
+    }
+  }
+
+  .receipt-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  :host-context(.dark) & {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border-color: rgba(247, 88, 12, 0.15);
+  }
+}
+
+// Responsive
+@media (max-width: 767px) {
+  .upload-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 20px 16px;
+    text-align: center;
+    border-style: solid;
+    border-width: 1px;
+    background: var(--jensify-surface-soft, #fafafa);
+
+    // Camera button is large and prominent on mobile
+    .camera-btn {
+      width: 100%;
+      padding: 14px 24px;
+      font-size: 1rem;
+      font-weight: 500;
+
+      mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
+      }
+    }
+
+    // File picker is secondary on mobile
+    .file-btn {
+      width: 100%;
+      padding: 10px 16px;
+      font-size: 0.875rem;
+    }
+
+    .upload-bar-hint {
+      margin: 4px 0 0 0;
+      font-size: 0.75rem;
+    }
+  }
+
+  .upload-card .upload-preview-row {
+    flex-wrap: wrap;
+
+    .upload-thumb {
+      width: 48px;
+      height: 48px;
+    }
+
+    .upload-actions {
+      width: 100%;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+  }
+
+  .upload-success-card .ocr-results {
+    flex-direction: column;
+
+    .ocr-field {
+      min-width: 100%;
+    }
+  }
+
+  .receipt-row {
+    flex-wrap: wrap;
+
+    .receipt-info {
+      width: 100%;
+    }
+
+    .receipt-status {
+      margin-left: 36px;
+    }
+
+    .receipt-actions {
+      width: 100%;
+      justify-content: flex-end;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--jensify-border-subtle, #eee);
+    }
+  }
+}

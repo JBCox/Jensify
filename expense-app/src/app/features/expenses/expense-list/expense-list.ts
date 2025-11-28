@@ -8,16 +8,9 @@ import {
   signal,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
-import { MatChipsModule } from "@angular/material/chips";
-import { MatFormFieldModule } from "@angular/material/form-field";
-import { MatInputModule } from "@angular/material/input";
-import { MatSelectModule } from "@angular/material/select";
-import { MatDatepickerModule } from "@angular/material/datepicker";
-import { MatNativeDateModule } from "@angular/material/core";
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { ScrollingModule } from "@angular/cdk/scrolling";
@@ -29,7 +22,7 @@ import { SupabaseService } from "../../../core/services/supabase.service";
 import { Expense } from "../../../core/models/expense.model";
 import { ExpenseReport } from "../../../core/models/report.model";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { ExpenseCategory, ExpenseStatus } from "../../../core/models/enums";
+import { ExpenseStatus } from "../../../core/models/enums";
 import {
   ExpenseStatus as BadgeStatus,
   StatusBadge,
@@ -38,6 +31,7 @@ import { EmptyState } from "../../../shared/components/empty-state/empty-state";
 import { LoadingSkeleton } from "../../../shared/components/loading-skeleton/loading-skeleton";
 import { Router } from "@angular/router";
 import { AddToReportDialogComponent } from "../add-to-report-dialog/add-to-report-dialog";
+import { ExpenseFiltersComponent, ExpenseFilterState } from "../expense-filters/expense-filters";
 
 /**
  * Expense List Component
@@ -47,26 +41,19 @@ import { AddToReportDialogComponent } from "../add-to-report-dialog/add-to-repor
   selector: "app-expense-list",
   imports: [
     CommonModule,
-    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatChipsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
     MatCheckboxModule,
     MatDialogModule,
     ScrollingModule,
     StatusBadge,
     EmptyState,
     LoadingSkeleton,
+    ExpenseFiltersComponent,
   ],
   templateUrl: "./expense-list.html",
   styleUrl: "./expense-list.scss",
-
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExpenseList implements OnInit, OnDestroy {
@@ -179,41 +166,19 @@ export class ExpenseList implements OnInit, OnDestroy {
     return count;
   });
 
+  // Computed filter state for child component
+  filterState = computed((): ExpenseFilterState => ({
+    status: this.selectedStatus(),
+    searchQuery: this.searchQuery(),
+    category: this.selectedCategory(),
+    dateFrom: this.dateFrom(),
+    dateTo: this.dateTo(),
+    minAmount: this.minAmount(),
+    maxAmount: this.maxAmount(),
+  }));
+
   // Enums for template
   readonly ExpenseStatus = ExpenseStatus;
-  readonly ExpenseCategory = ExpenseCategory;
-
-  // Status options for filter chips
-  readonly statusOptions = [
-    { value: "all" as const, label: "All" },
-    { value: ExpenseStatus.DRAFT, label: "Draft" },
-    { value: ExpenseStatus.SUBMITTED, label: "Pending" },
-    { value: ExpenseStatus.APPROVED, label: "Approved" },
-    { value: ExpenseStatus.REJECTED, label: "Rejected" },
-    { value: ExpenseStatus.REIMBURSED, label: "Reimbursed" },
-  ];
-
-  // Category options for dropdown
-  readonly categoryOptions = [
-    { value: "all", label: "All Categories" },
-    { value: ExpenseCategory.FUEL, label: ExpenseCategory.FUEL },
-    { value: ExpenseCategory.MEALS, label: ExpenseCategory.MEALS },
-    { value: ExpenseCategory.LODGING, label: ExpenseCategory.LODGING },
-    { value: ExpenseCategory.AIRFARE, label: ExpenseCategory.AIRFARE },
-    {
-      value: ExpenseCategory.GROUND_TRANSPORTATION,
-      label: ExpenseCategory.GROUND_TRANSPORTATION,
-    },
-    {
-      value: ExpenseCategory.OFFICE_SUPPLIES,
-      label: ExpenseCategory.OFFICE_SUPPLIES,
-    },
-    { value: ExpenseCategory.SOFTWARE, label: ExpenseCategory.SOFTWARE },
-    {
-      value: ExpenseCategory.MISCELLANEOUS,
-      label: ExpenseCategory.MISCELLANEOUS,
-    },
-  ];
 
   ngOnInit(): void {
     this.loadExpenses();
@@ -246,10 +211,23 @@ export class ExpenseList implements OnInit, OnDestroy {
   }
 
   /**
-   * Set status filter
+   * Handle filter changes from child component
    */
-  setStatusFilter(status: ExpenseStatus | "all"): void {
-    this.selectedStatus.set(status);
+  onFiltersChange(changes: Partial<ExpenseFilterState>): void {
+    if (changes.status !== undefined) this.selectedStatus.set(changes.status);
+    if (changes.searchQuery !== undefined) this.searchQuery.set(changes.searchQuery);
+    if (changes.category !== undefined) this.selectedCategory.set(changes.category);
+    if (changes.dateFrom !== undefined) this.dateFrom.set(changes.dateFrom);
+    if (changes.dateTo !== undefined) this.dateTo.set(changes.dateTo);
+    if (changes.minAmount !== undefined) this.minAmount.set(changes.minAmount);
+    if (changes.maxAmount !== undefined) this.maxAmount.set(changes.maxAmount);
+  }
+
+  /**
+   * Toggle advanced filters visibility
+   */
+  toggleAdvancedFilters(): void {
+    this.showAdvancedFilters = !this.showAdvancedFilters;
   }
 
   /**
@@ -264,20 +242,6 @@ export class ExpenseList implements OnInit, OnDestroy {
     this.minAmount.set(null);
     this.maxAmount.set(null);
     this.showAdvancedFilters = false;
-  }
-
-  /**
-   * Set date from string (for native date input)
-   */
-  setDateFrom(dateString: string): void {
-    this.dateFrom.set(dateString ? new Date(dateString) : null);
-  }
-
-  /**
-   * Set date to string (for native date input)
-   */
-  setDateTo(dateString: string): void {
-    this.dateTo.set(dateString ? new Date(dateString) : null);
   }
 
   /**
@@ -460,6 +424,10 @@ export class ExpenseList implements OnInit, OnDestroy {
 
   goToDetails(expense: Expense): void {
     this.router.navigate(["/expenses", expense.id]);
+  }
+
+  addExpense(): void {
+    this.router.navigate(["/expenses/new"]);
   }
 
   goToEdit(expense: Expense, focusViolations = false): void {

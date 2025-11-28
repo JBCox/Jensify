@@ -74,7 +74,7 @@ export class BudgetService {
     return from(query).pipe(
       map(({ data, error }) => {
         if (error) throw error;
-        return (data || []).map(budget => this.enrichBudgetWithStatus(budget));
+        return ((data || []) as unknown as (Budget & { budget_tracking?: BudgetTracking[] })[]).map(budget => this.enrichBudgetWithStatus(budget));
       }),
       catchError(this.handleError)
     );

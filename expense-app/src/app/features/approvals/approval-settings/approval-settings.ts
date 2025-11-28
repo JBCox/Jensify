@@ -11,12 +11,10 @@ import {
 import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
 import { MatTableModule } from "@angular/material/table";
-import { MatTabsModule } from "@angular/material/tabs";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule } from "@angular/material/select";
 import { MatSlideToggleModule } from "@angular/material/slide-toggle";
-import { MatExpansionModule } from "@angular/material/expansion";
 import { MatChipsModule } from "@angular/material/chips";
 import { MatSnackBar, MatSnackBarModule } from "@angular/material/snack-bar";
 import { MatTooltipModule } from "@angular/material/tooltip";
@@ -40,6 +38,8 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from "../../../shared/components/confirm-dialog/confirm-dialog";
+import { WorkflowStepEditorComponent, StepType, ApproverRole } from "../workflow-step-editor/workflow-step-editor";
+import { WorkflowTestPanelComponent, TestResults } from "../workflow-test-panel/workflow-test-panel";
 
 @Component({
   selector: "app-approval-settings",
@@ -50,12 +50,10 @@ import {
     MatButtonModule,
     MatIconModule,
     MatTableModule,
-    MatTabsModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatSlideToggleModule,
-    MatExpansionModule,
     MatChipsModule,
     MatSnackBarModule,
     MatTooltipModule,
@@ -64,6 +62,8 @@ import {
     MatDialogModule,
     EmptyState,
     LoadingSkeleton,
+    WorkflowStepEditorComponent,
+    WorkflowTestPanelComponent,
   ],
   templateUrl: "./approval-settings.html",
   styleUrls: ["./approval-settings.scss"],
@@ -83,34 +83,17 @@ export class ApprovalSettings implements OnInit {
   workflowForm!: FormGroup;
   showWorkflowForm = false;
 
-  // Expense categories for conditions
   expenseCategories = Object.values(ExpenseCategory);
-
-  // Organization members for specific user selection
   members = signal<OrganizationMember[]>([]);
   managersAndAbove = signal<OrganizationMember[]>([]);
 
-  // Step types
-  stepTypes = [
-    {
-      value: "manager",
-      label: "Submitter's Manager",
-      description: "Routes to employee's direct manager",
-    },
-    {
-      value: "role",
-      label: "User Role",
-      description: "Routes to any user with specific role",
-    },
-    {
-      value: "specific_user",
-      label: "Specific User",
-      description: "Routes to a named user",
-    },
+  stepTypes: StepType[] = [
+    { value: "manager", label: "Submitter's Manager", description: "Routes to employee's direct manager" },
+    { value: "role", label: "User Role", description: "Routes to any user with specific role" },
+    { value: "specific_user", label: "Specific User", description: "Routes to a named user" },
   ];
 
-  // Approver roles
-  approverRoles = [
+  approverRoles: ApproverRole[] = [
     { value: "manager", label: "Manager" },
     { value: "finance", label: "Finance" },
     { value: "admin", label: "Admin" },
@@ -118,19 +101,9 @@ export class ApprovalSettings implements OnInit {
 
   displayedColumns = ["name", "conditions", "steps", "active", "actions"];
 
-  // Workflow testing
+  // Testing state
   showTestPanel = false;
-  testAmount: number | null = null;
-  testCategory = "";
-  testResults: {
-    steps: {
-      stepNumber: number;
-      stepType: string;
-      approverName: string;
-      approverRole: string;
-    }[];
-    estimatedHours: number;
-  } | null = null;
+  testResults: TestResults | null = null;
 
   ngOnInit(): void {
     this.loadWorkflows();
@@ -149,15 +122,9 @@ export class ApprovalSettings implements OnInit {
     this.organizationService.getOrganizationMembers(orgId).subscribe({
       next: (members) => {
         this.members.set(members);
-        this.managersAndAbove.set(
-          members.filter((m) =>
-            ["manager", "finance", "admin"].includes(m.role)
-          ),
-        );
+        this.managersAndAbove.set(members.filter((m) => ["manager", "finance", "admin"].includes(m.role)));
       },
-      error: (error) => {
-        console.error("Failed to load organization members:", error);
-      },
+      error: (error) => console.error("Failed to load organization members:", error),
     });
   }
 
@@ -167,12 +134,10 @@ export class ApprovalSettings implements OnInit {
       description: [""],
       priority: [1, [Validators.required, Validators.min(1)]],
       is_active: [true],
-      // Conditions
       amount_min: [null],
       amount_max: [null],
       categories: [[]],
       submitter_ids: [[]],
-      // Steps
       steps: this.fb.array([]),
     });
   }
@@ -196,88 +161,45 @@ export class ApprovalSettings implements OnInit {
 
   removeStep(index: number): void {
     this.stepsFormArray.removeAt(index);
-    // Re-number steps
-    this.stepsFormArray.controls.forEach((control, idx) => {
-      control.patchValue({ step_order: idx + 1 });
-    });
+    this.renumberSteps();
   }
 
   moveStepUp(index: number): void {
     if (index === 0) return;
-    const steps = this.stepsFormArray;
-    const step = steps.at(index);
-    steps.removeAt(index);
-    steps.insert(index - 1, step);
-    // Re-number steps
-    steps.controls.forEach((control, idx) => {
-      control.patchValue({ step_order: idx + 1 });
-    });
+    const step = this.stepsFormArray.at(index);
+    this.stepsFormArray.removeAt(index);
+    this.stepsFormArray.insert(index - 1, step);
+    this.renumberSteps();
   }
 
   moveStepDown(index: number): void {
-    const steps = this.stepsFormArray;
-    if (index === steps.length - 1) return;
-    const step = steps.at(index);
-    steps.removeAt(index);
-    steps.insert(index + 1, step);
-    // Re-number steps
-    steps.controls.forEach((control, idx) => {
-      control.patchValue({ step_order: idx + 1 });
-    });
+    if (index === this.stepsFormArray.length - 1) return;
+    const step = this.stepsFormArray.at(index);
+    this.stepsFormArray.removeAt(index);
+    this.stepsFormArray.insert(index + 1, step);
+    this.renumberSteps();
   }
 
-  getStepTypeLabel(stepType: string): string {
-    return this.stepTypes.find((st) => st.value === stepType)?.label ||
-      stepType;
+  private renumberSteps(): void {
+    this.stepsFormArray.controls.forEach((control, idx) => {
+      control.patchValue({ step_order: idx + 1 });
+    });
   }
 
   asFormGroup(control: AbstractControl): FormGroup {
     return control as FormGroup;
   }
 
-  getStepDescription(step: FormGroup): string {
-    const stepType = step.get("step_type")?.value;
-    const approverRole = step.get("approver_role")?.value;
-    const approverUserId = step.get("approver_user_id")?.value;
-
-    switch (stepType) {
-      case "manager":
-        return "Submitter's Manager";
-      case "role":
-        return approverRole
-          ? `Any ${
-            approverRole.charAt(0).toUpperCase() + approverRole.slice(1)
-          }`
-          : "Role not set";
-      case "specific_user":
-        if (approverUserId) {
-          const user = this.members().find((m) => m.user_id === approverUserId);
-          return user?.user?.full_name || "User not found";
-        }
-        return "User not selected";
-      default:
-        return stepType;
-    }
-  }
-
   onCreateWorkflow(): void {
     this.editingWorkflow = null;
-    this.workflowForm.reset({
-      priority: 1,
-      is_active: true,
-      categories: [],
-      submitter_ids: [],
-    });
+    this.workflowForm.reset({ priority: 1, is_active: true, categories: [], submitter_ids: [] });
     this.stepsFormArray.clear();
-    // Add default first step (manager)
     this.addStep();
     this.showWorkflowForm = true;
   }
 
   onEditWorkflow(workflow: ApprovalWorkflow): void {
     this.editingWorkflow = workflow;
-
-    // Load workflow steps
     this.approvalService.getWorkflowSteps(workflow.id).subscribe({
       next: (steps) => {
         this.workflowForm.patchValue({
@@ -290,26 +212,12 @@ export class ApprovalSettings implements OnInit {
           categories: workflow.conditions?.categories || [],
           submitter_ids: workflow.conditions?.submitter_ids || [],
         });
-
-        // Clear and rebuild steps
         this.stepsFormArray.clear();
-        steps.forEach((step) => {
-          this.stepsFormArray.push(this.createStepFormGroup(step));
-        });
-
-        // If no steps, add default
-        if (this.stepsFormArray.length === 0) {
-          this.addStep();
-        }
-
+        steps.forEach((step) => this.stepsFormArray.push(this.createStepFormGroup(step)));
+        if (this.stepsFormArray.length === 0) this.addStep();
         this.showWorkflowForm = true;
       },
-      error: (error) => {
-        console.error("Failed to load workflow steps:", error);
-        this.snackBar.open("Failed to load workflow steps", "Close", {
-          duration: 5000,
-        });
-      },
+      error: () => this.snackBar.open("Failed to load workflow steps", "Close", { duration: 5000 }),
     });
   }
 
@@ -318,177 +226,138 @@ export class ApprovalSettings implements OnInit {
     this.editingWorkflow = null;
     this.workflowForm.reset();
     this.stepsFormArray.clear();
+    this.resetTest();
   }
 
   onSaveWorkflow(): void {
     if (this.workflowForm.invalid) {
-      this.snackBar.open("Please fill in all required fields", "Close", {
-        duration: 3000,
-      });
+      this.snackBar.open("Please fill in all required fields", "Close", { duration: 3000 });
       return;
     }
-
     if (this.stepsFormArray.length === 0) {
-      this.snackBar.open("At least one approval step is required", "Close", {
-        duration: 3000,
-      });
+      this.snackBar.open("At least one approval step is required", "Close", { duration: 3000 });
       return;
     }
 
-    // Validate steps
-    for (let i = 0; i < this.stepsFormArray.length; i++) {
-      const step = this.stepsFormArray.at(i) as FormGroup;
-      const stepType = step.get("step_type")?.value;
-
-      if (stepType === "role" && !step.get("approver_role")?.value) {
-        this.snackBar.open(
-          `Step ${i + 1}: Please select an approver role`,
-          "Close",
-          { duration: 5000 },
-        );
-        return;
-      }
-
-      if (
-        stepType === "specific_user" && !step.get("approver_user_id")?.value
-      ) {
-        this.snackBar.open(
-          `Step ${i + 1}: Please select a specific user`,
-          "Close",
-          { duration: 5000 },
-        );
-        return;
-      }
+    const stepValidationError = this.validateSteps();
+    if (stepValidationError) {
+      this.snackBar.open(stepValidationError, "Close", { duration: 5000 });
+      return;
     }
 
-    // Validate manager assignments
-    const validationWarnings = this.validateManagerAssignments();
-    if (validationWarnings.length > 0) {
-      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-        data: {
-          title: "Manager Assignment Warning",
-          message: `Warning:\\n\\n${validationWarnings.join("\\n\\n")}\\n\\nDo you want to proceed anyway?`,
-          confirmText: "Proceed Anyway",
-          cancelText: "Cancel",
-          confirmColor: "primary",
-          icon: "warning",
-          iconColor: "#FF5900",
-        } as ConfirmDialogData,
-      });
-
-      dialogRef.afterClosed().subscribe((confirmed) => {
-        if (confirmed) {
-          this.saveWorkflowData();
-        }
-      });
+    const warnings = this.validateManagerAssignments();
+    if (warnings.length > 0) {
+      this.showWarningDialog(warnings);
       return;
     }
 
     this.saveWorkflowData();
   }
 
+  private validateSteps(): string | null {
+    for (let i = 0; i < this.stepsFormArray.length; i++) {
+      const step = this.stepsFormArray.at(i) as FormGroup;
+      const stepType = step.get("step_type")?.value;
+      if (stepType === "role" && !step.get("approver_role")?.value) {
+        return `Step ${i + 1}: Please select an approver role`;
+      }
+      if (stepType === "specific_user" && !step.get("approver_user_id")?.value) {
+        return `Step ${i + 1}: Please select a specific user`;
+      }
+    }
+    return null;
+  }
+
+  private showWarningDialog(warnings: string[]): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: "Manager Assignment Warning",
+        message: `Warning:\n\n${warnings.join("\n\n")}\n\nDo you want to proceed anyway?`,
+        confirmText: "Proceed Anyway",
+        cancelText: "Cancel",
+        confirmColor: "primary",
+        icon: "warning",
+        iconColor: "#FF5900",
+      } as ConfirmDialogData,
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) this.saveWorkflowData();
+    });
+  }
+
   private saveWorkflowData(): void {
-
     const formValue = this.workflowForm.value;
-
-    // Build conditions object
-    const conditions: {
-      amount_min?: number;
-      amount_max?: number;
-      categories?: string[];
-      submitter_ids?: string[];
-    } = {};
-    if (formValue.amount_min !== null && formValue.amount_min !== "") {
-      conditions.amount_min = formValue.amount_min;
-    }
-    if (formValue.amount_max !== null && formValue.amount_max !== "") {
-      conditions.amount_max = formValue.amount_max;
-    }
-    if (formValue.categories && formValue.categories.length > 0) {
-      conditions.categories = formValue.categories;
-    }
-    if (formValue.submitter_ids && formValue.submitter_ids.length > 0) {
-      conditions.submitter_ids = formValue.submitter_ids;
-    }
-
-    // Build steps array
-    const steps: CreateStepDto[] = this.stepsFormArray.controls.map(
-      (control, index) => {
-        const stepValue = control.value;
-        return {
-          step_order: index + 1,
-          step_type: stepValue.step_type,
-          approver_role: stepValue.approver_role || undefined,
-          approver_user_id: stepValue.approver_user_id || undefined,
-        };
-      },
-    );
+    const conditions = this.buildConditions(formValue);
+    const steps = this.buildSteps();
 
     if (this.editingWorkflow) {
-      // Update existing workflow metadata
-      this.approvalService.updateWorkflow(this.editingWorkflow.id, {
-        name: formValue.name,
-        description: formValue.description,
-        conditions: conditions,
-        priority: formValue.priority,
-        is_active: formValue.is_active,
-      }).pipe(
-        // Then update steps
-        switchMap(() =>
-          this.approvalService.updateWorkflowSteps(
-            this.editingWorkflow!.id,
-            steps,
-          )
-        ),
-      ).subscribe({
-        next: () => {
-          this.snackBar.open("Workflow updated successfully", "Close", {
-            duration: 3000,
-          });
-          this.showWorkflowForm = false;
-          this.editingWorkflow = null;
-          this.loadWorkflows();
-        },
-        error: (error) => {
-          console.error("Error updating workflow:", error);
-          this.snackBar.open("Failed to update workflow", "Close", {
-            duration: 5000,
-          });
-        },
-      });
+      this.updateWorkflow(formValue, conditions, steps);
     } else {
-      // Create new workflow
-      this.approvalService.createWorkflow({
-        name: formValue.name,
-        description: formValue.description,
-        conditions: conditions,
-        priority: formValue.priority,
-        steps: steps,
-      }).subscribe({
-        next: () => {
-          this.snackBar.open("Workflow created successfully", "Close", {
-            duration: 3000,
-          });
-          this.showWorkflowForm = false;
-          this.loadWorkflows();
-        },
-        error: (error) => {
-          console.error("Error creating workflow:", error);
-          this.snackBar.open(
-            error.message || "Failed to create workflow",
-            "Close",
-            { duration: 5000 },
-          );
-        },
-      });
+      this.createWorkflow(formValue, conditions, steps);
     }
+  }
+
+  private buildConditions(formValue: { amount_min?: number; amount_max?: number; categories?: string[]; submitter_ids?: string[] }): Record<string, unknown> {
+    const conditions: Record<string, unknown> = {};
+    if (formValue.amount_min !== null && formValue.amount_min !== undefined) conditions['amount_min'] = formValue.amount_min;
+    if (formValue.amount_max !== null && formValue.amount_max !== undefined) conditions['amount_max'] = formValue.amount_max;
+    if (formValue.categories?.length) conditions['categories'] = formValue.categories;
+    if (formValue.submitter_ids?.length) conditions['submitter_ids'] = formValue.submitter_ids;
+    return conditions;
+  }
+
+  private buildSteps(): CreateStepDto[] {
+    return this.stepsFormArray.controls.map((control, index) => ({
+      step_order: index + 1,
+      step_type: control.value.step_type,
+      approver_role: control.value.approver_role || undefined,
+      approver_user_id: control.value.approver_user_id || undefined,
+    }));
+  }
+
+  private updateWorkflow(formValue: { name: string; description?: string; priority: number; is_active: boolean }, conditions: Record<string, unknown>, steps: CreateStepDto[]): void {
+    this.approvalService.updateWorkflow(this.editingWorkflow!.id, {
+      name: formValue.name,
+      description: formValue.description,
+      conditions,
+      priority: formValue.priority,
+      is_active: formValue.is_active,
+    }).pipe(
+      switchMap(() => this.approvalService.updateWorkflowSteps(this.editingWorkflow!.id, steps))
+    ).subscribe({
+      next: () => {
+        this.snackBar.open("Workflow updated successfully", "Close", { duration: 3000 });
+        this.showWorkflowForm = false;
+        this.editingWorkflow = null;
+        this.loadWorkflows();
+      },
+      error: () => this.snackBar.open("Failed to update workflow", "Close", { duration: 5000 }),
+    });
+  }
+
+  private createWorkflow(formValue: { name: string; description?: string; priority: number }, conditions: Record<string, unknown>, steps: CreateStepDto[]): void {
+    this.approvalService.createWorkflow({
+      name: formValue.name,
+      description: formValue.description,
+      conditions,
+      priority: formValue.priority,
+      steps,
+    }).subscribe({
+      next: () => {
+        this.snackBar.open("Workflow created successfully", "Close", { duration: 3000 });
+        this.showWorkflowForm = false;
+        this.loadWorkflows();
+      },
+      error: (err) => this.snackBar.open(err.message || "Failed to create workflow", "Close", { duration: 5000 }),
+    });
   }
 
   onDeleteWorkflow(workflow: ApprovalWorkflow): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: "Delete Workflow",
-        message: `Are you sure you want to delete the workflow "${workflow.name}"? This cannot be undone.`,
+        message: `Are you sure you want to delete "${workflow.name}"? This cannot be undone.`,
         confirmText: "Delete",
         cancelText: "Cancel",
         confirmColor: "warn",
@@ -501,167 +370,70 @@ export class ApprovalSettings implements OnInit {
       if (confirmed) {
         this.approvalService.deleteWorkflow(workflow.id).subscribe({
           next: () => {
-            this.snackBar.open("Workflow deleted successfully", "Close", {
-              duration: 3000,
-            });
+            this.snackBar.open("Workflow deleted", "Close", { duration: 3000 });
             this.loadWorkflows();
           },
-          error: (error) => {
-            console.error("Error deleting workflow:", error);
-            this.snackBar.open("Failed to delete workflow", "Close", {
-              duration: 5000,
-            });
-          },
+          error: () => this.snackBar.open("Failed to delete workflow", "Close", { duration: 5000 }),
         });
       }
     });
   }
 
   onToggleActive(workflow: ApprovalWorkflow): void {
-    this.approvalService.updateWorkflow(workflow.id, {
-      is_active: !workflow.is_active,
-    }).subscribe({
+    this.approvalService.updateWorkflow(workflow.id, { is_active: !workflow.is_active }).subscribe({
       next: () => {
-        this.snackBar.open(
-          `Workflow ${
-            !workflow.is_active ? "activated" : "deactivated"
-          } successfully`,
-          "Close",
-          { duration: 3000 },
-        );
+        this.snackBar.open(`Workflow ${!workflow.is_active ? "activated" : "deactivated"}`, "Close", { duration: 3000 });
         this.loadWorkflows();
       },
-      error: (error) => {
-        console.error("Error toggling workflow:", error);
-        this.snackBar.open("Failed to update workflow", "Close", {
-          duration: 5000,
-        });
-      },
+      error: () => this.snackBar.open("Failed to update workflow", "Close", { duration: 5000 }),
     });
   }
 
   formatConditions(workflow: ApprovalWorkflow): string {
     const parts: string[] = [];
-
-    if (
-      workflow.conditions?.amount_min !== undefined &&
-      workflow.conditions?.amount_max !== undefined
-    ) {
-      parts.push(
-        `$${workflow.conditions.amount_min} - $${workflow.conditions.amount_max}`,
-      );
+    if (workflow.conditions?.amount_min !== undefined && workflow.conditions?.amount_max !== undefined) {
+      parts.push(`$${workflow.conditions.amount_min} - $${workflow.conditions.amount_max}`);
     } else if (workflow.conditions?.amount_min !== undefined) {
       parts.push(`≥ $${workflow.conditions.amount_min}`);
     } else if (workflow.conditions?.amount_max !== undefined) {
       parts.push(`≤ $${workflow.conditions.amount_max}`);
     }
-
-    if (
-      workflow.conditions?.categories &&
-      workflow.conditions.categories.length > 0
-    ) {
-      if (workflow.conditions.categories.length === 1) {
-        parts.push(workflow.conditions.categories[0]);
-      } else {
-        parts.push(`${workflow.conditions.categories.length} categories`);
-      }
+    if (workflow.conditions?.categories?.length) {
+      parts.push(workflow.conditions.categories.length === 1 ? workflow.conditions.categories[0] : `${workflow.conditions.categories.length} categories`);
     }
-
     return parts.length > 0 ? parts.join(", ") : "All expenses";
   }
 
-  getStepTypeBadgeColor(stepType: string): string {
-    switch (stepType) {
-      case "manager":
-        return "primary";
-      case "role":
-        return "accent";
-      case "specific_user":
-        return "warn";
-      default:
-        return "";
-    }
-  }
-
-  /**
-   * Validate manager assignments for workflows with manager steps
-   * Returns array of warning messages
-   */
   validateManagerAssignments(): string[] {
     const warnings: string[] = [];
+    const hasManagerStep = this.stepsFormArray.controls.some((s) => s.get("step_type")?.value === "manager");
+    if (!hasManagerStep) return warnings;
 
-    // Check if any steps require manager
-    const hasManagerStep = this.stepsFormArray.controls.some(
-      (step) => step.get("step_type")?.value === "manager",
-    );
-
-    if (!hasManagerStep) {
-      return warnings; // No manager steps, no validation needed
-    }
-
-    // Check if any employees lack managers
-    const employeesWithoutManagers = this.members().filter(
-      (m) => m.role === "employee" && !m.manager_id && m.is_active,
-    );
-
+    const employeesWithoutManagers = this.members().filter((m) => m.role === "employee" && !m.manager_id && m.is_active);
     if (employeesWithoutManagers.length > 0) {
-      const names = employeesWithoutManagers
-        .slice(0, 5)
-        .map((m) => m.user?.full_name || "Unknown")
-        .join(", ");
-
-      const message =
-        `${employeesWithoutManagers.length} employee(s) have no manager assigned: ${names}${
-          employeesWithoutManagers.length > 5 ? ", ..." : ""
-        }. Workflows with "Manager" steps will fail for these users.`;
-
-      warnings.push(message);
+      const names = employeesWithoutManagers.slice(0, 5).map((m) => m.user?.full_name || "Unknown").join(", ");
+      warnings.push(`${employeesWithoutManagers.length} employee(s) have no manager: ${names}${employeesWithoutManagers.length > 5 ? ", ..." : ""}`);
     }
 
-    // Check if workflow conditions might affect employees without managers
     const formValue = this.workflowForm.value;
-    if (
-      formValue.amount_min === null && formValue.amount_max === null &&
-      (!formValue.categories || formValue.categories.length === 0)
-    ) {
-      // This workflow matches ALL expenses
+    if (formValue.amount_min === null && formValue.amount_max === null && (!formValue.categories || formValue.categories.length === 0)) {
       if (employeesWithoutManagers.length > 0) {
-        warnings.push(
-          "This workflow applies to ALL expenses. Consider assigning managers in User Management or using role-based approval steps instead.",
-        );
+        warnings.push("This workflow applies to ALL expenses. Consider assigning managers or using role-based approval.");
       }
     }
-
     return warnings;
   }
 
-  /**
-   * Test/preview the workflow with sample inputs
-   * Shows the approval chain that would be created
-   */
   testWorkflow(): void {
     if (this.stepsFormArray.length === 0) {
-      this.snackBar.open(
-        "Add at least one step to test the workflow",
-        "Close",
-        { duration: 3000 },
-      );
+      this.snackBar.open("Add at least one step to test", "Close", { duration: 3000 });
       return;
     }
 
-    // Simulate approval chain
-    const steps: {
-      stepNumber: number;
-      stepType: string;
-      approverName: string;
-      approverRole: string;
-    }[] = [];
-
-    for (let i = 0; i < this.stepsFormArray.length; i++) {
-      const step = this.stepsFormArray.at(i) as FormGroup;
-      const stepType = step.get("step_type")?.value;
-      const approverRole = step.get("approver_role")?.value;
-      const approverUserId = step.get("approver_user_id")?.value;
+    const steps = this.stepsFormArray.controls.map((control, i) => {
+      const stepType = control.get("step_type")?.value;
+      const approverRole = control.get("approver_role")?.value;
+      const approverUserId = control.get("approver_user_id")?.value;
 
       let approverName = "Unknown";
       let role = "";
@@ -673,59 +445,30 @@ export class ApprovalSettings implements OnInit {
           break;
         case "role":
           if (approverRole) {
-            const roleMembers = this.members().filter((m) =>
-              m.role === approverRole && m.is_active
-            );
-            if (roleMembers.length > 0) {
-              approverName = `Any ${
-                approverRole.charAt(0).toUpperCase() + approverRole.slice(1)
-              } (${roleMembers.length} available)`;
-              role = approverRole.charAt(0).toUpperCase() +
-                approverRole.slice(1);
-            } else {
-              approverName = `⚠️ No active ${approverRole}s found`;
-              role = approverRole;
-            }
+            const roleMembers = this.members().filter((m) => m.role === approverRole && m.is_active);
+            approverName = roleMembers.length > 0
+              ? `Any ${approverRole.charAt(0).toUpperCase() + approverRole.slice(1)} (${roleMembers.length} available)`
+              : `⚠️ No active ${approverRole}s found`;
+            role = approverRole.charAt(0).toUpperCase() + approverRole.slice(1);
           }
           break;
         case "specific_user":
           if (approverUserId) {
-            const user = this.members().find((m) =>
-              m.user_id === approverUserId
-            );
-            if (user) {
-              approverName = user.user?.full_name || "Unknown User";
-              role = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-            } else {
-              approverName = "⚠️ User not found";
-              role = "Unknown";
-            }
+            const user = this.members().find((m) => m.user_id === approverUserId);
+            approverName = user?.user?.full_name || "⚠️ User not found";
+            role = user ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Unknown";
           }
           break;
       }
 
-      steps.push({
-        stepNumber: i + 1,
-        stepType: stepType,
-        approverName: approverName,
-        approverRole: role,
-      });
-    }
+      return { stepNumber: i + 1, stepType, approverName, approverRole: role };
+    });
 
-    // Estimate approval time (rough estimate: 4-24 hours per step)
-    const estimatedHours = steps.length * 12; // Average 12 hours per step
-
-    this.testResults = {
-      steps: steps,
-      estimatedHours: estimatedHours,
-    };
-
+    this.testResults = { steps, estimatedHours: steps.length * 12 };
     this.showTestPanel = true;
   }
 
   resetTest(): void {
-    this.testAmount = null;
-    this.testCategory = "";
     this.testResults = null;
     this.showTestPanel = false;
   }

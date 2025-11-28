@@ -55,35 +55,19 @@
         <!-- Actions -->
         <div class="header-actions">
           @if (canPay()) {
-            <button
-              mat-raised-button
-              color="accent"
-              [disabled]="submitting()"
-              (click)="markAsPaid()"
-              class="jensify-button">
+            <button mat-raised-button color="accent" [disabled]="submitting()" (click)="markAsPaid()" class="jensify-button">
               <mat-icon>attach_money</mat-icon>
               Mark as Paid
             </button>
           }
-
           @if (canSubmit()) {
-            <button
-              mat-raised-button
-              color="primary"
-              [disabled]="submitting()"
-              (click)="submitReport()"
-              class="jensify-button">
+            <button mat-raised-button color="primary" [disabled]="submitting()" (click)="submitReport()" class="jensify-button">
               <mat-icon>send</mat-icon>
               Submit for Approval
             </button>
           }
-
           @if (canDelete()) {
-            <button
-              mat-stroked-button
-              color="warn"
-              (click)="deleteReport()"
-              class="jensify-button">
+            <button mat-stroked-button color="warn" (click)="deleteReport()" class="jensify-button">
               <mat-icon>delete</mat-icon>
               Delete Report
             </button>
@@ -91,13 +75,11 @@
         </div>
 
         @if (!canSubmit() && canEdit()) {
-          <p class="jensify-subtext jensify-mb-0">
-            Add expenses to this report before submitting for approval.
-          </p>
+          <p class="jensify-subtext jensify-mb-0">Add expenses to this report before submitting for approval.</p>
         }
       </mat-card>
 
-      <!-- Approval Action Card - for managers/finance reviewing -->
+      <!-- Approval Action Card -->
       @if (canApprove()) {
         <mat-card class="jensify-card approval-action-card">
           <div class="approval-action-header">
@@ -108,21 +90,11 @@
             </div>
           </div>
           <div class="approval-action-buttons">
-            <button
-              mat-raised-button
-              color="primary"
-              [disabled]="approving()"
-              (click)="approveReport()"
-              class="approve-btn">
+            <button mat-raised-button color="primary" [disabled]="approving()" (click)="approveReport()" class="approve-btn">
               <mat-icon>check_circle</mat-icon>
               Approve Report
             </button>
-            <button
-              mat-stroked-button
-              color="warn"
-              [disabled]="approving()"
-              (click)="rejectReport()"
-              class="reject-btn">
+            <button mat-stroked-button color="warn" [disabled]="approving()" (click)="rejectReport()" class="reject-btn">
               <mat-icon>cancel</mat-icon>
               Reject
             </button>
@@ -145,12 +117,7 @@
             <p class="reason-text">{{ report()!.rejection_reason }}</p>
           </div>
           @if (canResubmit()) {
-            <button
-              mat-raised-button
-              color="primary"
-              [disabled]="submitting()"
-              (click)="resubmitReport()"
-              class="jensify-button resubmit-btn">
+            <button mat-raised-button color="primary" [disabled]="submitting()" (click)="resubmitReport()" class="jensify-button resubmit-btn">
               <mat-icon>send</mat-icon>
               Resubmit for Approval
             </button>
@@ -160,113 +127,17 @@
 
       <!-- Main Content Grid -->
       <div class="content-grid">
-        <!-- Expenses List -->
-        <mat-card class="jensify-card expenses-card">
-          <div class="card-header">
-            <div class="header-title">
-              <mat-icon>receipt</mat-icon>
-              <h3>Expenses ({{ expenses().length }})</h3>
-            </div>
-          </div>
+        <!-- Expenses Table (Child Component) -->
+        <app-report-expenses-table
+          [expenses]="expenses()"
+          [canEdit]="canEdit()"
+          (addExpenses)="openAddExpensesDialog()"
+          (viewExpense)="viewExpense($event)"
+          (removeExpense)="removeExpense($event)">
+        </app-report-expenses-table>
 
-          @if (!hasExpenses()) {
-            <div class="empty-expenses">
-              <mat-icon>receipt_long</mat-icon>
-              <p>No expenses in this report</p>
-              @if (canEdit()) {
-                <button mat-raised-button color="primary" class="jensify-button" (click)="openAddExpensesDialog()">
-                  <mat-icon>add</mat-icon>
-                  Add Expenses
-                </button>
-              }
-            </div>
-          } @else {
-            <!-- Expenses Table -->
-            <div class="expenses-table-container">
-              <table mat-table [dataSource]="expenses()" class="expenses-table">
-                <!-- Merchant Column -->
-                <ng-container matColumnDef="merchant">
-                  <th mat-header-cell *matHeaderCellDef>Merchant</th>
-                  <td mat-cell *matCellDef="let expense">{{ expense.merchant }}</td>
-                </ng-container>
-
-                <!-- Category Column -->
-                <ng-container matColumnDef="category">
-                  <th mat-header-cell *matHeaderCellDef>Category</th>
-                  <td mat-cell *matCellDef="let expense">{{ expense.category }}</td>
-                </ng-container>
-
-                <!-- Date Column -->
-                <ng-container matColumnDef="date">
-                  <th mat-header-cell *matHeaderCellDef>Date</th>
-                  <td mat-cell *matCellDef="let expense">{{ formatDate(expense.expense_date) }}</td>
-                </ng-container>
-
-                <!-- Amount Column -->
-                <ng-container matColumnDef="amount">
-                  <th mat-header-cell *matHeaderCellDef>Amount</th>
-                  <td mat-cell *matCellDef="let expense">
-                    <span class="expense-amount">{{ formatCurrency(expense.amount) }}</span>
-                  </td>
-                </ng-container>
-
-                <!-- Status Column -->
-                <ng-container matColumnDef="status">
-                  <th mat-header-cell *matHeaderCellDef>Status</th>
-                  <td mat-cell *matCellDef="let expense">
-                    <app-status-badge [status]="getBadgeStatus(expense.status)" size="small"></app-status-badge>
-                  </td>
-                </ng-container>
-
-                <!-- Actions Column -->
-                <ng-container matColumnDef="actions">
-                  <th mat-header-cell *matHeaderCellDef>Actions</th>
-                  <td mat-cell *matCellDef="let expense">
-                    <div class="action-buttons">
-                      <button
-                        mat-icon-button
-                        (click)="viewExpense(expense)"
-                        matTooltip="View expense">
-                        <mat-icon>visibility</mat-icon>
-                      </button>
-                      @if (canEdit()) {
-                        <button
-                          mat-icon-button
-                          color="warn"
-                          (click)="removeExpense(expense)"
-                          matTooltip="Remove from report">
-                          <mat-icon>remove_circle</mat-icon>
-                        </button>
-                      }
-                    </div>
-                  </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns" class="expense-row"></tr>
-              </table>
-            </div>
-          }
-        </mat-card>
-
-        <!-- Timeline Card -->
-        <mat-card class="jensify-card timeline-card">
-          <div class="card-header">
-            <div class="header-title">
-              <mat-icon>timeline</mat-icon>
-              <h3>Timeline</h3>
-            </div>
-          </div>
-
-          <div class="timeline">
-            @for (item of getTimeline(); track item.label) {
-              <div class="timeline-item">
-                <span class="timeline-label">{{ item.label }}</span>
-                <span class="timeline-value">{{ formatDate(item.value) }}</span>
-              </div>
-            }
-          </div>
-        </mat-card>
+        <!-- Timeline (Child Component) -->
+        <app-report-timeline [items]="timelineItems()"></app-report-timeline>
       </div>
     </div>
   }

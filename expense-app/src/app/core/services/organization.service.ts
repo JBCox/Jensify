@@ -328,8 +328,9 @@ export class OrganizationService {
     ).pipe(
       map(({ data, error }) => {
         if (error) throw error;
-        if (!data || data.length === 0) return null;
-        return data[0] as UserOrganizationContext;
+        // Function returns JSON directly, not an array
+        if (!data) return null;
+        return data as UserOrganizationContext;
       }),
       catchError(this.handleError),
     );

@@ -18,70 +18,12 @@
           </mat-tab>
           <mat-tab label="GPS Tracking">
             <ng-template matTabContent>
-              <div class="jensify-tab-content">
-                <p class="jensify-text-muted">Live GPS tracking for accurate mileage calculation</p>
-
-                <!-- GPS Tracking Interface -->
-                @if (!isTracking()) {
-                  <div class="jensify-tracking-start">
-                    <button
-                      mat-raised-button
-                      color="primary"
-                      type="button"
-                      (click)="startGPSTracking()"
-                      [disabled]="!gpsAvailable()"
-                      class="jensify-button-lg">
-                      <mat-icon>play_arrow</mat-icon>
-                      Start Tracking
-                    </button>
-                    @if (!gpsAvailable()) {
-                      <p class="jensify-message-warning">GPS not available on this device</p>
-                    }
-                  </div>
-                } @else {
-                  <div class="jensify-tracking-active">
-                    <div class="jensify-tracking-header">
-                      <mat-icon color="accent">gps_fixed</mat-icon>
-                      <h3>Tracking in Progress...</h3>
-                    </div>
-                    <div class="jensify-tracking-stats">
-                      <div class="jensify-stat">
-                        <mat-icon>straighten</mat-icon>
-                        <div class="jensify-stat-content">
-                          <span class="jensify-stat-label">Distance</span>
-                          <span class="jensify-stat-value">{{ trackingDistance().toFixed(2) }} mi</span>
-                        </div>
-                      </div>
-                      <div class="jensify-stat">
-                        <mat-icon>timer</mat-icon>
-                        <div class="jensify-stat-content">
-                          <span class="jensify-stat-label">Duration</span>
-                          <span class="jensify-stat-value">{{ formatDuration(trackingDuration()) }}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="jensify-tracking-actions">
-                      <button
-                        mat-raised-button
-                        color="primary"
-                        type="button"
-                        (click)="stopGPSTracking()"
-                        class="jensify-button">
-                        <mat-icon>stop</mat-icon>
-                        Stop Tracking
-                      </button>
-                      <button
-                        mat-stroked-button
-                        type="button"
-                        (click)="cancelGPSTracking()"
-                        class="jensify-button">
-                        <mat-icon>close</mat-icon>
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
+              <app-trip-gps-tracking
+                [gpsAvailable]="gpsAvailable()"
+                (trackingComplete)="onTrackingComplete($event)"
+                (trackingStarted)="onTrackingStarted()"
+                (trackingCancelled)="onTrackingCancelled()">
+              </app-trip-gps-tracking>
             </ng-template>
           </mat-tab>
         </mat-tab-group>

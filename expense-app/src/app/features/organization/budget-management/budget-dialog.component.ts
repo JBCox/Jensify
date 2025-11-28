@@ -262,7 +262,12 @@ export class BudgetDialogComponent implements OnInit {
   }
 
   private loadDepartments(): void {
-    this.organizationService.getOrganizationMembers().subscribe({
+    const orgId = this.organizationService.currentOrganizationId;
+    if (!orgId) {
+      this.departments.set(['Engineering', 'Sales', 'Marketing', 'Operations', 'Finance']);
+      return;
+    }
+    this.organizationService.getOrganizationMembers(orgId).subscribe({
       next: (members) => {
         const depts = [...new Set(members.map(m => m.department).filter(Boolean))] as string[];
         this.departments.set(depts.length > 0 ? depts : ['Engineering', 'Sales', 'Marketing', 'Operations', 'Finance']);

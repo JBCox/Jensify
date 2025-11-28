@@ -2,7 +2,7 @@
   <!-- Header with Summary -->
   <div class="jensify-page-header">
     <div class="jensify-header-content">
-      <h1 class="jensify-page-title">My Mileage Trips</h1>
+      <h1 class="jensify-page-title">Mileage</h1>
       <div class="jensify-summary-metrics">
         <div class="jensify-metric">
           <span class="jensify-metric-value">{{ totalCount() }}</span>
@@ -76,82 +76,15 @@
     </mat-card>
   }
 
-  <!-- Filters Section -->
-  <mat-card class="jensify-card jensify-filters-card">
-    <!-- Status Filter Chips -->
-    <div class="jensify-filter-section">
-      <div class="jensify-filter-label">Status</div>
-      <mat-chip-set class="jensify-status-chips">
-        @for (option of statusOptions; track option.value) {
-          <mat-chip
-            [class.selected]="selectedStatus() === option.value"
-            (click)="setStatusFilter(option.value)">
-            {{ option.label }}
-          </mat-chip>
-        }
-      </mat-chip-set>
-    </div>
-
-    <!-- Search and Category -->
-    <div class="jensify-filter-row">
-      <mat-form-field appearance="fill" floatLabel="always">
-        <mat-icon matPrefix>search</mat-icon>
-        <mat-label>Search addresses or purpose</mat-label>
-        <input
-          matInput
-          [(ngModel)]="searchQuery"
-          (ngModelChange)="searchQuery.set($event)"
-          placeholder="Enter address, purpose, or notes...">
-      </mat-form-field>
-
-      <mat-form-field appearance="fill" floatLabel="always">
-        <mat-label>Category</mat-label>
-        <mat-select
-          [(ngModel)]="selectedCategory"
-          (ngModelChange)="selectedCategory.set($event)">
-          @for (option of categoryOptions; track option.value) {
-            <mat-option [value]="option.value">{{ option.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-    </div>
-
-    <!-- Date Range -->
-    <div class="jensify-filter-row">
-      <mat-form-field appearance="fill" floatLabel="always">
-        <mat-label>From Date</mat-label>
-        <input
-          matInput
-          [matDatepicker]="fromPicker"
-          [(ngModel)]="dateFrom"
-          (ngModelChange)="dateFrom.set($event)">
-        <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
-        <mat-datepicker #fromPicker></mat-datepicker>
-      </mat-form-field>
-
-      <mat-form-field appearance="fill" floatLabel="always">
-        <mat-label>To Date</mat-label>
-        <input
-          matInput
-          [matDatepicker]="toPicker"
-          [(ngModel)]="dateTo"
-          (ngModelChange)="dateTo.set($event)">
-        <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
-        <mat-datepicker #toPicker></mat-datepicker>
-      </mat-form-field>
-    </div>
-
-    <!-- Clear Filters Button -->
-    <div class="jensify-filter-actions">
-      <button
-        mat-button
-        class="jensify-button"
-        (click)="clearFilters()">
-        <mat-icon>clear</mat-icon>
-        Clear Filters
-      </button>
-    </div>
-  </mat-card>
+  <!-- Filters Component -->
+  <app-trip-filters
+    [filters]="filterState()"
+    [showAdvanced]="showAdvancedFilters"
+    [activeFilterCount]="activeFilterCount()"
+    (filtersChange)="onFiltersChange($event)"
+    (toggleAdvanced)="toggleAdvancedFilters()"
+    (clearFilters)="clearFilters()">
+  </app-trip-filters>
 
   <!-- Loading State -->
   @if (loading()) {

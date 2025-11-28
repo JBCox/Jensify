@@ -137,145 +137,33 @@
           }
 
           @for (stepControl of stepsFormArray.controls; track stepControl; let i = $index) {
-            <mat-card class="step-card" [formGroup]="asFormGroup(stepControl)">
-              <mat-card-header>
-                <div class="step-header">
-                  <div class="step-number">Step {{i + 1}}</div>
-                  <div class="step-actions">
-                    <button mat-icon-button type="button" (click)="moveStepUp(i)" [disabled]="i === 0" matTooltip="Move Up">
-                      <mat-icon>arrow_upward</mat-icon>
-                    </button>
-                    <button mat-icon-button type="button" (click)="moveStepDown(i)" [disabled]="i === stepsFormArray.length - 1" matTooltip="Move Down">
-                      <mat-icon>arrow_downward</mat-icon>
-                    </button>
-                    <button mat-icon-button type="button" (click)="removeStep(i)" [disabled]="stepsFormArray.length === 1" color="warn" matTooltip="Remove Step">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  </div>
-                </div>
-              </mat-card-header>
-              <mat-card-content>
-                <div class="step-form">
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Step Type</mat-label>
-                    <mat-select formControlName="step_type" required>
-                      @for (type of stepTypes; track type.value) {
-                        <mat-option [value]="type.value">
-                          <div class="step-type-option">
-                            <strong>{{type.label}}</strong>
-                            <span class="option-desc">{{type.description}}</span>
-                          </div>
-                        </mat-option>
-                      }
-                    </mat-select>
-                    <mat-hint>How should the approver be determined?</mat-hint>
-                  </mat-form-field>
-
-                  <!-- Show role selector if step_type is 'role' -->
-                  @if (stepControl.get('step_type')?.value === 'role') {
-                    <mat-form-field appearance="outline" class="full-width">
-                      <mat-label>Approver Role</mat-label>
-                      <mat-select formControlName="approver_role" required>
-                        @for (role of approverRoles; track role.value) {
-                          <mat-option [value]="role.value">{{role.label}}</mat-option>
-                        }
-                      </mat-select>
-                      <mat-icon matPrefix>badge</mat-icon>
-                      <mat-hint>Any active user with this role can approve</mat-hint>
-                    </mat-form-field>
-                  }
-
-                  <!-- Show user selector if step_type is 'specific_user' -->
-                  @if (stepControl.get('step_type')?.value === 'specific_user') {
-                    <mat-form-field appearance="outline" class="full-width">
-                      <mat-label>Specific User</mat-label>
-                      <mat-select formControlName="approver_user_id" required>
-                        @for (member of managersAndAbove(); track member.user_id) {
-                          <mat-option [value]="member.user_id">
-                            {{member.user?.full_name}} ({{member.role}})
-                          </mat-option>
-                        }
-                      </mat-select>
-                      <mat-icon matPrefix>person</mat-icon>
-                      <mat-hint>Specific user who must approve</mat-hint>
-                    </mat-form-field>
-                  }
-
-                  <!-- Preview -->
-                  <div class="step-preview">
-                    <mat-icon>arrow_forward</mat-icon>
-                    <span>Will route to: <strong>{{getStepDescription(asFormGroup(stepControl))}}</strong></span>
-                  </div>
-                </div>
-              </mat-card-content>
-            </mat-card>
+            <app-workflow-step-editor
+              [stepForm]="asFormGroup(stepControl)"
+              [stepIndex]="i"
+              [isFirst]="i === 0"
+              [isLast]="i === stepsFormArray.length - 1"
+              [isOnlyStep]="stepsFormArray.length === 1"
+              [stepTypes]="stepTypes"
+              [approverRoles]="approverRoles"
+              [managersAndAbove]="managersAndAbove()"
+              [allMembers]="members()"
+              (moveUp)="moveStepUp(i)"
+              (moveDown)="moveStepDown(i)"
+              (remove)="removeStep(i)">
+            </app-workflow-step-editor>
           }
         </div>
 
         <mat-divider></mat-divider>
 
         <!-- Workflow Testing Tool -->
-        <div class="form-section">
-          <div class="section-header">
-            <h3><mat-icon>science</mat-icon> Test Workflow</h3>
-            <button mat-stroked-button type="button" (click)="testWorkflow()" color="primary" [disabled]="stepsFormArray.length === 0">
-              <mat-icon>play_arrow</mat-icon>
-              Preview Approval Chain
-            </button>
-          </div>
-          <p class="section-hint">Preview how this workflow will route expenses through the approval chain.</p>
-
-          @if (showTestPanel && testResults) {
-            <div class="test-results">
-              <div class="approval-chain">
-                <div class="chain-start">
-                  <mat-icon>assignment</mat-icon>
-                  <strong>Expense Submitted</strong>
-                </div>
-
-                @for (step of testResults.steps; track step.stepNumber) {
-                  <div class="chain-arrow">
-                    <mat-icon>arrow_downward</mat-icon>
-                  </div>
-                  <div class="chain-step">
-                    <div class="step-badge">Step {{step.stepNumber}}</div>
-                    <div class="step-info">
-                      <strong>{{step.approverName}}</strong>
-                      <span class="step-role">{{step.approverRole}}</span>
-                    </div>
-                    @if (step.approverName.includes('⚠️')) {
-                      <mat-icon class="warning-icon" color="warn">warning</mat-icon>
-                    }
-                  </div>
-                }
-
-                <div class="chain-arrow">
-                  <mat-icon>arrow_downward</mat-icon>
-                </div>
-                <div class="chain-end">
-                  <mat-icon>check_circle</mat-icon>
-                  <strong>Approved</strong>
-                </div>
-              </div>
-
-              <div class="test-metadata">
-                <div class="metadata-item">
-                  <mat-icon>layers</mat-icon>
-                  <span><strong>{{testResults.steps.length}}</strong> approval step(s)</span>
-                </div>
-                <div class="metadata-item">
-                  <mat-icon>schedule</mat-icon>
-                  <span>Estimated time: <strong>~{{testResults.estimatedHours}} hours</strong></span>
-                </div>
-              </div>
-
-              <button mat-stroked-button type="button" (click)="resetTest()" class="reset-test-btn">
-                <mat-icon>refresh</mat-icon>
-                Close Preview
-              </button>
-            </div>
-          }
-        </div>
+        <app-workflow-test-panel
+          [canTest]="stepsFormArray.length > 0"
+          [showResults]="showTestPanel"
+          [results]="testResults"
+          (runTest)="testWorkflow()"
+          (reset)="resetTest()">
+        </app-workflow-test-panel>
 
         <!-- Form Actions -->
         <div class="form-actions">

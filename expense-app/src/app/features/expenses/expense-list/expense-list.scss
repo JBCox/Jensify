@@ -39,6 +39,12 @@
     }
   }
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--jensify-spacing-sm, 0.5rem);
+  }
+
   button[mat-flat-button] {
     &:not(:disabled) { background-color: var(--jensify-primary, #ff5900) !important; color: white !important; }
     &:disabled {
@@ -386,8 +392,14 @@
 @media (max-width: 767px) {
   .expense-list-container { padding: var(--jensify-spacing-md, 1rem); }
   .expense-header {
-    flex-direction: column; align-items: flex-start;
+    flex-direction: column; align-items: stretch; gap: var(--jensify-spacing-sm);
     .header-left { flex-direction: column; align-items: flex-start; gap: var(--jensify-spacing-xs); }
+    .header-actions {
+      display: flex;
+      width: 100%;
+      gap: var(--jensify-spacing-sm);
+      button { flex: 1; }
+    }
   }
   .filter-bar {
     flex-direction: column; align-items: stretch;

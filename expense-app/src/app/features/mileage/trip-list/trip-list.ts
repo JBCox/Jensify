@@ -1,15 +1,8 @@
 import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { ScrollingModule } from '@angular/cdk/scrolling';
@@ -25,6 +18,7 @@ import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loading-skeleton';
 import { Router } from '@angular/router';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import { TripFiltersComponent, TripFilterState } from '../trip-filters/trip-filters';
 
 /**
  * Trip List Component
@@ -34,21 +28,15 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/compo
   selector: 'app-trip-list',
   imports: [
     CommonModule,
-    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatChipsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
     MatCheckboxModule,
     ScrollingModule,
     StatusBadge,
     EmptyState,
-    LoadingSkeleton
+    LoadingSkeleton,
+    TripFiltersComponent,
   ],
   templateUrl: './trip-list.html',
   styleUrl: './trip-list.scss',
@@ -142,24 +130,26 @@ export class TripList implements OnInit, OnDestroy {
     return drafts.every(t => this.selectedTripIds().has(t.id));
   });
 
-  // Status options for filter chips
-  readonly statusOptions = [
-    { value: 'all' as const, label: 'All' },
-    { value: 'draft' as MileageStatus, label: 'Draft' },
-    { value: 'submitted' as MileageStatus, label: 'Pending' },
-    { value: 'approved' as MileageStatus, label: 'Approved' },
-    { value: 'rejected' as MileageStatus, label: 'Rejected' },
-    { value: 'reimbursed' as MileageStatus, label: 'Reimbursed' }
-  ];
+  // UI state
+  showAdvancedFilters = false;
 
-  // Category options for dropdown
-  readonly categoryOptions = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'business' as MileageCategory, label: 'Business' },
-    { value: 'medical' as MileageCategory, label: 'Medical' },
-    { value: 'charity' as MileageCategory, label: 'Charity' },
-    { value: 'moving' as MileageCategory, label: 'Moving' }
-  ];
+  // Computed active filter count
+  activeFilterCount = computed(() => {
+    let count = 0;
+    if (this.selectedCategory() !== 'all') count++;
+    if (this.dateFrom()) count++;
+    if (this.dateTo()) count++;
+    return count;
+  });
+
+  // Computed filter state for child component
+  filterState = computed((): TripFilterState => ({
+    status: this.selectedStatus(),
+    searchQuery: this.searchQuery(),
+    category: this.selectedCategory(),
+    dateFrom: this.dateFrom(),
+    dateTo: this.dateTo(),
+  }));
 
   ngOnInit(): void {
     this.loadTrips();
@@ -245,10 +235,21 @@ export class TripList implements OnInit, OnDestroy {
   }
 
   /**
-   * Set status filter
+   * Handle filter changes from child component
    */
-  setStatusFilter(status: MileageStatus | 'all'): void {
-    this.selectedStatus.set(status);
+  onFiltersChange(changes: Partial<TripFilterState>): void {
+    if (changes.status !== undefined) this.selectedStatus.set(changes.status);
+    if (changes.searchQuery !== undefined) this.searchQuery.set(changes.searchQuery);
+    if (changes.category !== undefined) this.selectedCategory.set(changes.category);
+    if (changes.dateFrom !== undefined) this.dateFrom.set(changes.dateFrom);
+    if (changes.dateTo !== undefined) this.dateTo.set(changes.dateTo);
+  }
+
+  /**
+   * Toggle advanced filters visibility
+   */
+  toggleAdvancedFilters(): void {
+    this.showAdvancedFilters = !this.showAdvancedFilters;
   }
 
   /**
@@ -260,6 +261,7 @@ export class TripList implements OnInit, OnDestroy {
     this.selectedCategory.set('all');
     this.dateFrom.set(null);
     this.dateTo.set(null);
+    this.showAdvancedFilters = false;
   }
 
   /**

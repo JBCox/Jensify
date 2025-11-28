@@ -1,47 +1,203 @@
-<div class="jensify-container-sm">
-  <mat-card class="jensify-card">
-    <mat-card-header>
-      <mat-card-title>Your Receipts</mat-card-title>
-      <mat-card-subtitle>Upload receipts can be turned into expenses whenever you're ready.</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <ng-container *ngIf="receipts$ | async as receipts; else loading">
-        <div *ngIf="receipts.length; else empty">
-          <div class="jensify-receipt-row" *ngFor="let receipt of receipts; trackBy: trackByReceiptId">
-            <div class="jensify-receipt-info">
-              <mat-icon>description</mat-icon>
-              <div>
-                <p class="jensify-receipt-name">{{ receipt.file_name }}</p>
-                <p class="jensify-receipt-meta">{{ receipt.file_type }} · {{ (receipt.file_size / 1024) | number:'1.0-0' }} KB</p>
-                <div class="jensify-status-chip" [ngClass]="getStatusClass(receipt)">
-                  <mat-icon>
-                    {{ receipt.ocr_status === 'completed' ? 'task_alt' :
-                       receipt.ocr_status === 'failed' ? 'error' : 'autorenew' }}
-                  </mat-icon>
-                  <span>{{ getStatusLabel(receipt) }}</span>
-                </div>
-              </div>
-            </div>
-            <div class="jensify-receipt-actions">
-              <button mat-button color="primary" (click)="viewReceipt(receipt)" class="jensify-button">View</button>
-              <button mat-raised-button color="primary" (click)="createExpense(receipt)" class="jensify-button">Create Expense</button>
+<div class="jensify-container">
+  <!-- Page Header -->
+  <div class="jensify-page-header">
+    <div class="jensify-header-content">
+      <h1 class="jensify-page-title">Receipts</h1>
+      <p class="jensify-page-subtitle">Upload and manage your expense receipts</p>
+    </div>
+  </div>
+
+  <!-- Compact Upload Area -->
+  @if (!selectedFile() && !uploadedReceipt()) {
+    <div
+      class="upload-bar"
+      [class.dragging]="isDragging()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)">
+      <mat-icon class="upload-bar-icon desktop-only">cloud_upload</mat-icon>
+      <span class="upload-bar-text desktop-only">Drop receipt here or</span>
+      <!-- Camera is PRIMARY on mobile -->
+      <input #cameraInput type="file" accept="image/*" capture="environment" (change)="onCameraCapture($event)" hidden>
+      <button mat-raised-button color="primary" (click)="cameraInput.click()" class="upload-bar-btn camera-btn">
+        <mat-icon>photo_camera</mat-icon>
+        <span class="btn-text">Take Photo</span>
+      </button>
+      <!-- File picker as secondary option -->
+      <input #fileInput type="file" accept="{{ ALLOWED_EXTENSIONS.join(',') }}" (change)="onFileSelected($event)" hidden>
+      <button mat-stroked-button color="primary" (click)="fileInput.click()" class="upload-bar-btn file-btn">
+        <mat-icon>folder_open</mat-icon>
+        <span class="btn-text">Choose File</span>
+      </button>
+      <span class="upload-bar-hint">JPEG, PNG, PDF up to 5MB</span>
+    </div>
+  }
+
+  <!-- File Selected / Upload State -->
+  @if (selectedFile() && !uploadedReceipt()) {
+    <mat-card class="jensify-card upload-card">
+      <div class="upload-preview-row">
+        <!-- Preview -->
+        @if (hasPreview()) {
+          <img [src]="previewUrl()" alt="Preview" class="upload-thumb">
+        } @else if (isPdf()) {
+          <div class="upload-thumb pdf-thumb">
+            <mat-icon>picture_as_pdf</mat-icon>
+          </div>
+        }
+
+        <!-- File Info -->
+        <div class="upload-file-info">
+          <p class="upload-file-name">{{ selectedFile()!.name }}</p>
+          <p class="upload-file-size">{{ getFileSizeLabel() }}</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="upload-actions">
+          @if (!isUploading()) {
+            <button mat-button color="warn" (click)="clearFile()">
+              <mat-icon>close</mat-icon>
+              Cancel
+            </button>
+            <button mat-raised-button color="primary" (click)="uploadReceipt()" [disabled]="!canUpload()">
+              <mat-icon>cloud_upload</mat-icon>
+              Upload
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Upload Progress -->
+      @if (showProgress()) {
+        <div class="upload-progress">
+          <mat-progress-bar mode="determinate" [value]="uploadProgress()"></mat-progress-bar>
+          <span class="upload-progress-text">Uploading... {{ uploadProgress() }}%</span>
+        </div>
+      }
+
+      <!-- Error -->
+      @if (errorMessage()) {
+        <div class="upload-error">
+          <mat-icon>error</mat-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+    </mat-card>
+  }
+
+  <!-- Upload Success with OCR -->
+  @if (uploadedReceipt()) {
+    <mat-card class="jensify-card upload-success-card">
+      <div class="upload-success-header">
+        <mat-icon class="success-icon">check_circle</mat-icon>
+        <span>Receipt uploaded!</span>
+      </div>
+
+      <!-- OCR Processing -->
+      @if (ocrProcessing()) {
+        <div class="ocr-processing">
+          <mat-spinner diameter="20"></mat-spinner>
+          <span>SmartScan extracting details...</span>
+        </div>
+      }
+
+      <!-- OCR Results -->
+      @if (ocrCompleted()) {
+        <div class="ocr-results">
+          <div class="ocr-field">
+            <label>Merchant</label>
+            <input type="text" [ngModel]="extractedMerchant()" (ngModelChange)="extractedMerchant.set($event)">
+          </div>
+          <div class="ocr-field">
+            <label>Amount</label>
+            <div class="amount-input">
+              <span>$</span>
+              <input type="number" step="0.01" [ngModel]="extractedAmount()" (ngModelChange)="extractedAmount.set($event)">
             </div>
           </div>
+          <div class="ocr-field">
+            <label>Date</label>
+            <input type="text" [ngModel]="extractedDate()" (ngModelChange)="extractedDate.set($event)">
+          </div>
         </div>
-      </ng-container>
-      <ng-template #loading>
-        <div class="jensify-loading">
-          <mat-progress-spinner diameter="24" mode="indeterminate"></mat-progress-spinner>
-          <span>Loading receipts…</span>
+      }
+
+      <!-- OCR Failed -->
+      @if (ocrFailed()) {
+        <div class="ocr-failed">
+          <mat-icon>warning</mat-icon>
+          <span>Couldn't extract details. Enter manually when creating expense.</span>
         </div>
-      </ng-template>
-      <ng-template #empty>
-        <div class="jensify-empty-state">
-          <mat-icon>inbox</mat-icon>
-          <p>No receipts yet. Upload one to get started.</p>
-          <button mat-raised-button color="primary" routerLink="/expenses/upload" class="jensify-button">Upload Receipt</button>
+      }
+
+      <!-- Actions -->
+      @if (!ocrProcessing()) {
+        <div class="upload-success-actions">
+          <button mat-button (click)="resetAndReload()">
+            <mat-icon>add</mat-icon>
+            Upload Another
+          </button>
+          <button mat-raised-button color="primary" (click)="navigateToExpenseForm()">
+            <mat-icon>receipt_long</mat-icon>
+            Create Expense
+          </button>
         </div>
-      </ng-template>
-    </mat-card-content>
-  </mat-card>
+      }
+    </mat-card>
+  }
+
+  <!-- Receipts List -->
+  <div class="receipts-section">
+    <h2 class="receipts-section-title">Your Receipts</h2>
+
+    @if (loadingReceipts()) {
+      <div class="receipts-loading">
+        <mat-progress-spinner diameter="24" mode="indeterminate"></mat-progress-spinner>
+        <span>Loading receipts...</span>
+      </div>
+    }
+
+    @if (!loadingReceipts() && receipts().length === 0) {
+      <div class="receipts-empty">
+        <mat-icon>inbox</mat-icon>
+        <p>No receipts yet</p>
+        <p class="receipts-empty-hint">Upload a receipt above to get started</p>
+      </div>
+    }
+
+    @if (!loadingReceipts() && receipts().length > 0) {
+      <div class="receipts-list">
+        @for (receipt of receipts(); track trackByReceiptId($index, receipt)) {
+          <div class="receipt-row">
+            <div class="receipt-info">
+              <mat-icon class="receipt-icon">description</mat-icon>
+              <div class="receipt-details">
+                <p class="receipt-name">{{ receipt.file_name }}</p>
+                <p class="receipt-meta">
+                  {{ receipt.file_type }} · {{ (receipt.file_size / 1024) | number:'1.0-0' }} KB
+                  @if (receipt.extracted_merchant) {
+                    · {{ receipt.extracted_merchant }}
+                  }
+                  @if (receipt.extracted_amount) {
+                    · {{ receipt.extracted_amount | currency }}
+                  }
+                </p>
+              </div>
+            </div>
+            <div class="receipt-status" [ngClass]="getStatusClass(receipt)">
+              <mat-icon>
+                {{ receipt.ocr_status === 'completed' ? 'task_alt' :
+                   receipt.ocr_status === 'failed' ? 'error' : 'autorenew' }}
+              </mat-icon>
+              <span>{{ getStatusLabel(receipt) }}</span>
+            </div>
+            <div class="receipt-actions">
+              <button mat-button (click)="viewReceipt(receipt)">View</button>
+              <button mat-raised-button color="primary" (click)="createExpense(receipt)">Create Expense</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
 </div>
