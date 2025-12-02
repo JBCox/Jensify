@@ -1,0 +1,173 @@
+<div class="bank-accounts-page">
+  <header class="page-header">
+    <div class="header-content">
+      <h1>Bank Accounts</h1>
+      <p>Manage your bank accounts for expense reimbursements</p>
+    </div>
+    @if (!showAddForm() && !isLoading()) {
+      <button mat-raised-button color="primary" (click)="showAddForm.set(true)">
+        <mat-icon>add</mat-icon>
+        Add Bank Account
+      </button>
+    }
+  </header>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Loading bank accounts...</p>
+    </div>
+  } @else {
+    <!-- Add Form -->
+    @if (showAddForm()) {
+      <mat-card class="add-form-card">
+        <mat-card-header>
+          <mat-card-title>Add Bank Account</mat-card-title>
+          <mat-card-subtitle>Your bank details are encrypted and sent directly to Stripe</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <app-bank-account-form
+            (tokenCreated)="onTokenCreated($event)"
+            (error)="onFormError($event)"
+            (cancelled)="onFormCancel()">
+          </app-bank-account-form>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Bank Accounts List -->
+    @if (bankAccounts().length > 0) {
+      <div class="accounts-grid">
+        @for (account of bankAccounts(); track account.id) {
+          <mat-card class="account-card" [class.default]="account.is_default" [class.unverified]="!account.is_verified">
+            <!-- Account Header -->
+            <div class="account-header">
+              <div class="bank-icon">
+                <mat-icon>account_balance</mat-icon>
+              </div>
+              <div class="bank-info">
+                <h3>{{ account.bank_name || 'Bank Account' }}</h3>
+                <p class="account-number">•••• {{ account.last_four }}</p>
+              </div>
+              <button mat-icon-button [matMenuTriggerFor]="accountMenu" class="menu-button">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #accountMenu="matMenu">
+                @if (!account.is_default && account.is_verified) {
+                  <button mat-menu-item (click)="setAsDefault(account)">
+                    <mat-icon>star</mat-icon>
+                    <span>Set as Default</span>
+                  </button>
+                }
+                @if (!account.is_verified && account.verification_status === 'pending') {
+                  <button mat-menu-item (click)="startVerification(account)">
+                    <mat-icon>verified</mat-icon>
+                    <span>Verify Account</span>
+                  </button>
+                }
+                <button mat-menu-item (click)="deleteAccount(account)" class="delete-option">
+                  <mat-icon>delete</mat-icon>
+                  <span>Remove</span>
+                </button>
+              </mat-menu>
+            </div>
+
+            <!-- Account Details -->
+            <div class="account-details">
+              <div class="detail-row">
+                <span class="label">Type</span>
+                <span class="value">{{ account.account_type | titlecase }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Holder</span>
+                <span class="value">{{ account.account_holder_name }}</span>
+              </div>
+            </div>
+
+            <!-- Status Chips -->
+            <div class="account-status">
+              @if (account.is_default) {
+                <mat-chip-set>
+                  <mat-chip color="primary" highlighted>
+                    <mat-icon matChipAvatar>star</mat-icon>
+                    Default
+                  </mat-chip>
+                </mat-chip-set>
+              }
+              <mat-chip-set>
+                <mat-chip [color]="getStatusColor(account.verification_status)"
+                          [highlighted]="account.is_verified">
+                  <mat-icon matChipAvatar>
+                    {{ account.is_verified ? 'check_circle' : 'pending' }}
+                  </mat-icon>
+                  {{ getStatusText(account.verification_status) }}
+                </mat-chip>
+              </mat-chip-set>
+            </div>
+
+            <!-- Verification Form (shown when verifying) -->
+            @if (verifyingAccountId() === account.id) {
+              <div class="verification-form">
+                <p class="verification-instructions">
+                  Enter the two small deposit amounts (in cents) that were made to your account.
+                </p>
+                <div class="amount-inputs">
+                  <mat-form-field appearance="outline">
+                    <mat-label>First Amount (¢)</mat-label>
+                    <input matInput
+                           type="number"
+                           min="1"
+                           max="99"
+                           [value]="verifyAmount1()"
+                           (input)="updateVerifyAmount(1, $any($event.target).value)">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Second Amount (¢)</mat-label>
+                    <input matInput
+                           type="number"
+                           min="1"
+                           max="99"
+                           [value]="verifyAmount2()"
+                           (input)="updateVerifyAmount(2, $any($event.target).value)">
+                  </mat-form-field>
+                </div>
+                <div class="verification-actions">
+                  <button mat-button (click)="cancelVerification()">Cancel</button>
+                  <button mat-raised-button color="primary" (click)="submitVerification(account)">
+                    Verify
+                  </button>
+                </div>
+              </div>
+            }
+          </mat-card>
+        }
+      </div>
+    } @else if (!showAddForm()) {
+      <!-- Empty State -->
+      <mat-card class="empty-state">
+        <mat-icon class="empty-icon">account_balance_wallet</mat-icon>
+        <h2>No Bank Accounts</h2>
+        <p>Add a bank account to receive expense reimbursements via direct deposit.</p>
+        <button mat-raised-button color="primary" (click)="showAddForm.set(true)">
+          <mat-icon>add</mat-icon>
+          Add Your First Bank Account
+        </button>
+      </mat-card>
+    }
+  }
+
+  <!-- Info Card -->
+  <mat-card class="info-card">
+    <mat-icon>info</mat-icon>
+    <div class="info-content">
+      <h4>How Bank Account Verification Works</h4>
+      <ol>
+        <li>Add your bank account information</li>
+        <li>We'll send two small deposits (under $1) to your account within 1-2 business days</li>
+        <li>Once you see the deposits, enter the exact amounts to verify ownership</li>
+        <li>Your account is now ready to receive reimbursements!</li>
+      </ol>
+    </div>
+  </mat-card>
+</div>

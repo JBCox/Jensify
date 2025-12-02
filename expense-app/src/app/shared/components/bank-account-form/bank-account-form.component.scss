@@ -1,0 +1,200 @@
+.bank-account-form {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.security-notice {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface-ground, #f0f9ff);
+  border: 1px solid var(--primary-light, #bae6fd);
+  border-radius: 8px;
+  margin-bottom: 24px;
+
+  mat-icon {
+    color: var(--primary-color, #0284c7);
+    flex-shrink: 0;
+  }
+
+  strong {
+    color: var(--text-color, #1e293b);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-secondary, #64748b);
+    font-size: 0.875rem;
+  }
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.terms-section {
+  margin: 16px 0 24px;
+
+  mat-checkbox {
+    ::ng-deep .mdc-form-field {
+      align-items: flex-start;
+    }
+
+    ::ng-deep .mdc-checkbox {
+      margin-top: 2px;
+    }
+
+    ::ng-deep .mdc-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary, #64748b);
+      line-height: 1.5;
+    }
+  }
+}
+
+.error-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  color: #dc2626;
+
+  mat-icon {
+    flex-shrink: 0;
+  }
+
+  span {
+    font-size: 0.875rem;
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--surface-border, #e2e8f0);
+  margin-top: 8px;
+
+  button {
+    min-width: 140px;
+
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+
+  .button-spinner {
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+
+    ::ng-deep circle {
+      stroke: white;
+    }
+  }
+}
+
+.help-section {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface-section, #f8fafc);
+  border-radius: 8px;
+  margin-top: 24px;
+
+  mat-icon {
+    color: var(--text-secondary, #64748b);
+    flex-shrink: 0;
+  }
+
+  strong {
+    color: var(--text-color, #1e293b);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-secondary, #64748b);
+    font-size: 0.875rem;
+  }
+}
+
+.loading-stripe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  text-align: center;
+
+  p {
+    margin-top: 16px;
+    color: var(--text-secondary, #64748b);
+  }
+}
+
+.success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px;
+  text-align: center;
+
+  .success-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #22c55e;
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    margin: 0 0 12px;
+    color: var(--text-color, #1e293b);
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-secondary, #64748b);
+    max-width: 320px;
+  }
+}
+
+// Dark mode support
+:host-context(.dark) {
+  .security-notice {
+    background: rgba(14, 165, 233, 0.1);
+    border-color: rgba(14, 165, 233, 0.3);
+  }
+
+  .error-alert {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+
+  .help-section {
+    background: var(--surface-card, #1e293b);
+  }
+}
+
+// Mobile responsiveness
+@media (max-width: 480px) {
+  .form-actions {
+    flex-direction: column-reverse;
+
+    button {
+      width: 100%;
+    }
+  }
+}

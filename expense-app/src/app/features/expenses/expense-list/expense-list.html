@@ -1,4 +1,10 @@
 <div class="expense-list-container">
+  <!-- Pull to Refresh (mobile only) -->
+  <app-pull-to-refresh
+    [refreshing]="loading()"
+    (refresh)="loadExpenses()">
+  </app-pull-to-refresh>
+
   <!-- Compact Header -->
   <div class="expense-header">
     <div class="header-left">
@@ -161,7 +167,14 @@
             <div class="jensify-expense-meta">
               <span class="jensify-meta-item">{{ formatDate(expense.expense_date) }}</span>
               <span class="jensify-meta-divider">•</span>
-              <span class="jensify-meta-item">{{ expense.category }}</span>
+              <span class="jensify-meta-item jensify-category-item">
+                @if (getCategoryInfo(expense.category); as catInfo) {
+                  <span class="category-icon-mini" [style.background]="catInfo.color">
+                    <mat-icon>{{ catInfo.icon }}</mat-icon>
+                  </span>
+                }
+                {{ expense.category }}
+              </span>
               @if (expense.report_id) {
                 <span class="jensify-meta-divider">•</span>
                 <span class="jensify-meta-item jensify-in-report">In report</span>

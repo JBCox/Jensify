@@ -25,6 +25,7 @@ import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loading-skeleton';
 import { EditMemberDialogComponent, EditMemberDialogData } from './edit-member-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import { PullToRefresh } from '../../../shared/components/pull-to-refresh/pull-to-refresh';
 
 /**
  * User Management Component
@@ -51,7 +52,8 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/compo
     MatDialogModule,
     MatMenuModule,
     EmptyState,
-    LoadingSkeleton
+    LoadingSkeleton,
+    PullToRefresh
   ],
   templateUrl: './user-management.component.html',
   styleUrls: ['./user-management.component.scss']
@@ -139,6 +141,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   // UI State
   isLoading = signal(false);
   selectedTabIndex = 0;
+  refreshing = signal(false);
 
   // Table columns
   memberColumns = ['user', 'role', 'department', 'status', 'actions'];
@@ -179,6 +182,15 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Handle pull-to-refresh
+   */
+  onRefresh(): void {
+    this.refreshing.set(true);
+    this.loadData();
+    setTimeout(() => this.refreshing.set(false), 1000);
+  }
+
+  /**
    * Load organization members
    */
   loadMembers(): void {
@@ -192,8 +204,13 @@ export class UserManagementComponent implements OnInit, OnDestroy {
         next: (members) => {
           this.members.set(members);
           // Filter managers for the dropdown
+          // Include: managers, admins, and finance users with can_manage_expenses flag
           this.managers.set(members.filter(m =>
-            (m.role === UserRole.MANAGER || m.role === UserRole.ADMIN) && m.is_active
+            m.is_active && (
+              m.role === UserRole.MANAGER ||
+              m.role === UserRole.ADMIN ||
+              (m.role === UserRole.FINANCE && m.can_manage_expenses)
+            )
           ));
           this.isLoading.set(false);
         },

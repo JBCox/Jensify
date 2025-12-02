@@ -19,6 +19,7 @@ import { ReportService } from '../../../core/services/report.service';
 import { ExpenseReport, ReportStatus } from '../../../core/models/report.model';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { PullToRefresh } from '../../../shared/components/pull-to-refresh/pull-to-refresh';
 import { CreateReportDialogComponent } from '../create-report-dialog/create-report-dialog';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
@@ -53,7 +54,8 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/compo
     MatSnackBarModule,
     MatDialogModule,
     StatusBadge,
-    EmptyState
+    EmptyState,
+    PullToRefresh
   ],
   templateUrl: './report-list.html',
   styleUrl: './report-list.scss'
@@ -220,7 +222,7 @@ export class ReportListComponent implements OnInit, OnDestroy {
         cancelText: 'Cancel',
         confirmColor: 'primary',
         icon: 'send',
-        iconColor: '#FF5900',
+        iconColor: getComputedStyle(document.documentElement).getPropertyValue('--jensify-primary').trim() || '#FF5900',
       } as ConfirmDialogData,
     });
 
@@ -391,7 +393,7 @@ export class ReportListComponent implements OnInit, OnDestroy {
   private notifyStatusChange(report: ExpenseReport): void {
     switch (report.status) {
       case ReportStatus.APPROVED:
-        if (this.notificationService.shouldAlert('approvals')) {
+        if (this.notificationService.shouldAlert('approval')) {
           this.notificationService.showSuccess(
             `"${report.name}" was approved`,
             'Report approved'
@@ -399,15 +401,15 @@ export class ReportListComponent implements OnInit, OnDestroy {
         }
         break;
       case ReportStatus.REJECTED:
-        if (this.notificationService.shouldAlert('approvals')) {
+        if (this.notificationService.shouldAlert('approval')) {
           this.notificationService.showWarning(
-            `"${report.name}" was rejected â€” review and resubmit`,
+            `"${report.name}" was rejected — review and resubmit`,
             'Report rejected'
           );
         }
         break;
       case ReportStatus.PAID:
-        if (this.notificationService.shouldAlert('reimbursements')) {
+        if (this.notificationService.shouldAlert('reimbursement')) {
           this.notificationService.showSuccess(
             `"${report.name}" was reimbursed`,
             'Reimbursed'

@@ -100,7 +100,7 @@ describe('SplitExpenseDialog', () => {
     component.items.at(1).patchValue({
       description: 'Meal',
       amount: 50,
-      category: ExpenseCategory.MEALS
+      category: ExpenseCategory.INDIVIDUAL_MEALS
     });
     expect(component.totalMatchesExpense).toBe(true);
   });
@@ -120,7 +120,7 @@ describe('SplitExpenseDialog', () => {
     component.items.at(1).patchValue({
       description: 'Room service',
       amount: 50,
-      category: ExpenseCategory.MEALS
+      category: ExpenseCategory.INDIVIDUAL_MEALS
     });
     expect(component.isValidSplit).toBe(true);
   });
@@ -134,7 +134,7 @@ describe('SplitExpenseDialog', () => {
     component.items.at(1).patchValue({
       description: 'Room service',
       amount: 50,
-      category: ExpenseCategory.MEALS
+      category: ExpenseCategory.INDIVIDUAL_MEALS
     });
     expect(component.isValidSplit).toBe(false);
   });
@@ -175,7 +175,7 @@ describe('SplitExpenseDialog', () => {
     component.items.at(1).patchValue({
       description: 'Room service',
       amount: 50,
-      category: ExpenseCategory.MEALS
+      category: ExpenseCategory.INDIVIDUAL_MEALS
     });
 
     component.onSplit();
@@ -183,7 +183,7 @@ describe('SplitExpenseDialog', () => {
     expect(dialogRef.close).toHaveBeenCalledWith({
       items: [
         { description: 'Room charge', amount: 150, category: ExpenseCategory.LODGING },
-        { description: 'Room service', amount: 50, category: ExpenseCategory.MEALS }
+        { description: 'Room service', amount: 50, category: ExpenseCategory.INDIVIDUAL_MEALS }
       ]
     });
   });
@@ -200,8 +200,8 @@ describe('SplitExpenseDialog', () => {
 
   it('should have all expense categories available', () => {
     expect(component.categories).toContain(ExpenseCategory.LODGING);
-    expect(component.categories).toContain(ExpenseCategory.MEALS);
+    expect(component.categories).toContain(ExpenseCategory.INDIVIDUAL_MEALS);
     expect(component.categories).toContain(ExpenseCategory.FUEL);
-    expect(component.categories.length).toBe(9); // 9 categories including MILEAGE
+    expect(component.categories.length).toBe(16); // All 16 categories from ExpenseCategory enum
   });
 });

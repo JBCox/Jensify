@@ -90,7 +90,8 @@ export class ReceiptUpload implements OnDestroy {
   // Category options for dropdown
   readonly categoryOptions = [
     { value: ExpenseCategory.FUEL, label: 'Fuel/Gas' },
-    { value: ExpenseCategory.MEALS, label: 'Meals & Entertainment' },
+    { value: ExpenseCategory.INDIVIDUAL_MEALS, label: 'Individual Meals' },
+    { value: ExpenseCategory.BUSINESS_MEALS, label: 'Business Meals' },
     { value: ExpenseCategory.LODGING, label: 'Lodging/Hotels' },
     { value: ExpenseCategory.AIRFARE, label: 'Airfare' },
     { value: ExpenseCategory.GROUND_TRANSPORTATION, label: 'Ground Transportation' },

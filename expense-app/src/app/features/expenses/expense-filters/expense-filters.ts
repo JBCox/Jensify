@@ -141,7 +141,8 @@ export class ExpenseFiltersComponent {
   categoryOptions = [
     { value: "all", label: "All Categories" },
     { value: ExpenseCategory.FUEL, label: ExpenseCategory.FUEL },
-    { value: ExpenseCategory.MEALS, label: ExpenseCategory.MEALS },
+    { value: ExpenseCategory.INDIVIDUAL_MEALS, label: ExpenseCategory.INDIVIDUAL_MEALS },
+    { value: ExpenseCategory.BUSINESS_MEALS, label: ExpenseCategory.BUSINESS_MEALS },
     { value: ExpenseCategory.LODGING, label: ExpenseCategory.LODGING },
     { value: ExpenseCategory.AIRFARE, label: ExpenseCategory.AIRFARE },
     { value: ExpenseCategory.GROUND_TRANSPORTATION, label: ExpenseCategory.GROUND_TRANSPORTATION },

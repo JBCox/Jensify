@@ -92,8 +92,8 @@ interface OrgWithMembership {
       width: 100%;
       padding: 0.5rem;
       border-radius: var(--jensify-radius-md, 6px);
-      background: rgba(247, 88, 12, 0.08);
-      border: 1px solid rgba(247, 88, 12, 0.15);
+      background: color-mix(in srgb, var(--jensify-primary) 8%, transparent);
+      border: 1px solid color-mix(in srgb, var(--jensify-primary) 15%, transparent);
       transition: all 0.2s ease;
 
       &.collapsed {
@@ -107,8 +107,8 @@ interface OrgWithMembership {
       text-align: left;
 
       &:hover {
-        background: rgba(247, 88, 12, 0.15);
-        border-color: rgba(247, 88, 12, 0.3);
+        background: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
+        border-color: color-mix(in srgb, var(--jensify-primary) 30%, transparent);
       }
     }
 
@@ -190,7 +190,7 @@ interface OrgWithMembership {
         padding: 0.75rem 1rem;
 
         &.active {
-          background: rgba(247, 88, 12, 0.08);
+          background: color-mix(in srgb, var(--jensify-primary) 8%, transparent);
 
           mat-icon {
             color: var(--jensify-primary, #ff5900);

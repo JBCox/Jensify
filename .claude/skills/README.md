@@ -48,10 +48,10 @@ supabase db reset
 - Mobile responsiveness
 
 **Test Personas:**
-- `employee@covaer.com` - Basic user, submit expenses
-- `manager@covaer.com` - Approve team expenses
-- `finance@covaer.com` - Reimbursement queue
-- `admin@covaer.com` - Full system access
+- `employee@corvaer.com` - Basic user, submit expenses
+- `manager@corvaer.com` - Approve team expenses
+- `finance@corvaer.com` - Reimbursement queue
+- `admin@corvaer.com` - Full system access
 
 All passwords: `TestPass123!`
 

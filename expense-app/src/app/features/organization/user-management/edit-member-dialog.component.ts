@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -8,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { OrganizationMember } from '../../../core/models';
 import { UserRole } from '../../../core/models/enums';
 
@@ -28,7 +29,8 @@ export interface EditMemberDialogData {
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSlideToggleModule
   ],
   template: `
     <h2 mat-dialog-title>Edit Member</h2>
@@ -69,6 +71,28 @@ export interface EditMemberDialogData {
             }
           </mat-select>
         </mat-form-field>
+
+        @if (showManagerRightsToggle()) {
+          <div class="manager-rights-toggle">
+            <mat-slide-toggle formControlName="can_manage_expenses" color="primary">
+              <div class="toggle-content">
+                <span class="toggle-label">Can Manage Expenses</span>
+                <span class="toggle-hint">Allow employees to report to this finance user for expense approvals</span>
+              </div>
+            </mat-slide-toggle>
+          </div>
+        }
+
+        @if (showFinanceAccessToggle()) {
+          <div class="manager-rights-toggle">
+            <mat-slide-toggle formControlName="can_access_finance" color="primary">
+              <div class="toggle-content">
+                <span class="toggle-label">Can Access Finance Dashboard</span>
+                <span class="toggle-hint">Allow this manager to view finance data and process payouts</span>
+              </div>
+            </mat-slide-toggle>
+          </div>
+        }
       </form>
     </mat-dialog-content>
 
@@ -146,6 +170,38 @@ export interface EditMemberDialogData {
     mat-dialog-actions {
       padding: 1rem 1.5rem !important;
     }
+
+    .manager-rights-toggle {
+      padding: 1rem;
+      background: var(--jensify-surface-soft, #f5f5f5);
+      border-radius: var(--jensify-radius-md, 8px);
+      margin-top: 0.5rem;
+
+      :host-context(.dark) & {
+        background: rgba(255, 255, 255, 0.05);
+      }
+    }
+
+    .toggle-content {
+      display: flex;
+      flex-direction: column;
+      margin-left: 0.5rem;
+    }
+
+    .toggle-label {
+      font-weight: 500;
+      color: var(--jensify-text-strong);
+
+      :host-context(.dark) & {
+        color: #fff;
+      }
+    }
+
+    .toggle-hint {
+      font-size: 0.75rem;
+      color: var(--jensify-text-muted);
+      margin-top: 0.125rem;
+    }
   `]
 })
 export class EditMemberDialogComponent {
@@ -155,6 +211,13 @@ export class EditMemberDialogComponent {
 
   form: FormGroup;
   isLoading = signal(false);
+  selectedRole = signal<UserRole>(this.data.member.role);
+
+  // Show manager rights toggle only for finance users
+  showManagerRightsToggle = computed(() => this.selectedRole() === UserRole.FINANCE);
+
+  // Show finance access toggle only for managers
+  showFinanceAccessToggle = computed(() => this.selectedRole() === UserRole.MANAGER);
 
   roleOptions = [
     { value: UserRole.EMPLOYEE, label: 'Employee' },
@@ -167,7 +230,21 @@ export class EditMemberDialogComponent {
     this.form = this.fb.group({
       role: [this.data.member.role, Validators.required],
       department: [this.data.member.department || ''],
-      manager_id: [this.data.member.manager_id || null]
+      manager_id: [this.data.member.manager_id || null],
+      can_manage_expenses: [this.data.member.can_manage_expenses || false],
+      can_access_finance: [this.data.member.can_access_finance || false]
+    });
+
+    // Update selectedRole when role changes
+    this.form.get('role')?.valueChanges.subscribe(role => {
+      this.selectedRole.set(role);
+      // Reset role-specific flags when role changes
+      if (role !== UserRole.FINANCE) {
+        this.form.patchValue({ can_manage_expenses: false });
+      }
+      if (role !== UserRole.MANAGER) {
+        this.form.patchValue({ can_access_finance: false });
+      }
     });
   }
 
@@ -182,7 +259,9 @@ export class EditMemberDialogComponent {
     this.dialogRef.close({
       role: this.form.value.role,
       department: this.form.value.department || null,
-      manager_id: this.form.value.manager_id || null
+      manager_id: this.form.value.manager_id || null,
+      can_manage_expenses: this.form.value.role === UserRole.FINANCE ? this.form.value.can_manage_expenses : false,
+      can_access_finance: this.form.value.role === UserRole.MANAGER ? this.form.value.can_access_finance : false
     });
   }
 }

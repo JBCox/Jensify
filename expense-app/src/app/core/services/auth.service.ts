@@ -9,6 +9,7 @@ import { UserRole } from "../models/enums";
 import {
   BehaviorSubject,
   catchError,
+  filter,
   firstValueFrom,
   from,
   fromEvent,
@@ -18,6 +19,8 @@ import {
   Observable,
   of,
   Subject,
+  switchMap,
+  take,
   takeUntil,
   throttleTime,
 } from "rxjs";
@@ -52,9 +55,15 @@ export class AuthService implements OnDestroy {
 
   constructor() {
     // Subscribe to auth changes and load user profile
-    // Using takeUntil to prevent memory leaks
-    this.supabase.currentUser$
-      .pipe(takeUntil(this.destroy$))
+    // Wait for session to be initialized before reacting to user changes
+    // This prevents premature organizationInitialized$ = true from initial null emission
+    this.supabase.sessionInitialized$
+      .pipe(
+        filter(initialized => initialized === true),
+        take(1),
+        switchMap(() => this.supabase.currentUser$),
+        takeUntil(this.destroy$)
+      )
       .subscribe(async (user) => {
         if (user) {
           this.userProfileSubject.next(this.createProvisionalProfile(user));
@@ -63,6 +72,9 @@ export class AuthService implements OnDestroy {
         } else {
           this.userProfileSubject.next(null);
           this.hasRedirectedToDefault = false;
+          // Clear organization context for unauthenticated users
+          // This ensures organizationInitialized$ emits true so auth guard can proceed
+          this.organizationService.clearCurrentOrganization();
         }
       });
 
@@ -346,7 +358,14 @@ export class AuthService implements OnDestroy {
       return;
     }
 
-    if (this.shouldUseDefaultRoute(this.router.url)) {
+    // Use window.location.pathname instead of this.router.url
+    // because during initial page load, the Angular router hasn't
+    // resolved the actual URL yet (this.router.url returns "/" initially)
+    const actualPath = typeof window !== 'undefined'
+      ? window.location.pathname
+      : this.router.url;
+
+    if (this.shouldUseDefaultRoute(actualPath)) {
       this.hasRedirectedToDefault = true;
       this.router.navigateByUrl(this.getDefaultRoute());
     }

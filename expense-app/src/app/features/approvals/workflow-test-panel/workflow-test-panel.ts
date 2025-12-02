@@ -80,7 +80,7 @@ export interface TestResults {
             </div>
           </div>
 
-          <button mat-stroked-button type="button" (click)="reset.emit()" class="reset-test-btn">
+          <button mat-stroked-button type="button" (click)="resetClicked.emit()" class="reset-test-btn">
             <mat-icon>refresh</mat-icon>
             Close Preview
           </button>
@@ -116,8 +116,8 @@ export interface TestResults {
     }
 
     .test-results {
-      background: linear-gradient(135deg, rgba(255, 89, 0, 0.05) 0%, rgba(255, 89, 0, 0.02) 100%);
-      border: 1px solid rgba(255, 89, 0, 0.2);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--jensify-primary) 5%, transparent) 0%, color-mix(in srgb, var(--jensify-primary) 2%, transparent) 100%);
+      border: 1px solid color-mix(in srgb, var(--jensify-primary) 20%, transparent);
       border-radius: 12px;
       padding: 24px;
       margin-top: 16px;
@@ -140,7 +140,7 @@ export interface TestResults {
     }
 
     .chain-start {
-      background: rgba(255, 89, 0, 0.1);
+      background: color-mix(in srgb, var(--jensify-primary) 10%, transparent);
       color: var(--jensify-primary, #FF5900);
     }
 
@@ -222,5 +222,5 @@ export class WorkflowTestPanelComponent {
   @Input() results: TestResults | null = null;
 
   @Output() runTest = new EventEmitter<void>();
-  @Output() reset = new EventEmitter<void>();
+  @Output() resetClicked = new EventEmitter<void>();
 }

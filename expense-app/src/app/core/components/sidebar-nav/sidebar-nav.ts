@@ -82,6 +82,12 @@ export class SidebarNav implements OnDestroy, AfterViewInit {
       requiredRole: "manager",
     },
     {
+      icon: "account_balance",
+      label: "Finance",
+      route: "/finance",
+      requiredRole: "finance",
+    },
+    {
       icon: "admin_panel_settings",
       label: "Admin",
       route: "/admin",
@@ -107,6 +113,12 @@ export class SidebarNav implements OnDestroy, AfterViewInit {
       icon: "commute",
       label: "Mileage",
       route: "/mileage",
+    },
+    // User settings
+    {
+      icon: "person",
+      label: "Profile",
+      route: "/profile",
     },
   ];
 

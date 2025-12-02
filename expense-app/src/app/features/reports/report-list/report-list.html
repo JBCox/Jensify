@@ -1,4 +1,10 @@
 <div class="jensify-container">
+  <!-- Pull to Refresh (mobile only) -->
+  <app-pull-to-refresh
+    [refreshing]="loading()"
+    (refresh)="loadReports()">
+  </app-pull-to-refresh>
+
   <!-- Page Header -->
   <div class="jensify-page-header">
     <div>

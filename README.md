@@ -1,6 +1,6 @@
 # Jensify - Modern Expense Management Platform
 
-> A mobile-first expense management platform built for Covaer Manufacturing, designed to rival Expensify, Ramp, and Brex.
+> A mobile-first expense management platform built for Corvaer Manufacturing, designed to rival Expensify, Ramp, and Brex.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 [![Angular](https://img.shields.io/badge/Angular-20-red)](https://angular.io/)
@@ -316,7 +316,7 @@ netlify deploy --prod
 
 ## 🤝 Contributing
 
-This is a private project for Covaer Manufacturing. For questions or suggestions, please contact Josh.
+This is a private project for Corvaer Manufacturing. For questions or suggestions, please contact Josh.
 
 ### Development Workflow
 
@@ -339,13 +339,13 @@ Please create an issue in the GitHub repository with:
 
 ## 📄 License
 
-This project is proprietary software owned by Covaer Manufacturing.
+This project is proprietary software owned by Corvaer Manufacturing.
 
 ## 👥 Team
 
-- **Product Owner**: Josh (Covaer Manufacturing)
+- **Product Owner**: Josh (Corvaer Manufacturing)
 - **Development**: Built with Claude Code
-- **Company**: Covaer Manufacturing, Fort Worth, Texas
+- **Company**: Corvaer Manufacturing, Fort Worth, Texas
 
 ## 🙏 Acknowledgments
 
@@ -357,11 +357,11 @@ This project is proprietary software owned by Covaer Manufacturing.
 ## 📞 Support
 
 For technical support or questions:
-- **Email**: josh@covaer.com
+- **Email**: josh@corvaer.com
 - **GitHub Issues**: [Create an issue](https://github.com/JBCox/Jensify/issues)
 
 ---
 
-**Built with ❤️ for Covaer Manufacturing**
+**Built with ❤️ for Corvaer Manufacturing**
 
 *Last Updated: November 27, 2024*

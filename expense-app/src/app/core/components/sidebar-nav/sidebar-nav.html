@@ -62,14 +62,5 @@
     >
       <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
     </button>
-    <button
-      mat-icon-button
-      (click)="themeService.toggleTheme()"
-      class="theme-toggle"
-      [matTooltip]="themeService.theme() === 'dark' ? 'Light mode' : 'Dark mode'"
-      matTooltipPosition="right"
-    >
-      <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
-    </button>
   </div>
 </aside>

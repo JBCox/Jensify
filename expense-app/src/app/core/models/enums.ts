@@ -30,19 +30,45 @@ export enum ExpenseStatus {
 
 /**
  * Expense categories for classification
- * Phase 0 focuses on FUEL, others for future phases
+ * These categories map to GL codes configured at the organization level
+ * Finance admins can customize GL code assignments via Organization Settings
  */
 export enum ExpenseCategory {
+  // Vehicle-related
+  AUTO_ALLOWANCE = 'Auto Allowance',
+  PARKING = 'Parking',
+  TOLLS = 'Tolls',
+  AUTO_RENTAL = 'Auto Rental',
   FUEL = 'Fuel',
-  MEALS = 'Meals & Entertainment',
-  LODGING = 'Lodging',
+  MILEAGE = 'Mileage',
+
+  // Travel
   AIRFARE = 'Airfare',
+  LODGING = 'Lodging',
+  RAIL_BUS = 'Rail/Bus',
   GROUND_TRANSPORTATION = 'Ground Transportation',
+
+  // Meals & Entertainment
+  INDIVIDUAL_MEALS = 'Individual Meals',
+  BUSINESS_MEALS = 'Business Meals',
+  BUSINESS_ENTERTAINMENT = 'Business Entertainment',
+
+  // Office & Operations
   OFFICE_SUPPLIES = 'Office Supplies',
   SOFTWARE = 'Software/Subscriptions',
-  MILEAGE = 'Mileage',
+
+  // Other
   MISCELLANEOUS = 'Miscellaneous'
 }
+
+/**
+ * @deprecated Use ExpenseCategory enum values directly
+ * Legacy mapping for backward compatibility with old data using 'Meals & Entertainment'
+ */
+export const LEGACY_CATEGORY_MAPPINGS: Record<string, ExpenseCategory> = {
+  'Meals & Entertainment': ExpenseCategory.INDIVIDUAL_MEALS,
+  'Meals': ExpenseCategory.INDIVIDUAL_MEALS
+};
 
 /**
  * OCR processing status for receipt images

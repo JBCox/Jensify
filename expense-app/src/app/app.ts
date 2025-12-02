@@ -9,6 +9,8 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from './core/services/auth.service';
 import { KeyboardShortcutsService } from './core/services/keyboard-shortcuts.service';
+import { ThemeService } from './core/services/theme.service';
+import { OrganizationService } from './core/services/organization.service';
 import { Observable, Subject, combineLatest, map, filter, fromEvent } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { User } from './core/models/user.model';
@@ -55,6 +57,8 @@ export class App implements OnInit, OnDestroy {
   private router = inject(Router);
   private dialog = inject(MatDialog);
   private keyboardShortcuts = inject(KeyboardShortcutsService);
+  private organizationService = inject(OrganizationService);
+  themeService = inject(ThemeService);
 
   // Cleanup
   private destroy$ = new Subject<void>();
@@ -98,6 +102,23 @@ export class App implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.setupKeyboardShortcuts();
+    this.setupBrandColor();
+  }
+
+  /**
+   * Subscribe to organization changes and apply brand color
+   */
+  private setupBrandColor(): void {
+    this.organizationService.currentOrganization$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(org => {
+        if (org?.primary_color) {
+          this.themeService.applyBrandColor(org.primary_color);
+        } else {
+          // Reset to default Jensify orange if no custom color
+          this.themeService.resetBrandColor();
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -155,6 +176,13 @@ export class App implements OnInit, OnDestroy {
       maxWidth: '95vw',
       panelClass: 'shortcuts-dialog-panel'
     });
+  }
+
+  /**
+   * Toggle dark/light theme
+   */
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
 
   /**

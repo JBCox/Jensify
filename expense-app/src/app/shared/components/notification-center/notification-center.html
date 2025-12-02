@@ -10,12 +10,16 @@
 </button>
 
 <mat-menu #notificationMenu="matMenu" class="notification-menu" xPosition="before">
-  <div class="menu-header">
+  <div class="menu-header" (click)="$event.stopPropagation()">
     <div>
       <p class="title">Notifications</p>
       <p class="subtitle">Stay on top of receipts and approvals</p>
     </div>
-    <button mat-button (click)="markAllRead()" [disabled]="unreadCount() === 0">Mark all read</button>
+    <div class="header-actions">
+      <button mat-button (click)="markAllRead()" [disabled]="unreadCount() === 0">
+        Mark all read
+      </button>
+    </div>
   </div>
 
   <div class="notification-list" *ngIf="notificationsSignal().length; else emptyState">
@@ -23,15 +27,28 @@
       class="notification-item"
       *ngFor="let notification of notificationsSignal(); trackBy: trackById"
       [class.unread]="!notification.read"
-      (click)="markAsRead(notification)">
+      [class.clickable]="notification.action_url"
+      (click)="handleNotificationClick(notification, $event)">
       <div class="icon" [class]="notification.type">
         <mat-icon>{{ iconFor(notification.type) }}</mat-icon>
       </div>
       <div class="content">
         <p class="item-title">{{ notification.title }}</p>
         <p class="item-message">{{ notification.message }}</p>
-        <span class="timestamp">{{ notification.timestamp | date:'short' }}</span>
+        <div class="item-footer">
+          <span class="timestamp">{{ formatRelativeTime(notification.created_at) }}</span>
+          <span class="category-badge" *ngIf="notification.category !== 'system'">
+            {{ notification.category }}
+          </span>
+        </div>
       </div>
+      <button
+        mat-icon-button
+        class="delete-btn"
+        (click)="deleteNotification(notification, $event)"
+        matTooltip="Delete notification">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
   </div>
 
@@ -39,32 +56,51 @@
     <div class="empty-state">
       <mat-icon>mark_email_read</mat-icon>
       <p>You're all caught up.</p>
+      <span class="empty-hint">Notifications will appear here</span>
     </div>
   </ng-template>
 
   <mat-divider></mat-divider>
 
-  <div class="preferences" *ngIf="preferencesSignal() as prefs">
-    <p class="pref-title">Alert me about…</p>
-    <mat-slide-toggle
-      [checked]="prefs.smartScanUpdates"
-      (change)="updatePreference({ smartScanUpdates: $event.checked })">
-      SmartScan progress
-    </mat-slide-toggle>
-    <mat-slide-toggle
-      [checked]="prefs.receiptIssues"
-      (change)="updatePreference({ receiptIssues: $event.checked })">
-      Receipt issues / violations
-    </mat-slide-toggle>
-    <mat-slide-toggle
-      [checked]="prefs.approvals"
-      (change)="updatePreference({ approvals: $event.checked })">
-      Approvals required
-    </mat-slide-toggle>
-    <mat-slide-toggle
-      [checked]="prefs.reimbursements"
-      (change)="updatePreference({ reimbursements: $event.checked })">
-      Reimbursements sent
-    </mat-slide-toggle>
+  <div class="preferences" *ngIf="preferencesSignal() as prefs" (click)="$event.stopPropagation()">
+    <div class="pref-header">
+      <p class="pref-title">Alert me about...</p>
+      <mat-slide-toggle
+        [checked]="prefs.show_toast"
+        (change)="updatePreference('show_toast', $event.checked)"
+        matTooltip="Show popup toasts">
+        <span class="toggle-label">Toasts</span>
+      </mat-slide-toggle>
+    </div>
+
+    <div class="pref-grid">
+      <mat-slide-toggle
+        [checked]="prefs.smartscan_enabled"
+        (change)="updatePreference('smartscan_enabled', $event.checked)">
+        SmartScan
+      </mat-slide-toggle>
+      <mat-slide-toggle
+        [checked]="prefs.receipt_enabled"
+        (change)="updatePreference('receipt_enabled', $event.checked)">
+        Receipts
+      </mat-slide-toggle>
+      <mat-slide-toggle
+        [checked]="prefs.approval_enabled"
+        (change)="updatePreference('approval_enabled', $event.checked)">
+        Approvals
+      </mat-slide-toggle>
+      <mat-slide-toggle
+        [checked]="prefs.reimbursement_enabled"
+        (change)="updatePreference('reimbursement_enabled', $event.checked)">
+        Reimbursements
+      </mat-slide-toggle>
+    </div>
+  </div>
+
+  <div class="menu-footer" *ngIf="notificationsSignal().length > 0" (click)="$event.stopPropagation()">
+    <button mat-button color="warn" (click)="clearAll()">
+      <mat-icon>delete_sweep</mat-icon>
+      Clear all
+    </button>
   </div>
 </mat-menu>

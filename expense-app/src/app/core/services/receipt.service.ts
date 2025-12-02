@@ -129,12 +129,13 @@ export class ReceiptService {
 
         const receipt = receiptData as Receipt;
 
-        if (this.notificationService.shouldAlert("smartScanUpdates")) {
+        if (this.notificationService.shouldAlert("smartscan")) {
           this.notificationService.notify({
             type: "info",
+            category: "smartscan",
             title: "SmartScan started",
             message: `We're extracting details from ${receipt.file_name}.`,
-            data: { receiptId: receipt.id },
+            action_data: { receiptId: receipt.id },
           });
         }
 
@@ -462,16 +463,17 @@ export class ReceiptService {
         .eq("id", receipt.id);
 
       // Send success notification
-      if (this.notificationService.shouldAlert("smartScanUpdates")) {
+      if (this.notificationService.shouldAlert("smartscan")) {
         const amountText = ocrResult.amount
           ? `$${ocrResult.amount.toFixed(2)}`
           : "unknown amount";
 
         this.notificationService.notify({
           type: "success",
+          category: "smartscan",
           title: "SmartScan complete",
           message: `Detected ${ocrResult.merchant} for ${amountText}.`,
-          data: { receiptId: receipt.id },
+          action_data: { receiptId: receipt.id },
         });
       }
     } catch (error) {
@@ -493,12 +495,13 @@ export class ReceiptService {
         .eq("id", receipt.id);
 
       // Send error notification
-      if (this.notificationService.shouldAlert("smartScanUpdates")) {
+      if (this.notificationService.shouldAlert("smartscan")) {
         this.notificationService.notify({
           type: "error",
+          category: "smartscan",
           title: "SmartScan failed",
           message: "Could not extract receipt data. Please enter manually.",
-          data: { receiptId: receipt.id },
+          action_data: { receiptId: receipt.id },
         });
       }
     }
@@ -543,14 +546,15 @@ export class ReceiptService {
       })
       .eq("id", receiptId);
 
-    if (this.notificationService.shouldAlert("smartScanUpdates")) {
+    if (this.notificationService.shouldAlert("smartscan")) {
       this.notificationService.notify({
         type: "success",
+        category: "smartscan",
         title: "SmartScan complete",
         message: `Detected ${extracted.merchant} for $${
           extracted.amount.toFixed(2)
         }.`,
-        data: { receiptId },
+        action_data: { receiptId },
       });
     }
   }

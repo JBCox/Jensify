@@ -137,6 +137,24 @@ export interface Expense {
   /** True if expense has been split into multiple line items */
   is_split?: boolean;
 
+  // Multi-currency support
+  /** Original currency code before conversion */
+  original_currency?: string;
+  /** Original amount in original currency */
+  original_amount?: number;
+  /** Exchange rate used for conversion */
+  exchange_rate?: number;
+  /** Timestamp when currency was converted */
+  converted_at?: string;
+
+  // Duplicate detection
+  /** ID of the original expense if this is a confirmed duplicate */
+  duplicate_of?: string | null;
+  /** Duplicate status: potential, confirmed, or dismissed */
+  duplicate_status?: 'potential' | 'confirmed' | 'dismissed' | null;
+  /** When duplicate check was last performed */
+  duplicate_checked_at?: string | null;
+
   // Relations (populated by query)
   /** User object (populated) */
   user?: User;
@@ -183,6 +201,10 @@ export interface CreateExpenseDto {
   expense_date: string;
   notes?: string;
   receipt_id?: string;
+  /** Currency for the expense (defaults to organization's base currency) */
+  original_currency?: string;
+  /** Original amount in the specified currency */
+  original_amount?: number;
 }
 
 /**

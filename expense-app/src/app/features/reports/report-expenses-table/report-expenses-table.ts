@@ -42,6 +42,37 @@ import { StatusBadge } from "../../../shared/components/status-badge/status-badg
           }
         </div>
       } @else {
+        <!-- Mobile Card View -->
+        <div class="mobile-expense-cards">
+          @for (expense of expenses; track expense.id) {
+            <div class="mobile-expense-card" (click)="viewExpense.emit(expense)">
+              <div class="expense-card-header">
+                <div class="expense-merchant">{{ expense.merchant }}</div>
+                <span class="expense-amount">{{ formatCurrency(expense.amount) }}</span>
+              </div>
+              <div class="expense-card-details">
+                <div class="expense-detail">
+                  <span class="detail-label">Category</span>
+                  <span class="detail-value">{{ expense.category }}</span>
+                </div>
+                <div class="expense-detail">
+                  <span class="detail-label">Date</span>
+                  <span class="detail-value">{{ formatDate(expense.expense_date) }}</span>
+                </div>
+              </div>
+              <div class="expense-card-footer">
+                <app-status-badge [status]="getBadgeStatus(expense.status)" size="small"></app-status-badge>
+                @if (canEdit) {
+                  <button mat-icon-button color="warn" (click)="removeExpense.emit(expense); $event.stopPropagation()" matTooltip="Remove from report">
+                    <mat-icon>remove_circle</mat-icon>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Desktop Table View -->
         <div class="expenses-table-container">
           <table mat-table [dataSource]="expenses" class="expenses-table">
             <ng-container matColumnDef="merchant">
@@ -141,6 +172,80 @@ import { StatusBadge } from "../../../shared/components/status-badge/status-badg
 
     .empty-expenses p {
       margin-bottom: 16px;
+    }
+
+    /* Mobile card view - hidden on desktop */
+    .mobile-expense-cards {
+      display: none;
+    }
+
+    @media (max-width: 767px) {
+      .mobile-expense-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .expenses-table-container {
+        display: none;
+      }
+    }
+
+    .mobile-expense-card {
+      background: var(--jensify-surface-subtle, #f5f5f5);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .mobile-expense-card:active {
+      transform: scale(0.98);
+    }
+
+    .expense-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .expense-merchant {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--jensify-text-strong, #1a1a1a);
+    }
+
+    .expense-card-details {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 12px;
+    }
+
+    .expense-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .detail-label {
+      font-size: 0.75rem;
+      color: var(--jensify-text-muted, #666);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .detail-value {
+      font-size: 0.875rem;
+      color: var(--jensify-text-body, #333);
+    }
+
+    .expense-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid var(--jensify-border-subtle, #e0e0e0);
     }
 
     .expenses-table-container {

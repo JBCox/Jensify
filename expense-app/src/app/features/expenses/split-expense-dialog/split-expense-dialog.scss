@@ -12,7 +12,7 @@
   border-bottom: 1px solid var(--jensify-border-subtle, #e5e5e5);
 
   :host-context(.dark) & {
-    border-bottom-color: rgba(247, 88, 12, 0.15);
+    border-bottom-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
     color: #FFFFFF;
   }
 
@@ -45,7 +45,7 @@
       rgba(255, 255, 255, 0.05) 0%,
       rgba(255, 255, 255, 0.02) 100%
     );
-    border-color: rgba(247, 88, 12, 0.15);
+    border-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
   }
 
   .summary-row {
@@ -131,7 +131,7 @@
 
     :host-context(.dark) & {
       background: rgba(255, 255, 255, 0.03);
-      border-color: rgba(247, 88, 12, 0.1);
+      border-color: color-mix(in srgb, var(--jensify-primary) 10%, transparent);
     }
 
     @media (max-width: 640px) {
@@ -144,7 +144,7 @@
       justify-content: center;
       min-width: 28px;
       height: 28px;
-      background: rgba(255, 89, 0, 0.1);
+      background: color-mix(in srgb, var(--jensify-primary) 10%, transparent);
       color: var(--jensify-primary, #ff5900);
       border-radius: 50%;
       font-weight: 600;
@@ -192,7 +192,7 @@ mat-form-field {
 
   :host-context(.dark) & {
     background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(247, 88, 12, 0.1);
+    border-color: color-mix(in srgb, var(--jensify-primary) 10%, transparent);
   }
 
   .summary-line {
@@ -209,7 +209,7 @@ mat-form-field {
       font-weight: 600;
 
       :host-context(.dark) & {
-        border-top-color: rgba(247, 88, 12, 0.15);
+        border-top-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
       }
 
       &.balanced {
@@ -278,7 +278,7 @@ mat-dialog-actions {
   border-top: 1px solid var(--jensify-border-subtle, #e5e5e5);
 
   :host-context(.dark) & {
-    border-top-color: rgba(247, 88, 12, 0.15);
+    border-top-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
   }
 
   button {

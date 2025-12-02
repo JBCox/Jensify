@@ -2,97 +2,512 @@
   <div class="jensify-page-header">
     <div class="jensify-header-content">
       <h1 class="jensify-page-title">Finance Dashboard</h1>
-      <p class="jensify-page-subtitle">Approved reports waiting for reimbursement</p>
+      <p class="jensify-page-subtitle">Manage reimbursements and payouts</p>
     </div>
-    <button mat-stroked-button class="jensify-export-btn" (click)="exportToCSV()">
-      <mat-icon>download</mat-icon>
-      Export CSV
-    </button>
+    <div class="jensify-header-actions">
+      @if (activeTab() === 2) {
+        <button mat-stroked-button class="jensify-export-btn" (click)="exportAnalyticsData()" [disabled]="loadingAnalytics()">
+          <mat-icon>download</mat-icon>
+          Export Analytics
+        </button>
+      } @else if (activeTab() === 1) {
+        <button mat-stroked-button class="jensify-export-btn" (click)="exportPayoutsToCSV()">
+          <mat-icon>download</mat-icon>
+          Export Payouts
+        </button>
+      } @else {
+        <button mat-stroked-button class="jensify-export-btn" (click)="exportToCSV()">
+          <mat-icon>download</mat-icon>
+          Export CSV
+        </button>
+      }
+      <a mat-stroked-button routerLink="/organization/payouts">
+        <mat-icon>settings</mat-icon>
+        Payout Settings
+      </a>
+    </div>
   </div>
 
-  <div class="jensify-metrics-grid">
-    <app-metric-card
-      [value]="totalPending().toString()"
-      label="Reports Pending"
-      icon="pending_actions"
-      iconType="pending">
-    </app-metric-card>
-
-    <app-metric-card
-      [value]="formatCurrency(totalAmount())"
-      label="Total Amount"
-      icon="payments"
-      iconType="spend">
-    </app-metric-card>
-  </div>
-
-  @if (selectedCount() > 0) {
-    <div class="jensify-batch-action-bar">
-      <span class="jensify-selection-count">{{ selectedCount() }} selected</span>
-      <button mat-raised-button class="jensify-reimbursed-btn" (click)="markAllAsPaid()">
-        <mat-icon>paid</mat-icon>
-        Mark Selected Reimbursed
-      </button>
+  <!-- Payout Status Banner -->
+  @if (payoutMethod() === 'stripe' && stripeConnected()) {
+    <div class="payout-status-banner stripe-connected">
+      <mat-icon>check_circle</mat-icon>
+      <span>Stripe payments enabled - Process payouts directly to employee bank accounts</span>
+    </div>
+  } @else {
+    <div class="payout-status-banner manual-mode">
+      <mat-icon>info</mat-icon>
+      <span>Manual payout mode - Export CSV to process payments externally</span>
+      <a mat-button routerLink="/organization/payouts">Configure Stripe</a>
     </div>
   }
 
-  @if (loading()) {
-    <app-loading-skeleton />
-  }
+  <!-- Tab Navigation -->
+  <mat-tab-group (selectedIndexChange)="onTabChange($event)" [selectedIndex]="activeTab()">
+    <!-- Reports Tab -->
+    <mat-tab label="Approved Reports">
+      <ng-template matTabContent>
+        <div class="tab-content">
+          <div class="jensify-metrics-grid">
+            <app-metric-card
+              [value]="totalPending().toString()"
+              label="Reports Pending"
+              icon="pending_actions"
+              iconType="pending">
+            </app-metric-card>
 
-  @if (error() && !loading()) {
-    <mat-card class="jensify-card error-card">
-      <mat-icon>error</mat-icon>
-      <p>{{ error() }}</p>
-      <button mat-raised-button color="primary" (click)="loadApprovedReports()">Retry</button>
-    </mat-card>
-  }
+            <app-metric-card
+              [value]="formatCurrency(totalAmount())"
+              label="Total Amount"
+              icon="payments"
+              iconType="spend">
+            </app-metric-card>
+          </div>
 
-  @if (!loading() && !error() && approvedReports().length === 0) {
-    <app-empty-state
-      icon="check_circle"
-      title="All paid up"
-      message="No approved reports awaiting reimbursement.">
-    </app-empty-state>
-  }
-
-  @if (!loading() && !error() && approvedReports().length > 0) {
-    <mat-card class="jensify-card">
-      <div class="jensify-report-list">
-        @for (report of approvedReports(); track trackByReportId($index, report)) {
-          <div class="jensify-report-row" (click)="toggleSelection(report.id)">
-            <mat-checkbox
-              [checked]="isSelected(report.id)"
-              (click)="$event.stopPropagation()"
-              (change)="toggleSelection(report.id)">
-            </mat-checkbox>
-
-            <div class="jensify-report-main">
-              <div class="jensify-report-title">
-                <span class="name">{{ report.name }}</span>
-                <span class="employee" *ngIf="report.user?.full_name">
-                  • {{ report.user?.full_name }} <span class="muted">({{ report.user?.email }})</span>
-                </span>
-              </div>
-              <div class="jensify-report-meta">
-                <span>Approved {{ formatDate(report.approved_at) }}</span>
-                <span *ngIf="report.expense_count">{{ report.expense_count }} expenses</span>
-              </div>
-            </div>
-
-            <div class="jensify-report-amount">
-              {{ formatCurrency(report.total_amount || 0) }}
-            </div>
-
-            <div class="jensify-report-actions">
-              <button mat-raised-button class="jensify-reimbursed-btn" (click)="markAsPaid(report.id); $event.stopPropagation();">
+          @if (selectedCount() > 0) {
+            <div class="jensify-batch-action-bar">
+              <span class="jensify-selection-count">{{ selectedCount() }} selected</span>
+              <button mat-raised-button class="jensify-reimbursed-btn" (click)="markAllAsPaid()">
                 <mat-icon>paid</mat-icon>
-                Reimburse
+                Mark Selected Reimbursed
               </button>
             </div>
+          }
+
+          @if (loading()) {
+            <app-loading-skeleton />
+          }
+
+          @if (error() && !loading()) {
+            <mat-card class="jensify-card error-card">
+              <mat-icon>error</mat-icon>
+              <p>{{ error() }}</p>
+              <button mat-raised-button color="primary" (click)="loadApprovedReports()">Retry</button>
+            </mat-card>
+          }
+
+          @if (!loading() && !error() && approvedReports().length === 0) {
+            <app-empty-state
+              icon="check_circle"
+              title="All paid up"
+              message="No approved reports awaiting reimbursement.">
+            </app-empty-state>
+          }
+
+          @if (!loading() && !error() && approvedReports().length > 0) {
+            <mat-card class="jensify-card">
+              <div class="jensify-report-list">
+                @for (report of approvedReports(); track trackByReportId($index, report)) {
+                  <div class="jensify-report-row" (click)="toggleSelection(report.id)">
+                    <mat-checkbox
+                      [checked]="isSelected(report.id)"
+                      (click)="$event.stopPropagation()"
+                      (change)="toggleSelection(report.id)">
+                    </mat-checkbox>
+
+                    <div class="jensify-report-main">
+                      <div class="jensify-report-title">
+                        <span class="name">{{ report.name }}</span>
+                        <span class="employee" *ngIf="report.user?.full_name">
+                          • {{ report.user?.full_name }} <span class="muted">({{ report.user?.email }})</span>
+                        </span>
+                      </div>
+                      <div class="jensify-report-meta">
+                        <span>Approved {{ formatDate(report.approved_at) }}</span>
+                        <span *ngIf="report.expense_count">{{ report.expense_count }} expenses</span>
+                      </div>
+                    </div>
+
+                    <div class="jensify-report-amount">
+                      {{ formatCurrency(report.total_amount || 0) }}
+                    </div>
+
+                    <div class="jensify-report-actions">
+                      <button mat-raised-button class="jensify-reimbursed-btn" (click)="markAsPaid(report.id); $event.stopPropagation();">
+                        <mat-icon>paid</mat-icon>
+                        Reimburse
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </mat-card>
+          }
+        </div>
+      </ng-template>
+    </mat-tab>
+
+    <!-- Payouts Tab -->
+    <mat-tab label="Process Payouts">
+      <ng-template matTabContent>
+        <div class="tab-content">
+          <div class="jensify-metrics-grid">
+            <app-metric-card
+              [value]="totalPayoutCount().toString()"
+              label="Employees Pending"
+              icon="people"
+              iconType="pending">
+            </app-metric-card>
+
+            <app-metric-card
+              [value]="formatCurrency(totalPayoutAmount())"
+              label="Total Payout Amount"
+              icon="account_balance_wallet"
+              iconType="spend">
+            </app-metric-card>
           </div>
-        }
-      </div>
-    </mat-card>
-  }
+
+          @if (loadingPayouts()) {
+            <app-loading-skeleton />
+          }
+
+          @if (!loadingPayouts() && pendingPayouts().length === 0) {
+            <app-empty-state
+              icon="savings"
+              title="No pending payouts"
+              message="All approved expenses have been paid out.">
+            </app-empty-state>
+          }
+
+          @if (!loadingPayouts() && pendingPayouts().length > 0) {
+            <mat-card class="jensify-card">
+              <div class="payout-list">
+                @for (payout of pendingPayouts(); track payout.user_id) {
+                  <div class="payout-row">
+                    <div class="payout-user">
+                      <div class="user-avatar">
+                        <mat-icon>person</mat-icon>
+                      </div>
+                      <div class="user-info">
+                        <span class="user-name">{{ payout.user_name }}</span>
+                        <span class="user-email">{{ payout.user_email }}</span>
+                      </div>
+                    </div>
+
+                    <div class="payout-details">
+                      <span class="expense-count">{{ payout.expense_count }} expense{{ payout.expense_count !== 1 ? 's' : '' }}</span>
+                      @if (payout.has_bank_account) {
+                        <mat-chip-set>
+                          <mat-chip [color]="payout.bank_account_verified ? 'primary' : 'warn'" highlighted>
+                            <mat-icon matChipAvatar>{{ payout.bank_account_verified ? 'verified' : 'pending' }}</mat-icon>
+                            {{ payout.bank_account_verified ? 'Bank Verified' : 'Bank Pending' }}
+                          </mat-chip>
+                        </mat-chip-set>
+                      } @else {
+                        <mat-chip-set>
+                          <mat-chip>
+                            <mat-icon matChipAvatar>account_balance</mat-icon>
+                            No Bank Account
+                          </mat-chip>
+                        </mat-chip-set>
+                      }
+                    </div>
+
+                    <div class="payout-amount">
+                      {{ formatCurrency(payout.total_amount_cents / 100) }}
+                    </div>
+
+                    <div class="payout-actions">
+                      @if (isProcessing(payout.user_id)) {
+                        <mat-spinner diameter="24"></mat-spinner>
+                      } @else {
+                        @if (payoutMethod() === 'stripe' && stripeConnected() && payout.has_bank_account && payout.bank_account_verified) {
+                          <button mat-raised-button color="primary" (click)="processStripePayout(payout)">
+                            <mat-icon>send</mat-icon>
+                            Send Payout
+                          </button>
+                        } @else {
+                          <button mat-stroked-button (click)="createManualPayout(payout)">
+                            <mat-icon>assignment_turned_in</mat-icon>
+                            Mark Paid
+                          </button>
+                        }
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </mat-card>
+
+            <!-- Batch Actions -->
+            <div class="batch-payout-actions">
+              @if (payoutMethod() === 'stripe' && stripeConnected()) {
+                <button mat-raised-button color="primary" disabled>
+                  <mat-icon>flash_on</mat-icon>
+                  Process All Payouts (Coming Soon)
+                </button>
+              }
+              <button mat-stroked-button (click)="exportPayoutsToCSV()">
+                <mat-icon>download</mat-icon>
+                Export for External Processing
+              </button>
+            </div>
+          }
+        </div>
+      </ng-template>
+    </mat-tab>
+
+    <!-- Analytics Tab -->
+    <mat-tab label="Analytics">
+      <ng-template matTabContent>
+        <div class="tab-content analytics-tab">
+          <!-- Date Range Filter -->
+          <div class="analytics-header">
+            <mat-form-field appearance="outline" class="date-range-select">
+              <mat-label>Date Range</mat-label>
+              <mat-select [(value)]="selectedPreset" (selectionChange)="onDateRangeChange()">
+                @for (preset of datePresets; track preset.value) {
+                  <mat-option [value]="preset.value">{{ preset.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <button mat-stroked-button (click)="exportAnalyticsData()" [disabled]="loadingAnalytics()">
+              <mat-icon>download</mat-icon>
+              Export
+            </button>
+          </div>
+
+          @if (loadingAnalytics()) {
+            <div class="loading-container">
+              <mat-spinner diameter="40"></mat-spinner>
+              <p>Loading analytics data...</p>
+            </div>
+          } @else if (analyticsData()) {
+            <!-- Summary Metrics -->
+            <div class="analytics-metrics-grid">
+              @for (metric of summaryMetrics; track metric.key) {
+                <mat-card class="jensify-card analytics-metric-card">
+                  <div class="analytics-metric-icon" [style.background]="metric.color">
+                    <mat-icon>{{ metric.icon }}</mat-icon>
+                  </div>
+                  <div class="analytics-metric-content">
+                    <span class="analytics-metric-value">
+                      @if (metric.isCurrency) {
+                        {{ getMetricValue(metric.key) | currency:'USD':'symbol':'1.0-0' }}
+                      } @else {
+                        {{ getMetricValue(metric.key) | number:'1.0-0' }}
+                      }
+                    </span>
+                    <span class="analytics-metric-label">{{ metric.label }}</span>
+                    @if (getMetricChange(metric.key); as change) {
+                      <span class="analytics-metric-change" [ngClass]="change.class">
+                        <mat-icon>{{ change.icon }}</mat-icon>
+                        {{ change.text }}
+                      </span>
+                    }
+                  </div>
+                </mat-card>
+              }
+            </div>
+
+            <!-- Charts Row -->
+            <div class="analytics-charts-row">
+              <!-- Category Breakdown -->
+              <mat-card class="jensify-card analytics-chart-card">
+                <mat-card-header>
+                  <mat-icon mat-card-avatar class="analytics-card-icon">pie_chart</mat-icon>
+                  <mat-card-title>Spending by Category</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  @if (analyticsData()?.categoryBreakdown?.length) {
+                    <div class="analytics-category-list">
+                      @for (category of analyticsData()?.categoryBreakdown; track category.category; let i = $index) {
+                        <div class="analytics-category-item">
+                          <div class="analytics-category-info">
+                            <div class="analytics-category-color" [style.background]="chartColors[i % chartColors.length]"></div>
+                            <span class="analytics-category-name">{{ category.category }}</span>
+                          </div>
+                          <div class="analytics-category-stats">
+                            <span class="analytics-category-amount">{{ category.total_amount | currency:'USD':'symbol':'1.0-0' }}</span>
+                            <span class="analytics-category-percent">{{ category.percentage | number:'1.1-1' }}%</span>
+                          </div>
+                          <mat-progress-bar mode="determinate" [value]="category.percentage"
+                                            [style.--mdc-linear-progress-active-indicator-color]="chartColors[i % chartColors.length]">
+                          </mat-progress-bar>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="analytics-empty-state">
+                      <mat-icon>pie_chart</mat-icon>
+                      <p>No category data available</p>
+                    </div>
+                  }
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Department Comparison -->
+              <mat-card class="jensify-card analytics-chart-card">
+                <mat-card-header>
+                  <mat-icon mat-card-avatar class="analytics-card-icon department-icon">business</mat-icon>
+                  <mat-card-title>Spending by Department</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  @if (analyticsData()?.departmentComparison?.length) {
+                    <div class="analytics-category-list">
+                      @for (dept of analyticsData()?.departmentComparison; track dept.department; let i = $index) {
+                        <div class="analytics-category-item">
+                          <div class="analytics-category-info">
+                            <div class="analytics-category-color" [style.background]="chartColors[(i + 3) % chartColors.length]"></div>
+                            <span class="analytics-category-name">{{ dept.department || 'Unassigned' }}</span>
+                          </div>
+                          <div class="analytics-category-stats">
+                            <span class="analytics-category-amount">{{ dept.total_amount | currency:'USD':'symbol':'1.0-0' }}</span>
+                            <span class="analytics-category-percent">{{ dept.percentage_of_total | number:'1.1-1' }}%</span>
+                          </div>
+                          <mat-progress-bar mode="determinate" [value]="dept.percentage_of_total"
+                                            [style.--mdc-linear-progress-active-indicator-color]="chartColors[(i + 3) % chartColors.length]">
+                          </mat-progress-bar>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="analytics-empty-state">
+                      <mat-icon>business</mat-icon>
+                      <p>No department data available</p>
+                    </div>
+                  }
+                </mat-card-content>
+              </mat-card>
+            </div>
+
+            <!-- Top Spenders & Merchants -->
+            <div class="analytics-tables-row">
+              <!-- Top Spenders -->
+              <mat-card class="jensify-card analytics-table-card">
+                <mat-card-header>
+                  <mat-icon mat-card-avatar class="analytics-card-icon spender-icon">trending_up</mat-icon>
+                  <mat-card-title>Top Spenders</mat-card-title>
+                  <mat-card-subtitle>Highest expense submitters</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  @if (analyticsData()?.topSpenders?.length) {
+                    <table mat-table [dataSource]="analyticsData()?.topSpenders ?? []" class="analytics-table">
+                      <ng-container matColumnDef="rank">
+                        <th mat-header-cell *matHeaderCellDef>#</th>
+                        <td mat-cell *matCellDef="let spender; let i = index">{{ i + 1 }}</td>
+                      </ng-container>
+                      <ng-container matColumnDef="user">
+                        <th mat-header-cell *matHeaderCellDef>Employee</th>
+                        <td mat-cell *matCellDef="let spender">
+                          <div class="analytics-user-cell">
+                            <span class="analytics-user-name">{{ spender.user_name }}</span>
+                            <span class="analytics-user-dept">{{ spender.department || 'No department' }}</span>
+                          </div>
+                        </td>
+                      </ng-container>
+                      <ng-container matColumnDef="count">
+                        <th mat-header-cell *matHeaderCellDef>Expenses</th>
+                        <td mat-cell *matCellDef="let spender">{{ spender.expense_count }}</td>
+                      </ng-container>
+                      <ng-container matColumnDef="amount">
+                        <th mat-header-cell *matHeaderCellDef>Total</th>
+                        <td mat-cell *matCellDef="let spender" class="analytics-amount-cell">
+                          {{ spender.total_amount | currency:'USD':'symbol':'1.0-0' }}
+                        </td>
+                      </ng-container>
+                      <tr mat-header-row *matHeaderRowDef="['rank', 'user', 'count', 'amount']"></tr>
+                      <tr mat-row *matRowDef="let row; columns: ['rank', 'user', 'count', 'amount']"></tr>
+                    </table>
+                  } @else {
+                    <div class="analytics-empty-state">
+                      <mat-icon>person</mat-icon>
+                      <p>No spender data available</p>
+                    </div>
+                  }
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Top Merchants -->
+              <mat-card class="jensify-card analytics-table-card">
+                <mat-card-header>
+                  <mat-icon mat-card-avatar class="analytics-card-icon merchant-icon">store</mat-icon>
+                  <mat-card-title>Top Merchants</mat-card-title>
+                  <mat-card-subtitle>Most frequent vendors</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  @if (analyticsData()?.merchantAnalysis?.length) {
+                    <table mat-table [dataSource]="analyticsData()?.merchantAnalysis?.slice(0, 10) ?? []" class="analytics-table">
+                      <ng-container matColumnDef="rank">
+                        <th mat-header-cell *matHeaderCellDef>#</th>
+                        <td mat-cell *matCellDef="let merchant; let i = index">{{ i + 1 }}</td>
+                      </ng-container>
+                      <ng-container matColumnDef="merchant">
+                        <th mat-header-cell *matHeaderCellDef>Merchant</th>
+                        <td mat-cell *matCellDef="let merchant">
+                          <div class="analytics-merchant-cell">
+                            <span class="analytics-merchant-name">{{ merchant.merchant }}</span>
+                            <span class="analytics-merchant-category">{{ merchant.most_common_category }}</span>
+                          </div>
+                        </td>
+                      </ng-container>
+                      <ng-container matColumnDef="count">
+                        <th mat-header-cell *matHeaderCellDef>Txns</th>
+                        <td mat-cell *matCellDef="let merchant">{{ merchant.expense_count }}</td>
+                      </ng-container>
+                      <ng-container matColumnDef="amount">
+                        <th mat-header-cell *matHeaderCellDef>Total</th>
+                        <td mat-cell *matCellDef="let merchant" class="analytics-amount-cell">
+                          {{ merchant.total_amount | currency:'USD':'symbol':'1.0-0' }}
+                        </td>
+                      </ng-container>
+                      <tr mat-header-row *matHeaderRowDef="['rank', 'merchant', 'count', 'amount']"></tr>
+                      <tr mat-row *matRowDef="let row; columns: ['rank', 'merchant', 'count', 'amount']"></tr>
+                    </table>
+                  } @else {
+                    <div class="analytics-empty-state">
+                      <mat-icon>store</mat-icon>
+                      <p>No merchant data available</p>
+                    </div>
+                  }
+                </mat-card-content>
+              </mat-card>
+            </div>
+
+            <!-- Budget vs Actual -->
+            @if (analyticsData()?.budgetVsActual?.length) {
+              <mat-card class="jensify-card">
+                <mat-card-header>
+                  <mat-icon mat-card-avatar class="analytics-card-icon budget-icon">account_balance_wallet</mat-icon>
+                  <mat-card-title>Budget vs Actual</mat-card-title>
+                  <mat-card-subtitle>Budget utilization across departments</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="analytics-budget-grid">
+                    @for (budget of analyticsData()?.budgetVsActual; track budget.budget_name) {
+                      <div class="analytics-budget-item" [ngClass]="budget.status">
+                        <div class="analytics-budget-header">
+                          <span class="analytics-budget-name">{{ budget.budget_name }}</span>
+                          <mat-chip-set>
+                            <mat-chip [color]="budget.status === 'over_budget' ? 'warn' : budget.status === 'warning' ? 'accent' : 'primary'"
+                                      [highlighted]="true">
+                              {{ budget.utilization_percent | number:'1.0-0' }}% used
+                            </mat-chip>
+                          </mat-chip-set>
+                        </div>
+                        <mat-progress-bar mode="determinate"
+                                          [value]="budget.utilization_percent > 100 ? 100 : budget.utilization_percent"
+                                          [color]="budget.status === 'over_budget' ? 'warn' : budget.status === 'warning' ? 'accent' : 'primary'">
+                        </mat-progress-bar>
+                        <div class="analytics-budget-footer">
+                          <span>{{ budget.actual_spent | currency:'USD':'symbol':'1.0-0' }} spent</span>
+                          <span>{{ budget.budget_amount | currency:'USD':'symbol':'1.0-0' }} budget</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            }
+          } @else {
+            <app-empty-state
+              icon="analytics"
+              title="No analytics data"
+              message="Analytics data will appear once you have expenses in the system.">
+            </app-empty-state>
+          }
+        </div>
+      </ng-template>
+    </mat-tab>
+  </mat-tab-group>
 </div>

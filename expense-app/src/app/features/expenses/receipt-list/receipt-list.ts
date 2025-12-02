@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Router, RouterModule } from '@angular/router';
 import { ExpenseService } from '../../../core/services/expense.service';
+import { PullToRefresh } from '../../../shared/components/pull-to-refresh/pull-to-refresh';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { Subject, interval, takeUntil, take } from 'rxjs';
@@ -33,7 +34,8 @@ import { OcrStatus, ExpenseCategory } from '../../../core/models/enums';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    RouterModule
+    RouterModule,
+    PullToRefresh
   ],
   templateUrl: './receipt-list.html',
   styleUrl: './receipt-list.scss',
@@ -49,6 +51,7 @@ export class ReceiptList implements OnDestroy {
   // Receipts list
   receipts = signal<Receipt[]>([]);
   loadingReceipts = signal<boolean>(true);
+  refreshing = signal<boolean>(false);
 
   // Upload state signals
   selectedFile = signal<File | null>(null);
@@ -91,7 +94,8 @@ export class ReceiptList implements OnDestroy {
   // Category options for dropdown
   readonly categoryOptions = [
     { value: ExpenseCategory.FUEL, label: 'Fuel/Gas' },
-    { value: ExpenseCategory.MEALS, label: 'Meals & Entertainment' },
+    { value: ExpenseCategory.INDIVIDUAL_MEALS, label: 'Individual Meals' },
+    { value: ExpenseCategory.BUSINESS_MEALS, label: 'Business Meals' },
     { value: ExpenseCategory.LODGING, label: 'Lodging/Hotels' },
     { value: ExpenseCategory.AIRFARE, label: 'Airfare' },
     { value: ExpenseCategory.GROUND_TRANSPORTATION, label: 'Ground Transportation' },
@@ -130,6 +134,13 @@ export class ReceiptList implements OnDestroy {
           this.loadingReceipts.set(false);
         }
       });
+  }
+
+  /** Handle pull-to-refresh */
+  onRefresh(): void {
+    this.refreshing.set(true);
+    this.loadReceipts();
+    setTimeout(() => this.refreshing.set(false), 1000);
   }
 
   /** Create expense from receipt */

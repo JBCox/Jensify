@@ -167,7 +167,8 @@ export class ReportDetailComponent implements OnInit, OnDestroy {
     const r = this.report();
     if (!r || !this.canSubmit()) return;
 
-    this.confirmAction("Submit Report", `Submit "${r.name}" for approval?`, "Submit", "send", "#FF5900", () => {
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--jensify-primary').trim() || '#FF5900';
+    this.confirmAction("Submit Report", `Submit "${r.name}" for approval?`, "Submit", "send", primaryColor, () => {
       this.submitting.set(true);
       this.reportService.submitReport(r.id).pipe(takeUntil(this.destroy$)).subscribe({
         next: (updated) => {
@@ -202,7 +203,8 @@ export class ReportDetailComponent implements OnInit, OnDestroy {
     const r = this.report();
     if (!r || !this.canResubmit()) return;
 
-    this.confirmAction("Resubmit Report", `Resubmit "${r.name}" for approval?`, "Resubmit", "send", "#FF5900", () => {
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--jensify-primary').trim() || '#FF5900';
+    this.confirmAction("Resubmit Report", `Resubmit "${r.name}" for approval?`, "Resubmit", "send", primaryColor, () => {
       this.submitting.set(true);
       this.reportService.submitReport(r.id).pipe(takeUntil(this.destroy$)).subscribe({
         next: (updated) => {

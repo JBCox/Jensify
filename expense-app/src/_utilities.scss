@@ -158,7 +158,7 @@
   -webkit-backdrop-filter: blur(10px);
   border: 2px solid var(--jensify-border-medium);
   border-radius: var(--jensify-radius-lg);
-  box-shadow: 0 4px 20px rgba(74, 44, 26, 0.08), 0 0 40px rgba(247, 88, 12, 0.05);
+  box-shadow: 0 4px 20px rgba(74, 44, 26, 0.08), 0 0 40px color-mix(in srgb, var(--jensify-primary) 5%, transparent);
   overflow: hidden;
   padding: var(--jensify-spacing-lg);
   margin-bottom: var(--jensify-spacing-lg); // Consistent 2rem bottom margin
@@ -182,7 +182,7 @@
     height: 200%;
     background: radial-gradient(
       circle at top left,
-      rgba(247, 88, 12, 0.05) 0%,
+      color-mix(in srgb, var(--jensify-primary) 5%, transparent) 0%,
       transparent 50%
     );
     pointer-events: none;
@@ -198,17 +198,17 @@
     );
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(247, 88, 12, 0.4);
-    box-shadow: 
+    border: 1px solid color-mix(in srgb, var(--jensify-primary) 40%, transparent);
+    box-shadow:
       0 10px 30px -5px rgba(0, 0, 0, 0.8), // Deep shadow
-      0 0 25px rgba(247, 88, 12, 0.25), // Stronger outer glow
-      inset 0 0 20px rgba(247, 88, 12, 0.05); // Inner glow
+      0 0 25px color-mix(in srgb, var(--jensify-primary) 25%, transparent), // Stronger outer glow
+      inset 0 0 20px color-mix(in srgb, var(--jensify-primary) 5%, transparent); // Inner glow
     color: rgba(255, 255, 255, 0.95);
 
     &::before {
       background: radial-gradient(
         circle at top left,
-        rgba(247, 88, 12, 0.3) 0%,
+        color-mix(in srgb, var(--jensify-primary) 30%, transparent) 0%,
         transparent 60%
       );
       opacity: 0.8;
@@ -225,7 +225,7 @@
       height: 200%;
       background: radial-gradient(
         circle at bottom right,
-        rgba(247, 88, 12, 0.15) 0%,
+        color-mix(in srgb, var(--jensify-primary) 15%, transparent) 0%,
         transparent 60%
       );
       pointer-events: none;

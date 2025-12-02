@@ -1,3 +1,8 @@
+<app-pull-to-refresh
+  [refreshing]="refreshing()"
+  (refresh)="onRefresh()">
+</app-pull-to-refresh>
+
 <div class="dashboard-container">
   <!-- Header -->
   <div class="dashboard-header">
@@ -73,7 +78,7 @@
                 [labels]="false"
                 [doughnut]="true"
                 [gradient]="true"
-                [animations]="true">
+                [animations]="false">
               </ngx-charts-pie-chart>
             } @else {
               <div class="chart-empty">
@@ -108,7 +113,7 @@
                 [legendPosition]="legendPosition"
                 [autoScale]="true"
                 [gradient]="true"
-                [animations]="true">
+                [animations]="false">
               </ngx-charts-line-chart>
             } @else {
               <div class="chart-empty">

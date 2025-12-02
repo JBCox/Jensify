@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { KeyboardShortcutsService, KeyboardShortcut } from './keyboard-shortcuts.service';
 
 describe('KeyboardShortcutsService', () => {
@@ -11,16 +11,15 @@ describe('KeyboardShortcutsService', () => {
     shift?: boolean;
     meta?: boolean;
   } = {}): KeyboardEvent {
-    const event = document.createEvent('KeyboardEvent') as any;
-    Object.defineProperties(event, {
-      key: { value: key, writable: false },
-      ctrlKey: { value: options.ctrl || false, writable: false },
-      altKey: { value: options.alt || false, writable: false },
-      shiftKey: { value: options.shift || false, writable: false },
-      metaKey: { value: options.meta || false, writable: false }
+    return new KeyboardEvent('keydown', {
+      key: key,
+      ctrlKey: options.ctrl || false,
+      altKey: options.alt || false,
+      shiftKey: options.shift || false,
+      metaKey: options.meta || false,
+      bubbles: true,
+      cancelable: true
     });
-    event.initEvent('keydown', true, true);
-    return event;
   }
 
   beforeEach(() => {
@@ -83,7 +82,7 @@ describe('KeyboardShortcutsService', () => {
     expect(service.getAllShortcuts().find(s => s.id === 'temp-shortcut')).toBeUndefined();
   });
 
-  xit('should trigger shortcut callback on matching key event', (done) => {
+  it('should trigger shortcut callback on matching key event', fakeAsync(() => {
     const callback = jasmine.createSpy('callback');
     const shortcut: KeyboardShortcut = {
       id: 'ctrl-t',
@@ -99,13 +98,11 @@ describe('KeyboardShortcutsService', () => {
     document.dispatchEvent(event);
 
     // Wait for async event handling
-    setTimeout(() => {
-      expect(callback).toHaveBeenCalled();
-      done();
-    }, 100);
-  });
+    tick(100);
+    expect(callback).toHaveBeenCalled();
+  }));
 
-  xit('should not trigger shortcut when modifiers do not match', (done) => {
+  it('should not trigger shortcut when modifiers do not match', fakeAsync(() => {
     const callback = jasmine.createSpy('callback');
     const shortcut: KeyboardShortcut = {
       id: 'ctrl-s',
@@ -120,13 +117,11 @@ describe('KeyboardShortcutsService', () => {
     const event = createTestKeyboardEvent('s'); // No ctrl key
     document.dispatchEvent(event);
 
-    setTimeout(() => {
-      expect(callback).not.toHaveBeenCalled();
-      done();
-    }, 100);
-  });
+    tick(100);
+    expect(callback).not.toHaveBeenCalled();
+  }));
 
-  xit('should enable and disable shortcuts', (done) => {
+  it('should enable and disable shortcuts', fakeAsync(() => {
     const callback = jasmine.createSpy('callback');
     const shortcut: KeyboardShortcut = {
       id: 'toggle-test',
@@ -143,23 +138,20 @@ describe('KeyboardShortcutsService', () => {
     const event1 = createTestKeyboardEvent('g');
     document.dispatchEvent(event1);
 
-    setTimeout(() => {
-      expect(callback).not.toHaveBeenCalled();
+    tick(100);
+    expect(callback).not.toHaveBeenCalled();
 
-      // Re-enable shortcuts
-      service.enable();
+    // Re-enable shortcuts
+    service.enable();
 
-      const event2 = createTestKeyboardEvent('g');
-      document.dispatchEvent(event2);
+    const event2 = createTestKeyboardEvent('g');
+    document.dispatchEvent(event2);
 
-      setTimeout(() => {
-        expect(callback).toHaveBeenCalled();
-        done();
-      }, 100);
-    }, 100);
-  });
+    tick(100);
+    expect(callback).toHaveBeenCalled();
+  }));
 
-  xit('should handle context-aware shortcuts', (done) => {
+  it('should handle context-aware shortcuts', fakeAsync(() => {
     const callback = jasmine.createSpy('callback');
     const shortcut: KeyboardShortcut = {
       id: 'context-test',
@@ -175,21 +167,18 @@ describe('KeyboardShortcutsService', () => {
     const event1 = createTestKeyboardEvent('h');
     document.dispatchEvent(event1);
 
-    setTimeout(() => {
-      expect(callback).not.toHaveBeenCalled();
+    tick(100);
+    expect(callback).not.toHaveBeenCalled();
 
-      // Set context and trigger again
-      service.setContext('expenses');
+    // Set context and trigger again
+    service.setContext('expenses');
 
-      const event2 = createTestKeyboardEvent('h');
-      document.dispatchEvent(event2);
+    const event2 = createTestKeyboardEvent('h');
+    document.dispatchEvent(event2);
 
-      setTimeout(() => {
-        expect(callback).toHaveBeenCalled();
-        done();
-      }, 100);
-    }, 100);
-  });
+    tick(100);
+    expect(callback).toHaveBeenCalled();
+  }));
 
   it('should format shortcuts correctly', () => {
     const shortcut1: KeyboardShortcut = {
@@ -213,31 +202,27 @@ describe('KeyboardShortcutsService', () => {
     expect(service.formatShortcut(shortcut2)).toBe('Ctrl+Shift+S');
   });
 
-  xit('should dispatch custom event for escape key', (done) => {
+  it('should dispatch custom event for escape key', fakeAsync(() => {
     const listener = jasmine.createSpy('listener');
     window.addEventListener('keyboard:escape', listener);
 
     const event = createTestKeyboardEvent('Escape');
     document.dispatchEvent(event);
 
-    setTimeout(() => {
-      expect(listener).toHaveBeenCalled();
-      window.removeEventListener('keyboard:escape', listener);
-      done();
-    }, 100);
-  });
+    tick(100);
+    expect(listener).toHaveBeenCalled();
+    window.removeEventListener('keyboard:escape', listener);
+  }));
 
-  xit('should dispatch custom event for show help shortcut', (done) => {
+  it('should dispatch custom event for show help shortcut', fakeAsync(() => {
     const listener = jasmine.createSpy('listener');
     window.addEventListener('keyboard:show-help', listener);
 
     const event = createTestKeyboardEvent('?', { shift: true });
     document.dispatchEvent(event);
 
-    setTimeout(() => {
-      expect(listener).toHaveBeenCalled();
-      window.removeEventListener('keyboard:show-help', listener);
-      done();
-    }, 100);
-  });
+    tick(100);
+    expect(listener).toHaveBeenCalled();
+    window.removeEventListener('keyboard:show-help', listener);
+  }));
 });

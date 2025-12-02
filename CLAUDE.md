@@ -1,9 +1,11 @@
 # Jensify - Expense Management Platform
 
 ## Project Overview
-Full-featured expense management platform starting with gas receipt tracking for Covaer Manufacturing, expanding to compete with Expensify, Ramp, Brex, and similar platforms.
+Full-featured expense management platform starting with gas receipt tracking for Corvaer Manufacturing, expanding to compete with Expensify, Ramp, Brex, and similar platforms.
 
-**Company**: Covaer Manufacturing (Fort Worth, Texas)
+**Company**: Corvaer Manufacturing (Fort Worth, Texas)
+> **SPELLING NOTE**: The company name is **Corvaer** (NOT "Covaer"). Always use "Corvaer" and "corvaer.com".
+
 **Primary User**: Josh (Shipping Manager) and team
 **Initial Use Case**: Expense tracking for traveling employees (gas, hotels, flights, meals, etc.)
 **Long-term Vision**: Complete expense management platform with corporate cards, approvals, budgeting, and integrations
@@ -625,7 +627,7 @@ Run `C:\Jensify\launch-chrome-dev.bat` to start Chrome with all prompts disabled
 
 ## Contact & Support
 
-**Project Owner**: Josh (Covaer Manufacturing)
+**Project Owner**: Josh (Corvaer Manufacturing)
 **Repository**: https://github.com/JBCox/Jensify
 **Questions**: Create an issue in the repository
 

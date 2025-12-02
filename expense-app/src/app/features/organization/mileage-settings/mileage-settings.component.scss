@@ -148,6 +148,6 @@ mat-form-field {
 // Dark mode adjustments
 :host-context(.dark-theme) {
   .info-card {
-    background: rgba(255, 89, 0, 0.08);
+    background: color-mix(in srgb, var(--jensify-primary) 8%, transparent);
   }
 }

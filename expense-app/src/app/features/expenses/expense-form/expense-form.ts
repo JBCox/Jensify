@@ -11,16 +11,20 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ExpenseService } from '../../../core/services/expense.service';
+import { CategoryService } from '../../../core/services/category.service';
+import { DuplicateDetectionService, PotentialDuplicate } from '../../../core/services/duplicate-detection.service';
 import { ExpenseCategory, OcrStatus } from '../../../core/models/enums';
+import { CustomExpenseCategory } from '../../../core/models/gl-code.model';
 import { MatDialog } from '@angular/material/dialog';
 import { AttachReceiptDialog } from '../attach-receipt-dialog/attach-receipt-dialog';
 import { SplitExpenseDialog, SplitExpenseDialogData, SplitExpenseDialogResult } from '../split-expense-dialog/split-expense-dialog';
+import { DuplicateWarningDialog, DuplicateWarningDialogData, DuplicateWarningDialogResult } from '../../../shared/components/duplicate-warning-dialog/duplicate-warning-dialog';
 import { Receipt } from '../../../core/models/receipt.model';
 import { OcrService, DetectedLineItem } from '../../../core/services/ocr.service';
 import { BudgetService } from '../../../core/services/budget.service';
 import { BudgetCheckResult } from '../../../core/models/budget.model';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Subject, interval, takeUntil, switchMap, takeWhile, tap, of } from 'rxjs';
+import { Subject, interval, takeUntil, switchMap, takeWhile, tap, of, firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-expense-form',
@@ -49,7 +53,6 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   loading = false;
   errorMessage = '';
   successMessage = '';
-  categories = Object.values(ExpenseCategory);
   receiptId: string | null = null;
   attachedReceipt: Receipt | null = null;
   smartScanStatus: OcrStatus | null = null;
@@ -60,6 +63,28 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   suggestSplit = signal(false);
   splitSuggestionDismissed = signal(false);
   budgetWarnings = signal<BudgetCheckResult[]>([]);
+
+  // Categories signal - populated from database via CategoryService
+  categories = signal<CustomExpenseCategory[]>([]);
+  categoriesLoading = signal(false);
+
+  // Selected category details (icon, color, GL code)
+  selectedCategory = computed(() => {
+    const categoryId = this.form?.get('category')?.value;
+    return this.categories().find(c => c.id === categoryId) || null;
+  });
+
+  // Current GL code based on selected category
+  currentGlCode = computed(() => {
+    const category = this.selectedCategory();
+    return category?.gl_code || null;
+  });
+
+  // Current GL code name for display
+  currentGlCodeName = computed(() => {
+    const category = this.selectedCategory();
+    return category?.gl_code_name || null;
+  });
 
   // Computed properties for split suggestion
   uniqueCategories = computed(() => {
@@ -81,19 +106,25 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private expenses = inject(ExpenseService);
+  private categoryService = inject(CategoryService);
+  private duplicateService = inject(DuplicateDetectionService);
   private ocrService = inject(OcrService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private budgetService = inject(BudgetService);
 
   ngOnInit(): void {
+    // Initialize form with null category (will be set after categories load)
     this.form = this.fb.group({
       merchant: ['', [Validators.required, Validators.minLength(2)]],
       amount: [null, [Validators.required, Validators.min(0.01)]],
-      category: [ExpenseCategory.FUEL, [Validators.required]],
+      category: [null, [Validators.required]],
       expense_date: [new Date().toISOString().slice(0,10), [Validators.required]],
       notes: ['']
     });
+
+    // Load active categories from database
+    this.loadCategories();
 
     this.receiptId = this.route.snapshot.queryParamMap.get('receiptId');
     if (this.receiptId) {
@@ -103,6 +134,51 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
     // Check budgets when amount/category changes
     this.form.get('amount')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.checkBudgets());
     this.form.get('category')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.checkBudgets());
+  }
+
+  /**
+   * Load active expense categories from database
+   */
+  private loadCategories(): void {
+    this.categoriesLoading.set(true);
+    this.categoryService.getActiveCategories()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (categories) => {
+          this.categories.set(categories);
+          this.categoriesLoading.set(false);
+
+          // Set default category if we have categories and form category is not yet set
+          if (categories.length > 0 && !this.form.get('category')?.value) {
+            // Try to find a "Fuel" category as default, otherwise use first
+            const fuelCategory = categories.find(c =>
+              c.name.toLowerCase().includes('fuel') || c.name.toLowerCase().includes('gas')
+            );
+            const defaultCategory = fuelCategory || categories[0];
+            this.form.patchValue({ category: defaultCategory.id });
+          }
+        },
+        error: () => {
+          this.categoriesLoading.set(false);
+          // Fallback: use enum values as category names (legacy support)
+          const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--jensify-primary').trim() || '#ff5900';
+          const fallbackCategories: CustomExpenseCategory[] = Object.values(ExpenseCategory).map((name, index) => ({
+            id: name,
+            organization_id: '',
+            name,
+            is_active: true,
+            requires_receipt: true,
+            requires_description: false,
+            icon: 'receipt',
+            color: primaryColor,
+            display_order: index,
+            created_at: '',
+            updated_at: ''
+          }));
+          this.categories.set(fallbackCategories);
+          this.form.patchValue({ category: fallbackCategories[0]?.id });
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -150,13 +226,47 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
     });
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     this.errorMessage = '';
     this.successMessage = '';
     if (this.form.invalid) { Object.values(this.form.controls).forEach(c => c.markAsTouched()); return; }
 
     this.loading = true;
-    const dto = { ...this.form.value, receipt_id: this.receiptId || undefined };
+
+    // Check for duplicates first
+    const formValue = this.form.value;
+    try {
+      const duplicates = await firstValueFrom(
+        this.duplicateService.findPotentialDuplicates({
+          merchant: formValue.merchant,
+          amount: formValue.amount,
+          expense_date: formValue.expense_date
+        })
+      );
+
+      // If high-confidence duplicates found, show warning dialog
+      const highConfidenceDuplicates = duplicates.filter(d => d.similarity_score >= 60);
+      if (highConfidenceDuplicates.length > 0) {
+        this.loading = false;
+        const shouldProceed = await this.showDuplicateWarning(highConfidenceDuplicates, formValue);
+        if (!shouldProceed) {
+          return;
+        }
+        this.loading = true;
+      }
+    } catch (err) {
+      // If duplicate check fails, continue with submission (non-blocking)
+      console.warn('Duplicate check failed, continuing with submission:', err);
+    }
+
+    // Convert category ID to category name for submission
+    const selectedCategory = this.selectedCategory();
+    const dto = {
+      ...this.form.value,
+      category: selectedCategory?.name || this.form.value.category, // Use name, not ID
+      category_id: selectedCategory?.id || null, // Also store the category ID for reference
+      receipt_id: this.receiptId || undefined
+    };
 
     // Type assertion is safe here as form validation ensures required fields
     this.expenses.createExpense(dto as Parameters<typeof this.expenses.createExpense>[0])
@@ -185,6 +295,39 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
           this.loading = false;
         }
       });
+  }
+
+  /**
+   * Show duplicate warning dialog and return whether user wants to proceed
+   */
+  private async showDuplicateWarning(
+    duplicates: PotentialDuplicate[],
+    newExpense: { merchant: string; amount: number; expense_date: string }
+  ): Promise<boolean> {
+    const dialogData: DuplicateWarningDialogData = {
+      duplicates,
+      newExpense
+    };
+
+    const dialogRef = this.dialog.open(DuplicateWarningDialog, {
+      width: '520px',
+      maxWidth: '95vw',
+      data: dialogData,
+      disableClose: true
+    });
+
+    const result = await firstValueFrom(dialogRef.afterClosed()) as DuplicateWarningDialogResult | undefined;
+
+    if (!result || result.action === 'cancel') {
+      return false;
+    }
+
+    if (result.action === 'view' && result.selectedDuplicateId) {
+      this.router.navigate(['/expenses', result.selectedDuplicateId]);
+      return false;
+    }
+
+    return result.action === 'proceed';
   }
 
   openAttachDialog(): void {
@@ -367,7 +510,15 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
     }
 
     this.loading = true;
-    const dto = { ...this.form.value, receipt_id: this.receiptId || undefined };
+
+    // Convert category ID to category name for submission
+    const selectedCategory = this.selectedCategory();
+    const dto = {
+      ...this.form.value,
+      category: selectedCategory?.name || this.form.value.category,
+      category_id: selectedCategory?.id || null,
+      receipt_id: this.receiptId || undefined
+    };
 
     this.expenses.createExpense(dto as Parameters<typeof this.expenses.createExpense>[0])
       .pipe(
@@ -459,7 +610,16 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   /**
    * TrackBy function for category list - improves ngFor performance
    */
-  trackByCategory(_index: number, category: string): string {
-    return category;
+  trackByCategory(_index: number, category: CustomExpenseCategory): string {
+    return category.id;
+  }
+
+  /**
+   * Get the category name for the currently selected category
+   * Used for form submission (expenses table still uses category name)
+   */
+  getSelectedCategoryName(): string {
+    const selected = this.selectedCategory();
+    return selected?.name || '';
   }
 }

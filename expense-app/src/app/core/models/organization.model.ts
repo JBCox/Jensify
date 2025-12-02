@@ -10,8 +10,12 @@ export interface Organization {
   id: string;
   /** Organization name (company name) */
   name: string;
-  /** Optional email domain for auto-join (e.g., "covaer.com") */
+  /** Optional email domain for auto-join (e.g., "corvaer.com") */
   domain?: string;
+  /** URL to organization logo in Supabase Storage */
+  logo_url?: string;
+  /** Primary brand color (hex code, e.g., "#3B82F6") */
+  primary_color?: string;
   /** Organization-level settings and policies */
   settings: OrganizationSettings;
   /** Timestamp when organization was created */
@@ -32,6 +36,49 @@ export interface MileageSettings {
   /** Default mileage category */
   mileage_category: 'business' | 'medical' | 'charity' | 'moving';
 }
+
+/**
+ * GL Code mapping for a single expense category
+ * Finance admins can configure how each category maps to accounting codes
+ */
+export interface GLCodeMapping {
+  /** The GL/accounting code for this category (e.g., "travel", "meals", "entertainment") */
+  gl_code: string;
+  /** Description or notes about this mapping */
+  description?: string;
+  /** Whether this category is active/enabled */
+  is_active: boolean;
+}
+
+/**
+ * GL Code mappings for all expense categories
+ * Key is the expense category name (e.g., "Fuel", "Parking")
+ * Value is the GL code configuration
+ */
+export type GLCodeMappings = Record<string, GLCodeMapping>;
+
+/**
+ * Default GL code mappings
+ * Used when initializing new organizations
+ */
+export const DEFAULT_GL_CODE_MAPPINGS: GLCodeMappings = {
+  'Auto Allowance': { gl_code: 'auto allowance', description: 'Vehicle allowance/stipend', is_active: true },
+  'Parking': { gl_code: 'travel', description: 'Parking fees', is_active: true },
+  'Tolls': { gl_code: 'travel', description: 'Toll charges', is_active: true },
+  'Auto Rental': { gl_code: 'travel', description: 'Car rental expenses', is_active: true },
+  'Fuel': { gl_code: 'travel', description: 'Gas/fuel purchases', is_active: true },
+  'Airfare': { gl_code: 'travel', description: 'Flight tickets', is_active: true },
+  'Lodging': { gl_code: 'travel', description: 'Hotel/accommodation', is_active: true },
+  'Rail/Bus': { gl_code: 'travel', description: 'Train and bus fares', is_active: true },
+  'Ground Transportation': { gl_code: 'travel', description: 'Taxi, rideshare, etc.', is_active: true },
+  'Office Supplies': { gl_code: 'shop/office supplies', description: 'Office supplies and materials', is_active: true },
+  'Individual Meals': { gl_code: 'meals', description: 'Solo meals while traveling', is_active: true },
+  'Business Meals': { gl_code: 'meals', description: 'Meals with clients/partners (include attendees and purpose)', is_active: true },
+  'Business Entertainment': { gl_code: 'entertainment', description: 'Client entertainment (include attendees and purpose)', is_active: true },
+  'Software/Subscriptions': { gl_code: 'software', description: 'Software licenses and subscriptions', is_active: true },
+  'Mileage': { gl_code: 'travel', description: 'Personal vehicle mileage reimbursement', is_active: true },
+  'Miscellaneous': { gl_code: 'miscellaneous', description: 'Other uncategorized expenses', is_active: true }
+};
 
 /**
  * Organization settings and policies
@@ -56,6 +103,8 @@ export interface OrganizationSettings {
   };
   /** Mileage reimbursement settings */
   mileage_settings?: MileageSettings;
+  /** GL code mappings for expense categories (Finance admin configurable) */
+  gl_code_mappings?: GLCodeMappings;
 }
 
 /**
@@ -79,6 +128,16 @@ export interface OrganizationMember {
   is_active: boolean;
   /** User ID who invited this member */
   invited_by?: string;
+  /**
+   * Whether this user can manage expenses (act as a manager for approvals)
+   * Allows finance users to be assigned as managers for employees
+   */
+  can_manage_expenses?: boolean;
+  /**
+   * Whether this user can access the Finance Dashboard
+   * Allows managers to process payouts and view finance data
+   */
+  can_access_finance?: boolean;
   /** Timestamp when member joined organization */
   joined_at: string;
   /** Timestamp when membership was created */
@@ -159,6 +218,10 @@ export interface UpdateOrganizationDto {
   name?: string;
   /** Email domain */
   domain?: string;
+  /** URL to organization logo */
+  logo_url?: string;
+  /** Primary brand color (hex code) */
+  primary_color?: string;
   /** Organization settings */
   settings?: Partial<OrganizationSettings>;
 }
@@ -209,6 +272,10 @@ export interface UpdateOrganizationMemberDto {
   department?: string;
   /** Active status change */
   is_active?: boolean;
+  /** Grant manager rights (for finance users to act as managers) */
+  can_manage_expenses?: boolean;
+  /** Grant finance dashboard access (for managers to process payouts) */
+  can_access_finance?: boolean;
 }
 
 /**

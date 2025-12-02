@@ -277,7 +277,7 @@ export class ApprovalSettings implements OnInit {
         cancelText: "Cancel",
         confirmColor: "primary",
         icon: "warning",
-        iconColor: "#FF5900",
+        iconColor: getComputedStyle(document.documentElement).getPropertyValue('--jensify-primary').trim() || '#FF5900',
       } as ConfirmDialogData,
     });
 

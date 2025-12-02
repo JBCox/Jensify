@@ -180,6 +180,9 @@ export class KeyboardShortcutsService implements OnDestroy {
    */
   private isTypingInInput(event: KeyboardEvent): boolean {
     const target = event.target as HTMLElement;
+    if (!target || !target.tagName) {
+      return false;
+    }
     const tagName = target.tagName.toLowerCase();
     const isContentEditable = target.isContentEditable;
 

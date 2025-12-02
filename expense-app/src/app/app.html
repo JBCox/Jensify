@@ -34,6 +34,10 @@
           <div class="user-email">{{ vm.email }}</div>
         </div>
         <mat-divider></mat-divider>
+        <button mat-menu-item (click)="toggleTheme()">
+          <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+          <span>{{ themeService.theme() === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
+        </button>
         <button mat-menu-item (click)="signOut()">
           <mat-icon>logout</mat-icon>
           <span>Sign Out</span>

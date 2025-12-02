@@ -1,0 +1,153 @@
+<!-- Bank Account Form - Secure Stripe Integration -->
+<div class="bank-account-form">
+  <!-- Success State -->
+  @if (showSuccess()) {
+    <div class="success-state">
+      <mat-icon class="success-icon">check_circle</mat-icon>
+      <h3>Bank Account Added</h3>
+      <p>Your bank account has been securely added. Micro-deposits will be sent within 1-2 business days to verify ownership.</p>
+    </div>
+  } @else {
+    <!-- Loading Stripe -->
+    @if (!stripeLoaded()) {
+      <div class="loading-stripe">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading secure payment form...</p>
+      </div>
+    } @else {
+      <!-- Security Notice -->
+      <div class="security-notice">
+        <mat-icon>lock</mat-icon>
+        <div>
+          <strong>Bank-level security</strong>
+          <p>Your bank details are encrypted and sent directly to Stripe. We never see or store your account numbers.</p>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="form" (ngSubmit)="createToken()">
+        <!-- Account Holder Name -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Account Holder Name</mat-label>
+          <input matInput formControlName="accountHolderName" placeholder="Name as it appears on your bank account">
+          <mat-icon matSuffix>person</mat-icon>
+          @if (getFieldError('accountHolderName')) {
+            <mat-error>{{ getFieldError('accountHolderName') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Account Holder Type -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Account Holder Type</mat-label>
+          <mat-select formControlName="accountHolderType">
+            @for (type of holderTypes; track type.value) {
+              <mat-option [value]="type.value">{{ type.label }}</mat-option>
+            }
+          </mat-select>
+          <mat-icon matSuffix>badge</mat-icon>
+        </mat-form-field>
+
+        <!-- Account Type -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Account Type</mat-label>
+          <mat-select formControlName="accountType">
+            @for (type of accountTypes; track type.value) {
+              <mat-option [value]="type.value">{{ type.label }}</mat-option>
+            }
+          </mat-select>
+          <mat-icon matSuffix>account_balance</mat-icon>
+        </mat-form-field>
+
+        <!-- Routing Number -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Routing Number</mat-label>
+          <input matInput
+                 formControlName="routingNumber"
+                 type="text"
+                 inputmode="numeric"
+                 maxlength="9"
+                 placeholder="9-digit routing number"
+                 autocomplete="off">
+          <mat-icon matSuffix>numbers</mat-icon>
+          <mat-hint>Find this on the bottom left of your checks</mat-hint>
+          @if (getFieldError('routingNumber')) {
+            <mat-error>{{ getFieldError('routingNumber') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Account Number -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Account Number</mat-label>
+          <input matInput
+                 formControlName="accountNumber"
+                 type="password"
+                 inputmode="numeric"
+                 maxlength="17"
+                 placeholder="Bank account number"
+                 autocomplete="new-password">
+          <mat-icon matSuffix>password</mat-icon>
+          @if (getFieldError('accountNumber')) {
+            <mat-error>{{ getFieldError('accountNumber') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Confirm Account Number -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Confirm Account Number</mat-label>
+          <input matInput
+                 formControlName="accountNumberConfirm"
+                 type="password"
+                 inputmode="numeric"
+                 maxlength="17"
+                 placeholder="Re-enter account number"
+                 autocomplete="new-password">
+          <mat-icon matSuffix>check_circle</mat-icon>
+          @if (accountNumberMismatch) {
+            <mat-error>Account numbers do not match</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Terms Checkbox -->
+        <div class="terms-section">
+          <mat-checkbox formControlName="acceptTerms" color="primary">
+            I authorize Jensify to debit my bank account for expense reimbursements. I understand that two micro-deposits will be made to verify my account.
+          </mat-checkbox>
+        </div>
+
+        <!-- Error Message -->
+        @if (errorMessage()) {
+          <div class="error-alert">
+            <mat-icon>error</mat-icon>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <button mat-button type="button" (click)="cancel()" [disabled]="isLoading()">
+            Cancel
+          </button>
+          <button mat-raised-button
+                  color="primary"
+                  type="submit"
+                  [disabled]="isLoading() || form.invalid">
+            @if (isLoading()) {
+              <ng-container><mat-spinner diameter="20" class="button-spinner"></mat-spinner> Processing...</ng-container>
+            } @else {
+              <ng-container><mat-icon>add</mat-icon> Add Bank Account</ng-container>
+            }
+          </button>
+        </div>
+      </form>
+
+      <!-- Help Section -->
+      <div class="help-section">
+        <mat-icon>help_outline</mat-icon>
+        <div>
+          <strong>Need help?</strong>
+          <p>You can find your routing and account numbers on your checks or by logging into your online banking.</p>
+        </div>
+      </div>
+    }
+  }
+</div>

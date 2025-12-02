@@ -1,4 +1,10 @@
 <div class="jensify-container">
+  <!-- Pull to Refresh (mobile only) -->
+  <app-pull-to-refresh
+    [refreshing]="loading"
+    (refresh)="refreshApprovals()">
+  </app-pull-to-refresh>
+
   <!-- Header -->
   <div class="jensify-header">
     <div class="jensify-header-content">
@@ -7,8 +13,24 @@
     </div>
   </div>
 
-  <!-- Filters -->
-  <div class="jensify-filters-section">
+  <!-- Mobile Filter Toggle -->
+  <div class="mobile-filter-toggle">
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="toggleFilters()"
+      [class.active]="filtersExpanded">
+      <mat-icon>tune</mat-icon>
+      <span>Filters</span>
+      @if (activeFilterCount > 0) {
+        <span class="filter-badge">{{ activeFilterCount }}</span>
+      }
+      <mat-icon class="expand-icon">{{ filtersExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+    </button>
+  </div>
+
+  <!-- Filters (collapsible on mobile) -->
+  <div class="jensify-filters-section" [class.collapsed]="!filtersExpanded">
     <form [formGroup]="filterForm" class="jensify-filters">
       <mat-form-field appearance="outline" class="filter-field">
         <mat-label>Min Amount ($)</mat-label>
@@ -89,7 +111,7 @@
               </div>
               <div class="card-row">
                 <span class="card-label">Workflow</span>
-                <span class="card-value">{{approval.workflow.name}} (Step {{approval.current_step}}/{{approval.total_steps}})</span>
+                <span class="card-value">{{approval.workflow?.name || 'Direct Approval'}} (Step {{approval.current_step}}/{{approval.total_steps}})</span>
               </div>
             </div>
 
@@ -164,7 +186,7 @@
             <th mat-header-cell *matHeaderCellDef>Workflow</th>
             <td mat-cell *matCellDef="let approval">
               <div class="workflow-info">
-                <span class="workflow-name">{{approval.workflow.name}}</span>
+                <span class="workflow-name">{{approval.workflow?.name || 'Direct Approval'}}</span>
                 <span class="workflow-step">Step {{approval.current_step}} of {{approval.total_steps}}</span>
               </div>
             </td>

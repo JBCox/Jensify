@@ -5,6 +5,8 @@ import { SupabaseService } from "./supabase.service";
 import { LoggerService } from "./logger.service";
 import {
   CreateOrganizationDto,
+  DEFAULT_GL_CODE_MAPPINGS,
+  GLCodeMappings,
   Organization,
   OrganizationMember,
   OrganizationWithStats,
@@ -136,6 +138,67 @@ export class OrganizationService {
   }
 
   /**
+   * Upload organization logo to Supabase Storage
+   * @param organizationId Organization ID
+   * @param file Logo file (PNG, JPG, or SVG)
+   * @returns Observable with the public URL of the uploaded logo
+   */
+  uploadLogo(organizationId: string, file: File): Observable<string> {
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
+    const fileName = `${organizationId}/logo.${fileExt}`;
+
+    return from(
+      this.supabase.client.storage
+        .from('organization-logos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true, // Replace existing logo
+        })
+    ).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        if (!data) throw new Error('Upload failed');
+
+        // Get public URL
+        const { data: urlData } = this.supabase.client.storage
+          .from('organization-logos')
+          .getPublicUrl(fileName);
+
+        return urlData.publicUrl;
+      }),
+      catchError(this.handleError),
+    );
+  }
+
+  /**
+   * Delete organization logo from storage
+   */
+  deleteLogo(organizationId: string): Observable<void> {
+    // We need to list files first since we don't know the extension
+    return from(
+      this.supabase.client.storage
+        .from('organization-logos')
+        .list(organizationId)
+    ).pipe(
+      map(({ data: files, error }) => {
+        if (error) throw error;
+        return files || [];
+      }),
+      map(async (files) => {
+        if (files.length > 0) {
+          const filesToRemove = files.map(f => `${organizationId}/${f.name}`);
+          const { error } = await this.supabase.client.storage
+            .from('organization-logos')
+            .remove(filesToRemove);
+          if (error) throw error;
+        }
+      }),
+      map(() => undefined),
+      catchError(this.handleError),
+    );
+  }
+
+  /**
    * Get organization with statistics
    */
   getOrganizationWithStats(id: string): Observable<OrganizationWithStats> {
@@ -159,16 +222,16 @@ export class OrganizationService {
 
   /**
    * Get all members of an organization
-   * Note: Uses simplified query without joins due to PostgREST schema cache issues
+   * Includes user data for display (name, email)
    */
   getOrganizationMembers(
     organizationId: string,
     activeOnly = true,
   ): Observable<OrganizationMember[]> {
-    // Simplified query - PostgREST schema cache may be stale for joins
+    // Query with user join for name/email display
     let query = this.supabase.client
       .from("organization_members")
-      .select("*")
+      .select("*, user:users!organization_members_user_id_fkey(id, email, full_name)")
       .eq("organization_id", organizationId);
 
     if (activeOnly) {
@@ -186,7 +249,7 @@ export class OrganizationService {
 
   /**
    * Get a specific organization member
-   * Note: Uses simplified query without joins due to PostgREST schema cache issues
+   * Includes user data for display
    */
   getOrganizationMember(
     organizationId: string,
@@ -195,7 +258,7 @@ export class OrganizationService {
     return from(
       this.supabase.client
         .from("organization_members")
-        .select("*")
+        .select("*, user:users!organization_members_user_id_fkey(id, email, full_name)")
         .eq("organization_id", organizationId)
         .eq("user_id", userId)
         .single(),
@@ -225,7 +288,7 @@ export class OrganizationService {
         .from("organization_members")
         .update(dto)
         .eq("id", membershipId)
-        .select("*, user:users!user_id(*)")
+        .select("*, user:users!organization_members_user_id_fkey(*)")
         .single(),
     ).pipe(
       map(({ data, error }) => {
@@ -328,9 +391,11 @@ export class OrganizationService {
     ).pipe(
       map(({ data, error }) => {
         if (error) throw error;
-        // Function returns JSON directly, not an array
         if (!data) return null;
-        return data as UserOrganizationContext;
+        // Supabase RPC may return array - take first element if so
+        const context = Array.isArray(data) ? data[0] : data;
+        if (!context) return null;
+        return context as UserOrganizationContext;
       }),
       catchError(this.handleError),
     );
@@ -412,19 +477,121 @@ export class OrganizationService {
   }
 
   /**
-   * Check if user is finance or admin of current organization
+   * Check if user has finance dashboard access
+   * - Finance: Always has access
+   * - Admin: Always has access
+   * - Manager: Only if can_access_finance flag is enabled
    */
   isCurrentUserFinanceOrAdmin(): boolean {
     const role = this.currentUserRole;
-    return role === "finance" || role === "admin";
+    const membership = this.currentMembershipSubject.value;
+
+    // Finance and admins always have finance access
+    if (role === "finance" || role === "admin") {
+      return true;
+    }
+
+    // Managers only have finance access if explicitly granted
+    if (role === "manager" && membership?.can_access_finance) {
+      return true;
+    }
+
+    return false;
   }
 
   /**
-   * Check if user is manager, finance, or admin of current organization
+   * Check if user can access finance dashboard
+   * Alias for isCurrentUserFinanceOrAdmin for clarity
+   */
+  canAccessFinance(): boolean {
+    return this.isCurrentUserFinanceOrAdmin();
+  }
+
+  /**
+   * Check if user has manager capabilities (can approve expenses)
+   * - Managers: Always have approval rights
+   * - Admins: Always have approval rights
+   * - Finance: Only if can_manage_expenses flag is enabled
    */
   isCurrentUserManagerOrAbove(): boolean {
     const role = this.currentUserRole;
-    return role === "manager" || role === "finance" || role === "admin";
+    const membership = this.currentMembershipSubject.value;
+
+    // Managers and admins always have manager rights
+    if (role === "manager" || role === "admin") {
+      return true;
+    }
+
+    // Finance users only have manager rights if explicitly granted
+    if (role === "finance" && membership?.can_manage_expenses) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if user can manage expenses (has approval capabilities)
+   * Alias for isCurrentUserManagerOrAbove for clarity
+   */
+  canManageExpenses(): boolean {
+    return this.isCurrentUserManagerOrAbove();
+  }
+
+  // ============================================================================
+  // GL CODE HELPERS
+  // ============================================================================
+
+  /**
+   * Get GL code mappings for the current organization
+   * Returns default mappings if organization has no custom mappings
+   */
+  getGLCodeMappings(): GLCodeMappings {
+    const org = this.currentOrganizationSubject.value;
+    return org?.settings?.gl_code_mappings || DEFAULT_GL_CODE_MAPPINGS;
+  }
+
+  /**
+   * Get the GL code for a specific expense category
+   * @param category The expense category (e.g., "Fuel", "Airfare")
+   * @returns The GL code (e.g., "travel", "meals")
+   */
+  getGLCodeForCategory(category: string): string {
+    const mappings = this.getGLCodeMappings();
+    return mappings[category]?.gl_code || 'uncategorized';
+  }
+
+  /**
+   * Get all active categories grouped by their GL code
+   * Useful for reporting and summaries
+   */
+  getCategoriesByGLCode(): Map<string, string[]> {
+    const mappings = this.getGLCodeMappings();
+    const grouped = new Map<string, string[]>();
+
+    for (const [category, mapping] of Object.entries(mappings)) {
+      if (mapping.is_active) {
+        const code = mapping.gl_code;
+        if (!grouped.has(code)) {
+          grouped.set(code, []);
+        }
+        grouped.get(code)!.push(category);
+      }
+    }
+
+    return grouped;
+  }
+
+  /**
+   * Get list of active categories for dropdown selection
+   * Only returns categories that are marked as active in GL code mappings
+   */
+  getActiveCategories(): string[] {
+    const mappings = this.getGLCodeMappings();
+    return Object.entries(mappings)
+      .filter(([, mapping]) => mapping.is_active)
+      .map(([category]) => category)
+      .sort();
   }
 
   // ============================================================================

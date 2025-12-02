@@ -38,17 +38,17 @@ mat-card-content {
     :host-context(.dark) & {
       background: linear-gradient(
         135deg,
-        rgba(247, 88, 12, 0.12) 0%,
-        rgba(247, 88, 12, 0.05) 100%
+        color-mix(in srgb, var(--jensify-primary) 12%, transparent) 0%,
+        color-mix(in srgb, var(--jensify-primary) 5%, transparent) 100%
       ) !important;
-      border: 2px dashed rgba(247, 88, 12, 0.4) !important;
-      color: rgb(255, 180, 130) !important;
+      border: 2px dashed color-mix(in srgb, var(--jensify-primary) 40%, transparent) !important;
+      color: var(--jensify-primary-light, #ffb482) !important;
       box-shadow:
-        0 2px 8px rgba(247, 88, 12, 0.1),
+        0 2px 8px color-mix(in srgb, var(--jensify-primary) 10%, transparent),
         inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 
       mat-icon {
-        color: rgb(255, 140, 80) !important;
+        color: var(--jensify-primary-light, #ff8c50) !important;
       }
     }
 
@@ -60,15 +60,15 @@ mat-card-content {
       :host-context(.dark) & {
         background: linear-gradient(
           135deg,
-          rgba(247, 88, 12, 0.2) 0%,
-          rgba(247, 88, 12, 0.1) 100%
+          color-mix(in srgb, var(--jensify-primary) 20%, transparent) 0%,
+          color-mix(in srgb, var(--jensify-primary) 10%, transparent) 100%
         ) !important;
-        border-color: rgba(247, 88, 12, 0.7) !important;
+        border-color: color-mix(in srgb, var(--jensify-primary) 70%, transparent) !important;
         box-shadow:
-          0 4px 16px rgba(247, 88, 12, 0.2),
-          0 0 20px rgba(247, 88, 12, 0.1),
+          0 4px 16px color-mix(in srgb, var(--jensify-primary) 20%, transparent),
+          0 0 20px color-mix(in srgb, var(--jensify-primary) 10%, transparent),
           inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-        color: rgb(255, 200, 160) !important;
+        color: var(--jensify-primary-light, #ffc8a0) !important;
       }
     }
   }
@@ -119,11 +119,52 @@ mat-card-content {
     }
   }
 
-  // Category field
+  // Category field with GL code hint
   mat-form-field:has([formControlName="category"]) {
     @media (min-width: 640px) {
       grid-column: 2;
       grid-row: 2;
+    }
+
+    .gl-code-hint {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--jensify-text-muted);
+      font-size: 0.75rem;
+
+      .gl-code-icon {
+        font-size: 14px;
+        width: 14px;
+        height: 14px;
+        color: var(--jensify-primary);
+      }
+
+      strong {
+        color: var(--jensify-primary);
+        font-weight: 600;
+        background: color-mix(in srgb, var(--jensify-primary) 10%, transparent);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      .gl-code-name {
+        margin-left: 4px;
+        opacity: 0.8;
+      }
+
+      :host-context(.dark) & {
+        strong {
+          background: color-mix(in srgb, var(--jensify-primary) 20%, transparent);
+        }
+      }
+    }
+
+    .category-hint {
+      display: block;
+      margin-top: 4px;
+      font-style: italic;
+      color: var(--jensify-text-muted);
     }
   }
 
@@ -273,16 +314,16 @@ mat-card-content {
 
 // Split Suggestion Banner
 .jensify-split-suggestion {
-  background: linear-gradient(135deg, rgba(255, 89, 0, 0.08) 0%, rgba(255, 89, 0, 0.04) 100%);
-  border: 1px solid rgba(255, 89, 0, 0.2);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--jensify-primary) 8%, transparent) 0%, color-mix(in srgb, var(--jensify-primary) 4%, transparent) 100%);
+  border: 1px solid color-mix(in srgb, var(--jensify-primary) 20%, transparent);
   border-left: 4px solid var(--jensify-primary);
   border-radius: var(--jensify-radius-md);
   padding: var(--jensify-spacing-md);
   margin-bottom: var(--jensify-spacing-md);
 
   :host-context(.dark) & {
-    background: linear-gradient(135deg, rgba(255, 89, 0, 0.15) 0%, rgba(255, 89, 0, 0.05) 100%);
-    border-color: rgba(255, 89, 0, 0.3);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--jensify-primary) 15%, transparent) 0%, color-mix(in srgb, var(--jensify-primary) 5%, transparent) 100%);
+    border-color: color-mix(in srgb, var(--jensify-primary) 30%, transparent);
   }
 
   .split-suggestion-header {

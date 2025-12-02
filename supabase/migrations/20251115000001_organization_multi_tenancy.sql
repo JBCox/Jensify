@@ -12,7 +12,7 @@
 CREATE TABLE IF NOT EXISTS organizations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  domain TEXT, -- Optional: For domain-based auto-join (e.g., "covaer.com")
+  domain TEXT, -- Optional: For domain-based auto-join (e.g., "corvaer.com")
 
   -- Settings
   settings JSONB DEFAULT '{

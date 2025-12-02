@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
@@ -11,7 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
 import { MatNativeDateModule } from '@angular/material/core';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MatDialogConfig } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Observable, map, startWith, switchMap, Subject, merge, catchError, of } from 'rxjs';
@@ -20,6 +21,7 @@ import { ApprovalService } from '../../../core/services/approval.service';
 import { ApprovalWithDetails, ApprovalStatus } from '../../../core/models/approval.model';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loading-skeleton';
+import { PullToRefresh } from '../../../shared/components/pull-to-refresh/pull-to-refresh';
 import { ApproveDialog, ApproveDialogData, ApproveDialogResult } from '../approve-dialog/approve-dialog';
 import { RejectDialog, RejectDialogData, RejectDialogResult } from '../reject-dialog/reject-dialog';
 import { ApprovalHistoryDialog, ApprovalHistoryDialogData } from '../approval-history/approval-history';
@@ -44,7 +46,8 @@ import { ApprovalHistoryDialog, ApprovalHistoryDialogData } from '../approval-hi
     MatDialogModule,
     MatSnackBarModule,
     EmptyState,
-    LoadingSkeleton
+    LoadingSkeleton,
+    PullToRefresh
   ],
   templateUrl: './approval-queue.html',
   styleUrls: ['./approval-queue.scss']
@@ -56,18 +59,67 @@ export class ApprovalQueue implements OnInit {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private destroyRef = inject(DestroyRef);
+  private breakpointObserver = inject(BreakpointObserver);
 
   approvals$!: Observable<ApprovalWithDetails[]>;
   loading = true;
   error: string | null = null;
   private refreshTrigger$ = new Subject<void>();
+  private isMobile = false;
 
   filterForm!: FormGroup;
   displayedColumns = ['submitter', 'type', 'amount', 'category', 'workflow', 'submitted', 'actions'];
 
+  // Mobile filter toggle
+  filtersExpanded = false;
+
+  get activeFilterCount(): number {
+    if (!this.filterForm) return 0;
+    const values = this.filterForm.value;
+    let count = 0;
+    if (values.amount_min !== null && values.amount_min !== '') count++;
+    if (values.amount_max !== null && values.amount_max !== '') count++;
+    if (values.date_from !== null) count++;
+    if (values.date_to !== null) count++;
+    return count;
+  }
+
+  toggleFilters(): void {
+    this.filtersExpanded = !this.filtersExpanded;
+  }
+
   ngOnInit(): void {
     this.initializeFilterForm();
     this.loadApprovals();
+    this.setupBreakpointObserver();
+  }
+
+  private setupBreakpointObserver(): void {
+    this.breakpointObserver.observe([Breakpoints.Handset])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        this.isMobile = result.matches;
+      });
+  }
+
+  // Helper to get dialog config with bottom sheet styling on mobile
+  private getMobileDialogConfig<T>(data: T, width = '600px'): MatDialogConfig<T> {
+    const config: MatDialogConfig<T> = {
+      data,
+      disableClose: false
+    };
+
+    if (this.isMobile) {
+      config.panelClass = 'jensify-bottom-sheet-dialog';
+      config.width = '100vw';
+      config.maxWidth = '100vw';
+      config.position = { bottom: '0' };
+    } else {
+      config.width = width;
+      config.maxWidth = '90vw';
+    }
+
+    return config;
   }
 
   private initializeFilterForm(): void {
@@ -103,7 +155,7 @@ export class ApprovalQueue implements OnInit {
     );
   }
 
-  private refreshApprovals(): void {
+  refreshApprovals(): void {
     this.refreshTrigger$.next();
   }
 
@@ -162,12 +214,9 @@ export class ApprovalQueue implements OnInit {
   }
 
   onApprove(approval: ApprovalWithDetails): void {
-    const dialogRef = this.dialog.open(ApproveDialog, {
-      width: '600px',
-      maxWidth: '90vw',
-      data: { approval } as ApproveDialogData,
-      disableClose: false
-    });
+    const dialogRef = this.dialog.open(ApproveDialog,
+      this.getMobileDialogConfig<ApproveDialogData>({ approval }, '600px')
+    );
 
     // ✅ FIX: Add takeUntilDestroyed to prevent memory leaks
     dialogRef.afterClosed()
@@ -201,12 +250,9 @@ export class ApprovalQueue implements OnInit {
   }
 
   onReject(approval: ApprovalWithDetails): void {
-    const dialogRef = this.dialog.open(RejectDialog, {
-      width: '600px',
-      maxWidth: '90vw',
-      data: { approval } as RejectDialogData,
-      disableClose: false
-    });
+    const dialogRef = this.dialog.open(RejectDialog,
+      this.getMobileDialogConfig<RejectDialogData>({ approval }, '600px')
+    );
 
     // ✅ FIX: Add takeUntilDestroyed to prevent memory leaks
     dialogRef.afterClosed()
@@ -251,12 +297,9 @@ export class ApprovalQueue implements OnInit {
   }
 
   onViewHistory(approval: ApprovalWithDetails): void {
-    this.dialog.open(ApprovalHistoryDialog, {
-      width: '700px',
-      maxWidth: '90vw',
-      data: { approval } as ApprovalHistoryDialogData,
-      disableClose: false
-    });
+    this.dialog.open(ApprovalHistoryDialog,
+      this.getMobileDialogConfig<ApprovalHistoryDialogData>({ approval }, '700px')
+    );
   }
 
   clearFilters(): void {

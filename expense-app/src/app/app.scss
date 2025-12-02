@@ -7,7 +7,7 @@
   left: 0;
   right: 0;
   z-index: 1001;
-  height: 60px;
+  height: var(--jensify-topbar-height, 64px);
   background: var(--jensify-surface-glass-nav) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
@@ -150,7 +150,7 @@
   flex-direction: column;
 
   &.with-toolbar {
-    padding-top: 60px;
+    padding-top: var(--jensify-topbar-height, 64px);
     min-height: calc(100vh); // Ensure full viewport coverage
   }
 

@@ -150,6 +150,96 @@ export const routes: Routes = [
         title: "Budget Management - Jensify",
         data: { breadcrumb: "Budgets" },
       },
+      {
+        path: "gl-codes",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/gl-code-settings/gl-code-settings.component"
+          ).then((m) => m.GlCodeSettingsComponent),
+        title: "GL Code Mappings - Jensify",
+        data: { breadcrumb: "GL Codes" },
+      },
+      {
+        path: "payouts",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/payout-settings/payout-settings.component"
+          ).then((m) => m.PayoutSettingsComponent),
+        title: "Payout Settings - Jensify",
+        data: { breadcrumb: "Payout Settings" },
+      },
+      {
+        path: "policies",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/policy-settings/policy-settings.component"
+          ).then((m) => m.PolicySettingsComponent),
+        title: "Expense Policies - Jensify",
+        data: { breadcrumb: "Expense Policies" },
+      },
+      {
+        path: "delegation",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/delegation-settings/delegation-settings.component"
+          ).then((m) => m.DelegationSettingsComponent),
+        title: "Delegation Settings - Jensify",
+        data: { breadcrumb: "Delegation" },
+      },
+      {
+        path: "currency",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/currency-settings/currency-settings.component"
+          ).then((m) => m.CurrencySettingsComponent),
+        title: "Currency Settings - Jensify",
+        data: { breadcrumb: "Currency" },
+      },
+      {
+        path: "per-diem",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/per-diem-settings/per-diem-settings.component"
+          ).then((m) => m.PerDiemSettingsComponent),
+        title: "Per Diem Settings - Jensify",
+        data: { breadcrumb: "Per Diem" },
+      },
+      {
+        path: "tax",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/tax-settings/tax-settings.component"
+          ).then((m) => m.TaxSettingsComponent),
+        title: "Tax & VAT Settings - Jensify",
+        data: { breadcrumb: "Tax & VAT" },
+      },
+      {
+        path: "vendors",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/vendor-management/vendor-management.component"
+          ).then((m) => m.VendorManagementComponent),
+        title: "Vendor Management - Jensify",
+        data: { breadcrumb: "Vendors" },
+      },
+      {
+        path: "email-expense",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import(
+            "./features/organization/email-expense-settings/email-expense-settings.component"
+          ).then((m) => m.EmailExpenseSettingsComponent),
+        title: "Email-to-Expense - Jensify",
+        data: { breadcrumb: "Email-to-Expense" },
+      },
     ],
   },
 
@@ -312,7 +402,43 @@ export const routes: Routes = [
     ],
   },
 
-  // Finance routes - require finance or admin role
+  // Profile routes - user settings and bank accounts
+  {
+    path: "profile",
+    canActivate: [authGuard],
+    data: { breadcrumb: "Profile", breadcrumbIcon: "person" },
+    children: [
+      {
+        path: "",
+        loadComponent: () =>
+          import("./features/profile/profile-settings/profile-settings.component").then(
+            (m) => m.ProfileSettingsComponent
+          ),
+        title: "Profile Settings - Jensify",
+        data: { breadcrumb: "Settings" },
+      },
+      {
+        path: "notifications",
+        loadComponent: () =>
+          import("./features/profile/notification-preferences/notification-preferences.component").then(
+            (m) => m.NotificationPreferencesComponent
+          ),
+        title: "Notification Preferences - Jensify",
+        data: { breadcrumb: "Notifications" },
+      },
+      {
+        path: "bank-accounts",
+        loadComponent: () =>
+          import("./features/profile/bank-accounts/bank-accounts.component").then(
+            (m) => m.BankAccountsComponent
+          ),
+        title: "Bank Accounts - Jensify",
+        data: { breadcrumb: "Bank Accounts" },
+      },
+    ],
+  },
+
+  // Finance routes
   {
     path: "finance",
     canActivate: [authGuard, financeGuard],
@@ -331,6 +457,11 @@ export const routes: Routes = [
           ),
         title: "Finance Dashboard - Jensify",
         data: { breadcrumb: "Dashboard", breadcrumbIcon: "dashboard" },
+      },
+      {
+        path: "analytics",
+        redirectTo: "dashboard",
+        pathMatch: "full",
       },
     ],
   },

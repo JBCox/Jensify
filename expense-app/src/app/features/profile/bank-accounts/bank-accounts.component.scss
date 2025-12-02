@@ -1,0 +1,302 @@
+.bank-accounts-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
+
+  .header-content {
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-color, #1e293b);
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-secondary, #64748b);
+    }
+  }
+
+  button {
+    white-space: nowrap;
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px;
+  text-align: center;
+
+  p {
+    margin-top: 16px;
+    color: var(--text-secondary, #64748b);
+  }
+}
+
+.add-form-card {
+  margin-bottom: 24px;
+
+  mat-card-header {
+    margin-bottom: 16px;
+  }
+
+  mat-card-subtitle {
+    color: var(--text-secondary, #64748b);
+  }
+}
+
+.accounts-grid {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.account-card {
+  border: 1px solid var(--surface-border, #e2e8f0);
+  transition: all 0.2s ease;
+
+  &.default {
+    border-color: var(--jensify-primary, #FF5900);
+    border-width: 2px;
+  }
+
+  &.unverified {
+    background: var(--surface-section, #f8fafc);
+  }
+
+  .account-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid var(--surface-border, #e2e8f0);
+
+    .bank-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--jensify-primary, #FF5900);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      mat-icon {
+        color: white;
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    .bank-info {
+      flex: 1;
+
+      h3 {
+        margin: 0 0 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-color, #1e293b);
+      }
+
+      .account-number {
+        margin: 0;
+        font-family: monospace;
+        font-size: 0.875rem;
+        color: var(--text-secondary, #64748b);
+      }
+    }
+
+    .menu-button {
+      flex-shrink: 0;
+    }
+  }
+
+  .account-details {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+
+    .detail-row {
+      .label {
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary, #64748b);
+        margin-bottom: 4px;
+      }
+
+      .value {
+        font-size: 0.875rem;
+        color: var(--text-color, #1e293b);
+      }
+    }
+  }
+
+  .account-status {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px 16px;
+    flex-wrap: wrap;
+  }
+
+  .verification-form {
+    padding: 16px;
+    border-top: 1px solid var(--surface-border, #e2e8f0);
+    background: var(--surface-ground, #f0f9ff);
+
+    .verification-instructions {
+      margin: 0 0 16px;
+      font-size: 0.875rem;
+      color: var(--text-secondary, #64748b);
+    }
+
+    .amount-inputs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+
+      mat-form-field {
+        flex: 1;
+      }
+    }
+
+    .verification-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px;
+  text-align: center;
+
+  .empty-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: var(--text-secondary, #64748b);
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color, #1e293b);
+  }
+
+  p {
+    margin: 0 0 24px;
+    color: var(--text-secondary, #64748b);
+    max-width: 320px;
+  }
+
+  button mat-icon {
+    margin-right: 8px;
+  }
+}
+
+.info-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: var(--surface-section, #f8fafc);
+  border: 1px solid var(--surface-border, #e2e8f0);
+
+  > mat-icon {
+    color: var(--jensify-primary, #FF5900);
+    flex-shrink: 0;
+  }
+
+  .info-content {
+    h4 {
+      margin: 0 0 12px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-color, #1e293b);
+    }
+
+    ol {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--text-secondary, #64748b);
+      font-size: 0.875rem;
+
+      li {
+        margin-bottom: 4px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
+
+.delete-option {
+  color: #dc2626;
+}
+
+// Dark mode
+:host-context(.dark) {
+  .account-card {
+    &.unverified {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .verification-form {
+      background: rgba(14, 165, 233, 0.1);
+    }
+  }
+
+  .info-card {
+    background: var(--surface-card, #1e293b);
+  }
+}
+
+// Mobile responsiveness
+@media (max-width: 600px) {
+  .bank-accounts-page {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .account-card {
+    .account-details {
+      grid-template-columns: 1fr;
+    }
+
+    .verification-form .amount-inputs {
+      flex-direction: column;
+    }
+  }
+}

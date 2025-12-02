@@ -26,9 +26,9 @@
   }
 
   .create-btn {
-    background: linear-gradient(135deg, var(--jensify-primary, #ff5900) 0%, #ff7733 100%);
+    background: linear-gradient(135deg, var(--jensify-primary, #ff5900) 0%, var(--jensify-primary-light, #ff7733) 100%);
     color: white;
-    box-shadow: 0 2px 8px rgba(247, 88, 12, 0.25);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--jensify-primary) 25%, transparent);
     font-weight: 600;
 
     mat-icon {
@@ -36,7 +36,7 @@
     }
 
     &:hover:not(:disabled) {
-      box-shadow: 0 4px 12px rgba(247, 88, 12, 0.4);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--jensify-primary) 40%, transparent);
       transform: translateY(-1px);
     }
 
@@ -61,7 +61,7 @@
       rgba(255, 255, 255, 0.02) 100%
     );
     backdrop-filter: blur(20px);
-    border-color: rgba(247, 88, 12, 0.15);
+    border-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
   }
 
   .form-header {
@@ -73,7 +73,7 @@
     border-bottom: 1px solid var(--jensify-border-subtle, #e5e5e5);
 
     :host-context(.dark) & {
-      border-bottom-color: rgba(247, 88, 12, 0.15);
+      border-bottom-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
     }
 
     h2 {
@@ -191,7 +191,7 @@
 
     :host-context(.dark) & {
       background: rgba(255, 255, 255, 0.02);
-      border-color: rgba(247, 88, 12, 0.15);
+      border-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
       color: rgba(255, 255, 255, 0.6);
     }
 
@@ -222,7 +222,7 @@
 
     :host-context(.dark) & {
       background: rgba(255, 255, 255, 0.03);
-      border-color: rgba(247, 88, 12, 0.15);
+      border-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
     }
 
     mat-card-header {
@@ -307,14 +307,14 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.75rem 1rem;
-        background: rgba(247, 88, 12, 0.05);
+        background: color-mix(in srgb, var(--jensify-primary) 5%, transparent);
         border-left: 3px solid var(--jensify-primary, #ff5900);
         border-radius: var(--jensify-radius-sm, 4px);
         font-size: 0.875rem;
         color: var(--jensify-text-medium, #666);
 
         :host-context(.dark) & {
-          background: rgba(247, 88, 12, 0.1);
+          background: color-mix(in srgb, var(--jensify-primary) 10%, transparent);
           color: rgba(255, 255, 255, 0.8);
         }
 
@@ -346,7 +346,7 @@
 
     :host-context(.dark) & {
       background: rgba(255, 255, 255, 0.02);
-      border-color: rgba(247, 88, 12, 0.3);
+      border-color: color-mix(in srgb, var(--jensify-primary) 30%, transparent);
     }
 
     .approval-chain {
@@ -362,11 +362,11 @@
         align-items: center;
         gap: 0.75rem;
         padding: 1rem 1.5rem;
-        background: linear-gradient(135deg, var(--jensify-primary, #ff5900) 0%, #ff7733 100%);
+        background: linear-gradient(135deg, var(--jensify-primary, #ff5900) 0%, var(--jensify-primary-light, #ff7733) 100%);
         color: white;
         border-radius: var(--jensify-radius-md, 6px);
         font-weight: 600;
-        box-shadow: 0 2px 8px rgba(247, 88, 12, 0.25);
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--jensify-primary) 25%, transparent);
 
         mat-icon {
           font-size: 24px;
@@ -410,7 +410,7 @@
 
         :host-context(.dark) & {
           background: rgba(255, 255, 255, 0.05);
-          border-color: rgba(247, 88, 12, 0.2);
+          border-color: color-mix(in srgb, var(--jensify-primary) 20%, transparent);
         }
 
         .step-badge {
@@ -469,7 +469,7 @@
 
       :host-context(.dark) & {
         background: rgba(255, 255, 255, 0.03);
-        border-color: rgba(247, 88, 12, 0.15);
+        border-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
       }
 
       @media (max-width: 768px) {
@@ -519,20 +519,20 @@
     border-top: 1px solid var(--jensify-border-subtle, #e5e5e5);
 
     :host-context(.dark) & {
-      border-top-color: rgba(247, 88, 12, 0.15);
+      border-top-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
     }
 
     button[mat-raised-button] {
-      background: linear-gradient(135deg, var(--jensify-primary, #ff5900) 0%, #ff7733 100%);
+      background: linear-gradient(135deg, var(--jensify-primary, #ff5900) 0%, var(--jensify-primary-light, #ff7733) 100%);
       color: white;
-      box-shadow: 0 2px 8px rgba(247, 88, 12, 0.25);
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--jensify-primary) 25%, transparent);
 
       mat-icon {
         margin-right: 0.25rem;
       }
 
       &:hover:not(:disabled) {
-        box-shadow: 0 4px 12px rgba(247, 88, 12, 0.4);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--jensify-primary) 40%, transparent);
         transform: translateY(-1px);
       }
 
@@ -558,7 +558,7 @@
       rgba(255, 255, 255, 0.01) 100%
     );
     backdrop-filter: blur(20px);
-    border-color: rgba(247, 88, 12, 0.15);
+    border-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
   }
 }
 
@@ -587,7 +587,7 @@
 
     :host-context(.dark) & {
       color: #FFFFFF;
-      border-bottom-color: rgba(247, 88, 12, 0.1);
+      border-bottom-color: color-mix(in srgb, var(--jensify-primary) 10%, transparent);
     }
   }
 

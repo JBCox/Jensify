@@ -8,7 +8,7 @@
 -- This file is automatically run after migrations when using `supabase db reset`
 -- =====================================================================================
 
--- Create Covaer Manufacturing organization
+-- Create Corvaer Manufacturing organization
 INSERT INTO organizations (
   id,
   name,
@@ -16,7 +16,7 @@ INSERT INTO organizations (
   updated_at
 ) VALUES (
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-  'Covaer Manufacturing',
+  'Corvaer Manufacturing',
   NOW(),
   NOW()
 ) ON CONFLICT (id) DO NOTHING;
@@ -27,11 +27,11 @@ BEGIN
   RAISE NOTICE '========================================';
   RAISE NOTICE 'Seed Data Loaded Successfully!';
   RAISE NOTICE '========================================';
-  RAISE NOTICE 'Organization: Covaer Manufacturing (ID: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa)';
+  RAISE NOTICE 'Organization: Corvaer Manufacturing (ID: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa)';
   RAISE NOTICE '';
   RAISE NOTICE 'To create test users:';
   RAISE NOTICE '1. Register at http://localhost:4200/auth/register';
-  RAISE NOTICE '   - Use emails: josh@covaer.com, manager@covaer.com, finance@covaer.com, admin@covaer.com';
+  RAISE NOTICE '   - Use emails: josh@corvaer.com, manager@corvaer.com, finance@corvaer.com, admin@corvaer.com';
   RAISE NOTICE '   - Password: password123';
   RAISE NOTICE '2. Create/join organization through the setup wizard';
   RAISE NOTICE '';

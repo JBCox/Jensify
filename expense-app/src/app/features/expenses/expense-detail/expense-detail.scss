@@ -302,7 +302,7 @@
 // Approval Action Card - for reviewers
 .approval-action-card {
   background: linear-gradient(135deg, #fff8f0 0%, #fff5eb 100%);
-  border: 1px solid rgba(255, 89, 0, 0.2);
+  border: 1px solid color-mix(in srgb, var(--jensify-primary) 20%, transparent);
   border-left: 4px solid var(--jensify-primary);
 
   .approval-action-header {
@@ -338,7 +338,7 @@
     flex-wrap: wrap;
 
     .approve-btn {
-      background: linear-gradient(135deg, var(--jensify-primary) 0%, #ff7733 100%);
+      background: linear-gradient(135deg, var(--jensify-primary) 0%, var(--jensify-primary-light, #ff7733) 100%);
       color: white;
       font-weight: 600;
 
@@ -349,7 +349,7 @@
       }
 
       &:hover:not(:disabled) {
-        box-shadow: 0 4px 12px rgba(247, 88, 12, 0.4);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--jensify-primary) 40%, transparent);
       }
     }
 
@@ -369,8 +369,8 @@
 :host-context(.dark-mode),
 :host-context(.dark) {
   .approval-action-card {
-    background: linear-gradient(135deg, rgba(255, 89, 0, 0.1) 0%, rgba(255, 89, 0, 0.05) 100%);
-    border-color: rgba(255, 89, 0, 0.3);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--jensify-primary) 10%, transparent) 0%, color-mix(in srgb, var(--jensify-primary) 5%, transparent) 100%);
+    border-color: color-mix(in srgb, var(--jensify-primary) 30%, transparent);
 
     .approval-action-header {
       h3 {

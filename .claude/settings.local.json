@@ -1,8 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "*",
-      "Bash(cat:*)"
+      "Bash(wc -l echo \"\" echo \"=== SAMPLE HARDCODED HEX COLORS ===\" grep -r \"#[0-9a-fA-F]\\{6\\}\" expense-app/src/app --include=\"*.scss\")",
+      "Bash(__NEW_LINE__ cd C:Jensify echo \"=== HARDCODED HEX COLORS IN SCSS FILES ===\" grep -r \"#[0-9a-fA-F]\\{6\\}\" expense-app/src/app --include=\"*.scss\")"
     ],
     "deny": [],
     "ask": [],

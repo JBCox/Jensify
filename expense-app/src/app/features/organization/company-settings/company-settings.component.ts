@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -9,6 +10,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OrganizationService } from '../../../core/services/organization.service';
+import { ThemeService } from '../../../core/services/theme.service';
+import { ColorPickerComponent } from '../../../shared/components/color-picker/color-picker';
 
 @Component({
   selector: 'app-company-settings',
@@ -23,21 +26,22 @@ import { OrganizationService } from '../../../core/services/organization.service
     MatIconModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
+    ColorPickerComponent,
   ],
   template: `
     <div class="jensify-container">
       <div class="jensify-page-header">
         <div class="jensify-header-content">
-          <h1 class="jensify-page-title">Company Settings</h1>
-          <p class="jensify-page-subtitle">Update your organization's name and branding</p>
+          <h1 class="jensify-page-title">Organization Branding</h1>
+          <p class="jensify-page-subtitle">Customize your organization's name, logo, and brand color</p>
         </div>
       </div>
 
       <mat-card class="jensify-card settings-card">
         <mat-card-header>
-          <mat-icon mat-card-avatar class="card-icon">business</mat-icon>
-          <mat-card-title>Organization Details</mat-card-title>
-          <mat-card-subtitle>Basic information about your company</mat-card-subtitle>
+          <mat-icon mat-card-avatar class="card-icon">palette</mat-icon>
+          <mat-card-title>Brand Settings</mat-card-title>
+          <mat-card-subtitle>Logo, colors, and company identity</mat-card-subtitle>
         </mat-card-header>
 
         <mat-card-content>
@@ -52,21 +56,31 @@ import { OrganizationService } from '../../../core/services/organization.service
             </mat-form-field>
 
             <div class="logo-section">
-              <label class="logo-label">Company Logo</label>
-              <div class="logo-upload-area" (click)="logoInput.click()">
+              <label class="logo-label" for="logo-upload-input">Company Logo</label>
+              <div
+                class="logo-upload-area"
+                [class.dragging]="isDragging()"
+                (click)="logoInput.click()"
+                (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave($event)"
+                (drop)="onDrop($event)"
+                role="button"
+                tabindex="0"
+                (keyup.enter)="logoInput.click()">
                 @if (logoPreview()) {
                   <img [src]="logoPreview()" alt="Company logo" class="logo-preview">
                 } @else {
                   <div class="logo-placeholder">
-                    <mat-icon>add_photo_alternate</mat-icon>
-                    <span>Click to upload logo</span>
-                    <span class="logo-hint">PNG, JPG up to 2MB</span>
+                    <mat-icon>{{ isDragging() ? 'file_download' : 'add_photo_alternate' }}</mat-icon>
+                    <span>{{ isDragging() ? 'Drop image here' : 'Drag & drop or click to upload' }}</span>
+                    <span class="logo-hint">PNG, JPG, SVG up to 2MB</span>
                   </div>
                 }
                 <input
                   #logoInput
+                  id="logo-upload-input"
                   type="file"
-                  accept="image/png,image/jpeg,image/jpg"
+                  accept="image/png,image/jpeg,image/jpg,image/svg+xml"
                   (change)="onLogoSelected($event)"
                   hidden
                 >
@@ -79,6 +93,15 @@ import { OrganizationService } from '../../../core/services/organization.service
               }
             </div>
 
+            <!-- Brand Color Section -->
+            <div class="color-section">
+              <app-color-picker
+                label="Brand Color"
+                [value]="selectedColor()"
+                (colorChange)="onColorChange($event)"
+              ></app-color-picker>
+            </div>
+
             <div class="form-actions">
               <button
                 mat-raised-button
@@ -89,8 +112,10 @@ import { OrganizationService } from '../../../core/services/organization.service
                 @if (saving()) {
                   <mat-spinner diameter="20"></mat-spinner>
                 } @else {
-                  <mat-icon>save</mat-icon>
-                  Save Changes
+                  <ng-container>
+                    <mat-icon>save</mat-icon>
+                    Save Changes
+                  </ng-container>
                 }
               </button>
             </div>
@@ -139,7 +164,7 @@ import { OrganizationService } from '../../../core/services/organization.service
     }
 
     .logo-upload-area {
-      border: 2px dashed var(--jensify-border-medium, #ddd);
+      border: 2px dashed color-mix(in srgb, var(--jensify-primary) 40%, var(--jensify-border-medium));
       border-radius: 8px;
       padding: 2rem;
       text-align: center;
@@ -149,7 +174,14 @@ import { OrganizationService } from '../../../core/services/organization.service
 
       &:hover {
         border-color: var(--jensify-primary, #ff5900);
-        background: rgba(255, 89, 0, 0.05);
+        background: color-mix(in srgb, var(--jensify-primary) 5%, transparent);
+      }
+
+      &.dragging {
+        border-color: var(--jensify-primary, #ff5900);
+        border-style: solid;
+        background: color-mix(in srgb, var(--jensify-primary) 10%, transparent);
+        transform: scale(1.02);
       }
     }
 
@@ -199,10 +231,10 @@ import { OrganizationService } from '../../../core/services/organization.service
     :host-context(.dark) {
       .logo-upload-area {
         background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.2);
+        border-color: color-mix(in srgb, var(--jensify-primary) 40%, transparent);
 
         &:hover {
-          background: rgba(255, 89, 0, 0.1);
+          background: color-mix(in srgb, var(--jensify-primary) 10%, transparent);
         }
       }
 
@@ -217,10 +249,16 @@ export class CompanySettingsComponent implements OnInit {
   private fb = inject(FormBuilder);
   private organizationService = inject(OrganizationService);
   private snackBar = inject(MatSnackBar);
+  private cdr = inject(ChangeDetectorRef);
+  private themeService = inject(ThemeService);
 
   saving = signal(false);
   logoPreview = signal<string | null>(null);
+  isDragging = signal(false);
+  selectedColor = signal<string>('#F7580C');
   private logoFile: File | null = null;
+  private removeExistingLogo = false; // Track if user wants to remove existing logo
+  private initialLoadComplete = false; // Prevent resetting logoFile on org updates
 
   settingsForm: FormGroup = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -229,10 +267,34 @@ export class CompanySettingsComponent implements OnInit {
   ngOnInit(): void {
     // Load current organization data
     this.organizationService.currentOrganization$.subscribe(org => {
+      console.log('[CompanySettings] ngOnInit subscription fired, org:', org?.name);
+      console.log('[CompanySettings] initialLoadComplete:', this.initialLoadComplete);
+      console.log('[CompanySettings] logoFile before check:', this.logoFile);
       if (org) {
-        this.settingsForm.patchValue({ name: org.name });
-        // Logo URL support will be added when storage is configured
-        this.settingsForm.markAsPristine();
+        // Only update form/state on initial load or after explicit save
+        // Don't reset logoFile if user has selected a new file
+        if (!this.initialLoadComplete) {
+          console.log('[CompanySettings] RESETTING STATE - initialLoadComplete was false');
+          this.settingsForm.patchValue({ name: org.name });
+          // Load existing logo if present
+          if (org.logo_url) {
+            this.logoPreview.set(org.logo_url);
+          } else {
+            this.logoPreview.set(null);
+          }
+          // Load existing brand color if present
+          if (org.primary_color) {
+            this.selectedColor.set(org.primary_color);
+          } else {
+            this.selectedColor.set('#F7580C'); // Default orange
+          }
+          this.settingsForm.markAsPristine();
+          this.removeExistingLogo = false;
+          this.logoFile = null;
+          this.initialLoadComplete = true;
+        } else {
+          console.log('[CompanySettings] NOT resetting - initialLoadComplete was true');
+        }
       }
     });
   }
@@ -240,60 +302,128 @@ export class CompanySettingsComponent implements OnInit {
   onLogoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
-      const file = input.files[0];
-
-      // Validate file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        this.snackBar.open('Logo must be less than 2MB', 'Close', { duration: 3000 });
-        return;
-      }
-
-      // Validate file type
-      if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
-        this.snackBar.open('Logo must be PNG or JPG format', 'Close', { duration: 3000 });
-        return;
-      }
-
-      this.logoFile = file;
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.logoPreview.set(e.target?.result as string);
-        this.settingsForm.markAsDirty();
-      };
-      reader.readAsDataURL(file);
+      this.processFile(input.files[0]);
     }
   }
 
   removeLogo(): void {
     this.logoFile = null;
     this.logoPreview.set(null);
+    this.removeExistingLogo = true; // Mark for deletion on save
     this.settingsForm.markAsDirty();
+  }
+
+  onColorChange(color: string): void {
+    this.selectedColor.set(color);
+    this.settingsForm.markAsDirty();
+    // Live preview the color change
+    this.themeService.applyBrandColor(color);
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.processFile(files[0]);
+    }
+  }
+
+  private processFile(file: File): void {
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      this.snackBar.open('Logo must be less than 2MB', 'Close', { duration: 3000 });
+      return;
+    }
+
+    // Validate file type
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'].includes(file.type)) {
+      this.snackBar.open('Logo must be PNG, JPG, or SVG format', 'Close', { duration: 3000 });
+      return;
+    }
+
+    this.logoFile = file;
+    this.removeExistingLogo = false; // Reset since we're uploading a new file
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.logoPreview.set(e.target?.result as string);
+      this.settingsForm.markAsDirty();
+      this.cdr.markForCheck(); // Trigger change detection for OnPush
+    };
+    reader.readAsDataURL(file);
   }
 
   async saveSettings(): Promise<void> {
     if (!this.settingsForm.valid) return;
 
+    // CRITICAL: Capture file reference immediately before any async operations
+    // This prevents race conditions where ngOnInit subscription could reset logoFile
+    const fileToUpload = this.logoFile;
+    const shouldRemoveLogo = this.removeExistingLogo;
+
+    console.log('[CompanySettings] saveSettings called');
+    console.log('[CompanySettings] fileToUpload captured:', fileToUpload?.name);
+
     this.saving.set(true);
 
     try {
-      const currentOrg = await this.organizationService.currentOrganization$.toPromise();
+      const currentOrg = await firstValueFrom(this.organizationService.currentOrganization$);
       if (!currentOrg) {
         throw new Error('No organization selected');
       }
 
-      // Update organization name
       const { name } = this.settingsForm.value;
-      await this.organizationService.updateOrganization(currentOrg.id, { name }).toPromise();
+      let logoUrl: string | undefined = currentOrg.logo_url || undefined;
 
-      // TODO: Handle logo upload when storage is configured
-      // if (this.logoFile) {
-      //   await this.organizationService.uploadLogo(currentOrg.id, this.logoFile);
-      // }
+      // Handle logo upload if a new file was selected
+      console.log('[CompanySettings] Checking fileToUpload:', fileToUpload?.name);
+      if (fileToUpload) {
+        console.log('[CompanySettings] Uploading logo...');
+        logoUrl = await firstValueFrom(
+          this.organizationService.uploadLogo(currentOrg.id, fileToUpload)
+        );
+        console.log('[CompanySettings] Upload complete, logoUrl:', logoUrl);
+      } else {
+        console.log('[CompanySettings] No file to upload');
+      }
+
+      // Handle logo removal
+      if (shouldRemoveLogo && !fileToUpload) {
+        await firstValueFrom(this.organizationService.deleteLogo(currentOrg.id));
+        logoUrl = undefined;
+      }
+
+      // Update organization with name, logo_url, and primary_color
+      await firstValueFrom(
+        this.organizationService.updateOrganization(currentOrg.id, {
+          name,
+          logo_url: logoUrl,
+          primary_color: this.selectedColor(),
+        })
+      );
 
       this.snackBar.open('Company settings saved successfully', 'Close', { duration: 3000 });
       this.settingsForm.markAsPristine();
+      this.logoFile = null;
+      this.removeExistingLogo = false;
+      // Allow subscription to update with new logo_url from server
+      this.initialLoadComplete = false;
     } catch (error) {
       console.error('Failed to save settings:', error);
       this.snackBar.open('Failed to save settings', 'Close', { duration: 3000 });

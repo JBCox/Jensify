@@ -60,7 +60,7 @@ html {
 
 @mixin jensify-form-field-focus-state {
   border-color: var(--jensify-primary);
-  box-shadow: 0 0 0 var(--jensify-focus-ring-width) rgba(255, 89, 0, 0.2);
+  box-shadow: 0 0 0 var(--jensify-focus-ring-width) color-mix(in srgb, var(--jensify-primary) 20%, transparent);
 }
 
 // Jensify design tokens (global CSS variables)
@@ -72,6 +72,7 @@ html {
   --jensify-primary: #F7580C;
   --jensify-primary-strong: #D55110;
   --jensify-primary-hover: #FF6A1A;
+  --jensify-primary-light: #ff7733; // Lighter variant for gradients - will be dynamically calculated
   --jensify-primary-soft: #FFF4ED;
   --jensify-primary-border: #FFCFB3;
   --jensify-primary-background-active: #FFE5D6;
@@ -87,10 +88,10 @@ html {
   --jensify-background-gradient-start: #FFF8F3;
   --jensify-background-gradient-end: #FDEED9;
 
-  // Borders (Light Mode - Tan Tones)
-  --jensify-border-subtle: #F0E0D0;
-  --jensify-border-medium: #E6CCB2;
-  --jensify-border-strong: #DDB899;
+  // Borders (Light Mode - Derived from primary color)
+  --jensify-border-subtle: color-mix(in srgb, var(--jensify-primary) 12%, #f5f5f5);
+  --jensify-border-medium: color-mix(in srgb, var(--jensify-primary) 22%, #e5e5e5);
+  --jensify-border-strong: color-mix(in srgb, var(--jensify-primary) 35%, #d5d5d5);
 
   // Text (Light Mode - Dark Brown on Tan)
   --jensify-text-strong: #4A2C1A;
@@ -133,28 +134,28 @@ html {
   --jensify-focus-ring: #FFB380;
   --jensify-focus-ring-width: 2px;
 
-  // Shadows (Enhanced for premium feel with orange glow)
+  // Shadows (Enhanced for premium feel with brand color glow)
   --jensify-shadow-sm: 0 1px 2px 0 rgba(74, 44, 26, 0.05);
   --jensify-shadow-md:
-    0 4px 6px -1px rgba(74, 44, 26, 0.1), 
+    0 4px 6px -1px rgba(74, 44, 26, 0.1),
     0 2px 4px -1px rgba(74, 44, 26, 0.06),
-    0 0 20px rgba(247, 88, 12, 0.1);
+    0 0 20px color-mix(in srgb, var(--jensify-primary) 10%, transparent);
   --jensify-shadow-lg:
-    0 10px 15px -3px rgba(74, 44, 26, 0.1), 
+    0 10px 15px -3px rgba(74, 44, 26, 0.1),
     0 4px 6px -2px rgba(74, 44, 26, 0.05),
-    0 0 30px rgba(247, 88, 12, 0.15);
+    0 0 30px color-mix(in srgb, var(--jensify-primary) 15%, transparent);
   --jensify-shadow-xl:
-    0 20px 25px -5px rgba(74, 44, 26, 0.1), 
+    0 20px 25px -5px rgba(74, 44, 26, 0.1),
     0 10px 10px -5px rgba(74, 44, 26, 0.04),
-    0 0 40px rgba(247, 88, 12, 0.2);
+    0 0 40px color-mix(in srgb, var(--jensify-primary) 20%, transparent);
   --jensify-shadow-icon: 0 2px 8px rgba(74, 44, 26, 0.08);
-  --jensify-shadow-card-glow: 
-    0 4px 20px rgba(247, 88, 12, 0.2),
-    0 0 60px rgba(247, 88, 12, 0.1);
+  --jensify-shadow-card-glow:
+    0 4px 20px color-mix(in srgb, var(--jensify-primary) 20%, transparent),
+    0 0 60px color-mix(in srgb, var(--jensify-primary) 10%, transparent);
   --jensify-shadow-focus-glow:
-    0 0 0 4px rgba(247, 88, 12, 0.3),
-    0 0 20px rgba(247, 88, 12, 0.4),
-    0 0 40px rgba(247, 88, 12, 0.2);
+    0 0 0 4px color-mix(in srgb, var(--jensify-primary) 30%, transparent),
+    0 0 20px color-mix(in srgb, var(--jensify-primary) 40%, transparent),
+    0 0 40px color-mix(in srgb, var(--jensify-primary) 20%, transparent);
 
   // Gradients & Special Effects
   --jensify-gradient-card: linear-gradient(
@@ -169,7 +170,7 @@ html {
   );
   --jensify-glow-primary: radial-gradient(
     circle,
-    rgba(247, 88, 12, 0.25),
+    color-mix(in srgb, var(--jensify-primary) 25%, transparent),
     transparent 60%
   );
   --jensify-surface-frosted: rgba(255, 255, 255, 0.95);
@@ -210,9 +211,9 @@ html {
 
   // Form Inputs (Rounded, Filled Style)
   --jensify-input-bg: rgba(74, 44, 26, 0.05);
-  --jensify-input-border: rgba(247, 88, 12, 0.3);
-  --jensify-input-border-hover: rgba(247, 88, 12, 0.5);
-  --jensify-input-border-focus: #F7580C;
+  --jensify-input-border: color-mix(in srgb, var(--jensify-primary) 30%, transparent);
+  --jensify-input-border-hover: color-mix(in srgb, var(--jensify-primary) 50%, transparent);
+  --jensify-input-border-focus: var(--jensify-primary);
   --jensify-input-text: var(--jensify-text-strong);
   --jensify-input-placeholder: var(--jensify-text-muted);
   --jensify-input-radius: var(--jensify-radius-md); // 8px - consistent with buttons
@@ -233,10 +234,10 @@ html {
   --jensify-background-gradient-start: #020617; // Slate 950
   --jensify-background-gradient-end: #0f172a; // Slate 900
 
-  // Borders (Subtle Blue-Grey + Orange)
-  --jensify-border-subtle: rgba(247, 88, 12, 0.15);
-  --jensify-border-medium: rgba(247, 88, 12, 0.25);
-  --jensify-border-strong: rgba(247, 88, 12, 0.4);
+  // Borders (Subtle Blue-Grey + Brand Color)
+  --jensify-border-subtle: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
+  --jensify-border-medium: color-mix(in srgb, var(--jensify-primary) 25%, transparent);
+  --jensify-border-strong: color-mix(in srgb, var(--jensify-primary) 40%, transparent);
 
   // Text (White/Off-white)
   --jensify-text-strong: #f8fafc; // Slate 50
@@ -265,25 +266,25 @@ html {
   --jensify-reimbursed-soft: rgba(126, 34, 206, 0.1);
   --jensify-reimbursed-border: rgba(126, 34, 206, 0.2);
 
-  // Shadows (Orange Glow Focus)
+  // Shadows (Brand Color Glow Focus)
   --jensify-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
   --jensify-shadow-md:
     0 4px 6px -1px rgba(0, 0, 0, 0.5),
-    0 0 15px rgba(247, 88, 12, 0.1); /* Subtle orange glow */
+    0 0 15px color-mix(in srgb, var(--jensify-primary) 10%, transparent); /* Subtle brand glow */
   --jensify-shadow-lg:
     0 10px 15px -3px rgba(0, 0, 0, 0.5),
-    0 0 25px rgba(247, 88, 12, 0.15); /* Medium orange glow */
+    0 0 25px color-mix(in srgb, var(--jensify-primary) 15%, transparent); /* Medium brand glow */
   --jensify-shadow-xl:
     0 20px 25px -5px rgba(0, 0, 0, 0.6),
-    0 0 40px rgba(247, 88, 12, 0.2); /* Strong orange glow */
+    0 0 40px color-mix(in srgb, var(--jensify-primary) 20%, transparent); /* Strong brand glow */
 
   --jensify-shadow-card-glow:
-    0 0 0 1px rgba(247, 88, 12, 0.15), /* Border glow */
-    0 0 30px rgba(247, 88, 12, 0.1);   /* Ambient glow */
-    
+    0 0 0 1px color-mix(in srgb, var(--jensify-primary) 15%, transparent), /* Border glow */
+    0 0 30px color-mix(in srgb, var(--jensify-primary) 10%, transparent);   /* Ambient glow */
+
   --jensify-shadow-focus-glow:
-    0 0 0 2px rgba(247, 88, 12, 0.5),
-    0 0 15px rgba(247, 88, 12, 0.3);
+    0 0 0 2px color-mix(in srgb, var(--jensify-primary) 50%, transparent),
+    0 0 15px color-mix(in srgb, var(--jensify-primary) 30%, transparent);
 
   // Gradients & Special Effects
   --jensify-gradient-card: linear-gradient(
@@ -294,7 +295,7 @@ html {
   --jensify-gradient-hero: linear-gradient(135deg, #121212, #000000);
   --jensify-glow-primary: radial-gradient(
     circle,
-    rgba(247, 88, 12, 0.55),
+    color-mix(in srgb, var(--jensify-primary) 55%, transparent),
     transparent 60%
   );
   --jensify-surface-frosted: rgba(10, 10, 10, 0.85);
@@ -304,7 +305,7 @@ html {
   // Form Inputs
   --jensify-input-bg: rgba(255, 255, 255, 0.03);
   --jensify-input-border: rgba(255, 255, 255, 0.1);
-  --jensify-input-border-hover: rgba(247, 88, 12, 0.5);
+  --jensify-input-border-hover: color-mix(in srgb, var(--jensify-primary) 50%, transparent);
   --jensify-input-text: #FFFFFF;
   --jensify-input-placeholder: #737373;
 
@@ -328,8 +329,8 @@ body.dark, html.dark, .dark body {
     height: 60vh;
     background: radial-gradient(
       circle at 0% 0%,
-      rgba(247, 88, 12, 0.15) 0%,
-      rgba(247, 88, 12, 0.05) 40%,
+      color-mix(in srgb, var(--jensify-primary) 15%, transparent) 0%,
+      color-mix(in srgb, var(--jensify-primary) 5%, transparent) 40%,
       transparent 70%
     ) !important;
     filter: blur(100px);
@@ -346,8 +347,8 @@ body.dark, html.dark, .dark body {
     height: 60vh;
     background: radial-gradient(
       circle at 100% 100%,
-      rgba(247, 88, 12, 0.1) 0%,
-      rgba(247, 88, 12, 0.02) 40%,
+      color-mix(in srgb, var(--jensify-primary) 10%, transparent) 0%,
+      color-mix(in srgb, var(--jensify-primary) 2%, transparent) 40%,
       transparent 70%
     ) !important;
     filter: blur(120px);
@@ -393,8 +394,8 @@ body {
     height: 60vh;
     background: radial-gradient(
       circle at 0% 0%,
-      rgba(247, 88, 12, 0.12) 0%,
-      rgba(247, 88, 12, 0.06) 40%,
+      color-mix(in srgb, var(--jensify-primary) 12%, transparent) 0%,
+      color-mix(in srgb, var(--jensify-primary) 6%, transparent) 40%,
       transparent 70%
     );
     pointer-events: none;
@@ -411,8 +412,8 @@ body {
     height: 60vh;
     background: radial-gradient(
       circle at 100% 100%,
-      rgba(247, 88, 12, 0.12) 0%,
-      rgba(247, 88, 12, 0.06) 40%,
+      color-mix(in srgb, var(--jensify-primary) 12%, transparent) 0%,
+      color-mix(in srgb, var(--jensify-primary) 6%, transparent) 40%,
       transparent 70%
     );
     pointer-events: none;
@@ -467,19 +468,19 @@ body {
 @mixin jensify-mesh-gradient-bg {
   background-color: var(--jensify-surface-soft);
   background-image:
-    radial-gradient(at 0% 0%, rgba(247, 88, 12, 0.15) 0px, transparent 50%),
+    radial-gradient(at 0% 0%, color-mix(in srgb, var(--jensify-primary) 15%, transparent) 0px, transparent 50%),
     radial-gradient(at 100% 0%, rgba(240, 224, 208, 0.2) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(247, 88, 12, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, color-mix(in srgb, var(--jensify-primary) 15%, transparent) 0px, transparent 50%),
     radial-gradient(at 0% 100%, rgba(240, 224, 208, 0.2) 0px, transparent 50%);
 
   // Dark mode adjustments
   @at-root .dark & {
     background-color: #020617; // Slate 950
     background-image:
-      radial-gradient(at 0% 0%, rgba(247, 88, 12, 0.1) 0px, transparent 40%),
-      radial-gradient(at 100% 0%, rgba(247, 88, 12, 0.05) 0px, transparent 40%),
-      radial-gradient(at 100% 100%, rgba(247, 88, 12, 0.1) 0px, transparent 40%),
-      radial-gradient(at 0% 100%, rgba(247, 88, 12, 0.05) 0px, transparent 40%);
+      radial-gradient(at 0% 0%, color-mix(in srgb, var(--jensify-primary) 10%, transparent) 0px, transparent 40%),
+      radial-gradient(at 100% 0%, color-mix(in srgb, var(--jensify-primary) 5%, transparent) 0px, transparent 40%),
+      radial-gradient(at 100% 100%, color-mix(in srgb, var(--jensify-primary) 10%, transparent) 0px, transparent 40%),
+      radial-gradient(at 0% 100%, color-mix(in srgb, var(--jensify-primary) 5%, transparent) 0px, transparent 40%);
   }
 
   position: relative;
@@ -504,7 +505,7 @@ body {
   &::before {
     width: 400px;
     height: 400px;
-    background: rgba(247, 88, 12, 0.08);
+    background: color-mix(in srgb, var(--jensify-primary) 8%, transparent);
     top: 0;
     left: 0;
     animation-delay: -5s;
@@ -662,7 +663,7 @@ body {
       font-size: 40px;
       width: 40px;
       height: 40px;
-      filter: drop-shadow(0 0 10px rgba(255, 89, 0, 0.3));
+      filter: drop-shadow(0 0 10px color-mix(in srgb, var(--jensify-primary) 30%, transparent));
     }
 
     h2 {
@@ -716,7 +717,7 @@ body {
 
       mat-icon {
         transform: scale(1.1);
-        filter: drop-shadow(0 0 5px rgba(255, 89, 0, 0.5));
+        filter: drop-shadow(0 0 5px color-mix(in srgb, var(--jensify-primary) 50%, transparent));
       }
     }
 
@@ -833,6 +834,37 @@ body {
   box-shadow: var(--jensify-shadow-lg) !important;
 }
 
+/* Category dropdown option styling */
+.category-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+
+  .category-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    mat-icon {
+      color: white;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .category-name {
+    font-weight: 500;
+    color: var(--jensify-text-strong);
+    flex: 1;
+  }
+}
+
 /* Fix datepicker overlay - add solid background */
 .cdk-overlay-container {
   .mat-datepicker-content {
@@ -921,8 +953,8 @@ mat-card, .mat-mdc-card {
   background: rgba(255, 255, 255, 0.85) !important;
   backdrop-filter: blur(10px) !important;
   -webkit-backdrop-filter: blur(10px) !important;
-  border: 2px solid var(--jensify-border-medium) !important;
-  box-shadow: 0 4px 20px rgba(255, 89, 0, 0.12) !important;
+  border: 2px solid color-mix(in srgb, var(--jensify-primary) 25%, var(--jensify-border-subtle)) !important;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--jensify-primary) 12%, transparent) !important;
   color: var(--jensify-text-strong) !important;
   opacity: 1 !important;
 
@@ -934,7 +966,7 @@ mat-card, .mat-mdc-card {
       rgba(30, 41, 59, 0.7) 0%,
       rgba(15, 23, 42, 0.8) 100%
     ) !important;
-    border: 1px solid rgba(247, 88, 12, 0.2) !important;
+    border: 1px solid color-mix(in srgb, var(--jensify-primary) 20%, transparent) !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
     color: rgba(255, 255, 255, 0.95) !important;
   }
@@ -1153,14 +1185,14 @@ mat-card, .mat-mdc-card {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-radius: var(--jensify-input-radius);
-    border: 1.5px solid rgba(247, 88, 12, 0.2);
+    border: 1.5px solid color-mix(in srgb, var(--jensify-primary) 20%, transparent);
     padding: 0 !important;
     transition: all 0.2s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
     &:hover {
-      border-color: rgba(247, 88, 12, 0.4);
-      box-shadow: 0 4px 12px rgba(255, 89, 0, 0.1);
+      border-color: color-mix(in srgb, var(--jensify-primary) 40%, transparent);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--jensify-primary) 10%, transparent);
       background: rgba(74, 44, 26, 0.06);
     }
   }
@@ -1168,8 +1200,8 @@ mat-card, .mat-mdc-card {
   // Focused state - LIGHT MODE
   &.mat-focused .mat-mdc-text-field-wrapper {
     border-color: var(--jensify-primary);
-    box-shadow: 0 0 0 3px rgba(255, 89, 0, 0.15), 0 4px 16px rgba(255, 89, 0, 0.2);
-    background: rgba(255, 89, 0, 0.03);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--jensify-primary) 15%, transparent), 0 4px 16px color-mix(in srgb, var(--jensify-primary) 20%, transparent);
+    background: color-mix(in srgb, var(--jensify-primary) 3%, transparent);
   }
 
   // Input text - LIGHT MODE
@@ -1198,20 +1230,20 @@ mat-card, .mat-mdc-card {
   @at-root .dark & {
     .mat-mdc-text-field-wrapper {
       background: rgba(255, 255, 255, 0.05);
-      border: 1.5px solid rgba(247, 88, 12, 0.25);
+      border: 1.5px solid color-mix(in srgb, var(--jensify-primary) 25%, transparent);
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 
       &:hover {
-        border-color: rgba(247, 88, 12, 0.45);
-        box-shadow: 0 4px 16px rgba(255, 89, 0, 0.2);
+        border-color: color-mix(in srgb, var(--jensify-primary) 45%, transparent);
+        box-shadow: 0 4px 16px color-mix(in srgb, var(--jensify-primary) 20%, transparent);
         background: rgba(255, 255, 255, 0.08);
       }
     }
 
     &.mat-focused .mat-mdc-text-field-wrapper {
-      border-color: rgba(247, 88, 12, 0.8);
-      box-shadow: 0 0 0 3px rgba(255, 89, 0, 0.25), 0 4px 20px rgba(255, 89, 0, 0.3);
-      background: rgba(255, 89, 0, 0.08);
+      border-color: color-mix(in srgb, var(--jensify-primary) 80%, transparent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--jensify-primary) 25%, transparent), 0 4px 20px color-mix(in srgb, var(--jensify-primary) 30%, transparent);
+      background: color-mix(in srgb, var(--jensify-primary) 8%, transparent);
     }
 
     .mat-mdc-input-element {
@@ -1318,7 +1350,7 @@ mat-card, .mat-mdc-card {
   -webkit-backdrop-filter: blur(20px);
   border-radius: 12px;
   border: 2px solid var(--jensify-border-medium);
-  box-shadow: 0 8px 32px rgba(255, 89, 0, 0.15);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--jensify-primary) 15%, transparent);
   margin-top: 8px;
 
   .mat-mdc-option {
@@ -1328,12 +1360,12 @@ mat-card, .mat-mdc-card {
     color: var(--jensify-text-strong);
 
     &:hover {
-      background: rgba(255, 122, 51, 0.1);
+      background: color-mix(in srgb, var(--jensify-primary) 10%, transparent);
     }
 
     &.mat-mdc-option-active,
     &.mat-selected {
-      background: rgba(255, 89, 0, 0.15);
+      background: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
       color: var(--jensify-primary);
     }
   }
@@ -1341,19 +1373,19 @@ mat-card, .mat-mdc-card {
   // DARK MODE
   @at-root .dark & {
     background: #1e293b; // Slate 800
-    border: 1px solid rgba(247, 88, 12, 0.3);
+    border: 1px solid color-mix(in srgb, var(--jensify-primary) 30%, transparent);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 
     .mat-mdc-option {
       color: rgba(255, 255, 255, 0.9);
 
       &:hover {
-        background: rgba(255, 122, 51, 0.3);
+        background: color-mix(in srgb, var(--jensify-primary) 30%, transparent);
       }
 
       &.mat-mdc-option-active,
       &.mat-selected {
-        background: rgba(255, 89, 0, 0.4);
+        background: color-mix(in srgb, var(--jensify-primary) 40%, transparent);
         color: rgba(255, 255, 255, 1);
       }
     }
@@ -1379,58 +1411,43 @@ textarea.mat-mdc-input-element {
 
 // ============================================================================
 // BUTTON STYLING - PREMIUM FILLED BUTTONS
-// Modern, polished buttons with gradients, glows, and smooth transitions
+// Modern, polished buttons with dynamic brand colors via CSS variables
 // ============================================================================
 .mat-mdc-raised-button.mat-primary,
 .mat-mdc-unelevated-button.mat-primary,
 .mat-mdc-flat-button.mat-primary {
-  // Gradient background for depth
-  background: linear-gradient(
-    180deg,
-    #ff6a1a 0%,      // Lighter orange at top
-    #f7580c 50%,     // Primary orange
-    #d55110 100%     // Darker orange at bottom
-  ) !important;
+  // Use CSS variables for dynamic brand colors
+  background: var(--jensify-primary) !important;
   color: white !important;
   opacity: 1 !important;
   font-weight: 600 !important;
   letter-spacing: 0.02em;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: var(--jensify-radius-md) !important; // 8px - consistent with all buttons
+  border-radius: var(--jensify-radius-md) !important;
 
-  // Premium shadow with orange glow
+  // Premium shadow with dynamic glow using CSS custom property
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.1),
-    0 4px 12px rgba(247, 88, 12, 0.3),
+    0 4px 12px color-mix(in srgb, var(--jensify-primary) 30%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 
   // Smooth transition
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 
   &:hover {
-    background: linear-gradient(
-      180deg,
-      #ff7a33 0%,
-      #ff6a1a 50%,
-      #f7580c 100%
-    ) !important;
+    background: var(--jensify-primary-hover) !important;
     box-shadow:
       0 2px 4px rgba(0, 0, 0, 0.15),
-      0 8px 24px rgba(247, 88, 12, 0.4),
+      0 8px 24px color-mix(in srgb, var(--jensify-primary) 40%, transparent),
       inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
     transform: translateY(-1px);
   }
 
   &:active {
-    background: linear-gradient(
-      180deg,
-      #f7580c 0%,
-      #d55110 50%,
-      #c44a0e 100%
-    ) !important;
+    background: var(--jensify-primary-strong) !important;
     box-shadow:
       0 1px 2px rgba(0, 0, 0, 0.2),
-      0 2px 8px rgba(247, 88, 12, 0.3),
+      0 2px 8px color-mix(in srgb, var(--jensify-primary) 30%, transparent),
       inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
     transform: translateY(0);
   }
@@ -1442,11 +1459,7 @@ textarea.mat-mdc-input-element {
 
   // Disabled state
   &:disabled, &[disabled] {
-    background: linear-gradient(
-      180deg,
-      rgba(255, 106, 26, 0.5) 0%,
-      rgba(247, 88, 12, 0.5) 100%
-    ) !important;
+    background: color-mix(in srgb, var(--jensify-primary) 50%, transparent) !important;
     box-shadow: none !important;
     transform: none !important;
   }
@@ -1480,21 +1493,21 @@ textarea.mat-mdc-input-element {
   }
 
   &:hover {
-    background-color: rgba(247, 88, 12, 0.1) !important; // Subtle orange tint on hover
+    background-color: color-mix(in srgb, var(--jensify-primary) 10%, transparent) !important;
     border-color: var(--jensify-primary-hover) !important;
   }
 
   &:active {
-    background-color: rgba(247, 88, 12, 0.15) !important;
+    background-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent) !important;
   }
 
   // DARK MODE - Add background and improve contrast significantly
   @at-root .dark & {
-    background-color: rgba(247, 88, 12, 0.3) !important;
-    border: 2px solid #ff9966 !important;
-    color: #fff0e6 !important; // Very light peach, almost white
+    background-color: color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
+    border: 2px solid var(--jensify-primary-hover) !important;
+    color: #fff0e6 !important; // Very light, almost white
     font-weight: 700 !important;
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6), 0 0 8px rgba(247, 88, 12, 0.3);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6), 0 0 8px color-mix(in srgb, var(--jensify-primary) 30%, transparent);
     letter-spacing: 0.03em;
 
     // Ensure inner text elements also get the color
@@ -1505,8 +1518,8 @@ textarea.mat-mdc-input-element {
     }
 
     &:hover {
-      background-color: rgba(247, 88, 12, 0.45) !important;
-      border-color: #ffb380 !important;
+      background-color: color-mix(in srgb, var(--jensify-primary) 45%, transparent) !important;
+      border-color: var(--jensify-focus-ring) !important;
       color: #ffffff !important; // Pure white on hover
 
       .mdc-button__label,
@@ -1517,7 +1530,7 @@ textarea.mat-mdc-input-element {
     }
 
     &:active {
-      background-color: rgba(247, 88, 12, 0.55) !important;
+      background-color: color-mix(in srgb, var(--jensify-primary) 55%, transparent) !important;
     }
 
     // Icon inside button
@@ -1558,11 +1571,11 @@ textarea.mat-mdc-input-element {
 .mat-mdc-button:not(.mat-mdc-raised-button):not(.mat-mdc-outlined-button):not(.mat-mdc-unelevated-button) {
   // DARK MODE - Improve text button visibility
   @at-root .dark & {
-    color: #ffd4b3 !important; // Bright peach color
+    color: var(--jensify-primary-hover) !important;
     font-weight: 600 !important;
 
     &:hover {
-      background-color: rgba(247, 88, 12, 0.15) !important;
+      background-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent) !important;
       color: #fff0e6 !important;
     }
 
@@ -1576,7 +1589,7 @@ textarea.mat-mdc-input-element {
 .mat-mdc-form-field {
   // Stronger glow
   &.mat-focused .mat-mdc-text-field-wrapper {
-    box-shadow: 0 0 0 4px rgba(255, 89, 0, 0.25) !important; // Increased spread and opacity
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--jensify-primary) 25%, transparent) !important; // Increased spread and opacity
     border-color: var(--jensify-primary) !important;
   }
 
@@ -1611,7 +1624,7 @@ textarea.mat-mdc-input-element {
   @at-root .dark &,
   .dark & {
     background: #1e293b !important; // Slate 800
-    border: 1px solid rgba(247, 88, 12, 0.25) !important;
+    border: 1px solid color-mix(in srgb, var(--jensify-primary) 25%, transparent) !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
   }
 
@@ -1624,7 +1637,7 @@ textarea.mat-mdc-input-element {
     color: var(--jensify-text-strong) !important;
 
     &:hover {
-      background-color: rgba(247, 88, 12, 0.1) !important;
+      background-color: color-mix(in srgb, var(--jensify-primary) 10%, transparent) !important;
     }
 
     .mat-icon {
@@ -1636,7 +1649,7 @@ textarea.mat-mdc-input-element {
       color: rgba(255, 255, 255, 0.9) !important;
 
       &:hover {
-        background-color: rgba(247, 88, 12, 0.2) !important;
+        background-color: color-mix(in srgb, var(--jensify-primary) 20%, transparent) !important;
       }
 
       .mat-icon {
@@ -1679,7 +1692,7 @@ html.dark .cdk-overlay-pane .mat-mdc-select-panel,
 body.dark .mat-mdc-select-panel,
 html.dark .mat-mdc-select-panel {
   background: #1e293b !important; // Slate 800
-  border: 1px solid rgba(247, 88, 12, 0.3) !important;
+  border: 1px solid color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
 
   .mat-mdc-option {
@@ -1688,12 +1701,12 @@ html.dark .mat-mdc-select-panel {
 
     &:hover,
     &:focus {
-      background: rgba(255, 122, 51, 0.2) !important;
+      background: color-mix(in srgb, var(--jensify-primary) 20%, transparent) !important;
     }
 
     &.mdc-list-item--selected,
     &.mat-mdc-option-active {
-      background: rgba(255, 89, 0, 0.3) !important;
+      background: color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
       color: #ffffff !important;
     }
   }
@@ -1712,7 +1725,7 @@ html.dark .mdc-menu-surface.mat-mdc-select-panel,
     background: transparent !important;
 
     &.mdc-list-item--selected {
-      background: rgba(255, 89, 0, 0.3) !important;
+      background: color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
     }
   }
 }
@@ -1739,7 +1752,7 @@ html.dark .mdc-menu-surface {
 :root.dark .cdk-overlay-container .mat-mdc-select-panel {
   background: #1e293b !important;
   background-color: #1e293b !important;
-  border: 1px solid rgba(247, 88, 12, 0.3) !important;
+  border: 1px solid color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
 
   .mat-mdc-option {
     color: rgba(255, 255, 255, 0.9) !important;
@@ -1750,11 +1763,11 @@ html.dark .mdc-menu-surface {
     }
 
     &:hover, &:focus, &.mat-mdc-option-active {
-      background-color: rgba(255, 122, 51, 0.2) !important;
+      background-color: color-mix(in srgb, var(--jensify-primary) 20%, transparent) !important;
     }
 
     &.mdc-list-item--selected {
-      background-color: rgba(255, 89, 0, 0.3) !important;
+      background-color: color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
 
       .mdc-list-item__primary-text {
         color: #ffffff !important;
@@ -1775,14 +1788,14 @@ html.dark .mdc-menu-surface {
 body.dark .cdk-overlay-container .mat-mdc-autocomplete-panel,
 html.dark .cdk-overlay-container .mat-mdc-autocomplete-panel {
   background: #1e293b !important;
-  border: 1px solid rgba(247, 88, 12, 0.3) !important;
+  border: 1px solid color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
 
   .mat-mdc-option {
     color: rgba(255, 255, 255, 0.9) !important;
 
     &:hover {
-      background: rgba(255, 122, 51, 0.2) !important;
+      background: color-mix(in srgb, var(--jensify-primary) 20%, transparent) !important;
     }
   }
 }
@@ -1791,7 +1804,7 @@ html.dark .cdk-overlay-container .mat-mdc-autocomplete-panel {
 body.dark .cdk-overlay-container .mat-datepicker-content,
 html.dark .cdk-overlay-container .mat-datepicker-content {
   background: #1e293b !important;
-  border: 1px solid rgba(247, 88, 12, 0.3) !important;
+  border: 1px solid color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
 
   .mat-calendar {
@@ -1844,7 +1857,7 @@ html.dark .cdk-overlay-container .mat-datepicker-content {
   // Active tab - LIGHT MODE
   .mat-mdc-tab.mdc-tab--active,
   .mat-mdc-tab-link.mdc-tab--active {
-    background: rgba(247, 88, 12, 0.1) !important;
+    background: color-mix(in srgb, var(--jensify-primary) 10%, transparent) !important;
     border-radius: var(--jensify-radius-md) var(--jensify-radius-md) 0 0;
 
     .mdc-tab__text-label {
@@ -1873,10 +1886,10 @@ html.dark {
 
     .mat-mdc-tab.mdc-tab--active,
     .mat-mdc-tab-link.mdc-tab--active {
-      background: rgba(247, 88, 12, 0.25) !important;
+      background: color-mix(in srgb, var(--jensify-primary) 25%, transparent) !important;
 
       .mdc-tab__text-label {
-        color: #ff8a4d !important;
+        color: var(--jensify-primary-hover) !important;
       }
     }
   }
@@ -1887,16 +1900,16 @@ html.dark {
 // Maintain orange brand color even when buttons are disabled
 // ============================================================================
 
-// Primary flat/raised buttons - maintain orange color when disabled
+// Primary flat/raised buttons - maintain brand color when disabled
 html.dark {
   .mat-mdc-raised-button.mat-primary:disabled,
   .mat-mdc-flat-button.mat-primary:disabled,
   .mat-mdc-unelevated-button.mat-primary:disabled,
   button[mat-flat-button][color="primary"]:disabled,
   button[mat-raised-button][color="primary"]:disabled {
-    background-color: rgba(255, 89, 0, 0.25) !important;
+    background-color: color-mix(in srgb, var(--jensify-primary) 25%, transparent) !important;
     color: rgba(255, 255, 255, 0.4) !important;
-    border: 1px solid rgba(255, 89, 0, 0.3) !important;
+    border: 1px solid color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
     opacity: 1 !important;
 
     .mat-icon,
@@ -1905,13 +1918,13 @@ html.dark {
     }
   }
 
-  // Enabled state - ensure full orange color
+  // Enabled state - ensure full brand color
   .mat-mdc-raised-button.mat-primary:not(:disabled),
   .mat-mdc-flat-button.mat-primary:not(:disabled),
   .mat-mdc-unelevated-button.mat-primary:not(:disabled),
   button[mat-flat-button][color="primary"]:not(:disabled),
   button[mat-raised-button][color="primary"]:not(:disabled) {
-    background-color: var(--jensify-primary, #ff5900) !important;
+    background-color: var(--jensify-primary) !important;
     color: white !important;
   }
 }
@@ -1920,7 +1933,7 @@ html.dark {
 .mat-mdc-raised-button.mat-primary:disabled,
 .mat-mdc-flat-button.mat-primary:disabled,
 .mat-mdc-unelevated-button.mat-primary:disabled {
-  background-color: rgba(255, 89, 0, 0.3) !important;
+  background-color: color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
   color: rgba(255, 255, 255, 0.5) !important;
   opacity: 1 !important;
 }
@@ -1954,9 +1967,9 @@ html.dark {
         rgba(255, 255, 255, 0.1) 0%,
         rgba(255, 255, 255, 0.04) 100%
       ) !important;
-      border-color: rgba(247, 88, 12, 0.4) !important;
+      border-color: color-mix(in srgb, var(--jensify-primary) 40%, transparent) !important;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
-                  0 0 16px rgba(247, 88, 12, 0.1),
+                  0 0 16px color-mix(in srgb, var(--jensify-primary) 10%, transparent),
                   inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
       transform: translateY(-1px);
     }
@@ -2004,10 +2017,10 @@ html.dark {
         rgba(255, 255, 255, 0.12) 0%,
         rgba(255, 255, 255, 0.06) 100%
       ) !important;
-      border-color: rgba(247, 88, 12, 0.4) !important;
+      border-color: color-mix(in srgb, var(--jensify-primary) 40%, transparent) !important;
       box-shadow:
         0 4px 16px rgba(0, 0, 0, 0.3),
-        0 0 20px rgba(247, 88, 12, 0.15),
+        0 0 20px color-mix(in srgb, var(--jensify-primary) 15%, transparent),
         inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
       transform: translateY(-1px);
 
@@ -2026,7 +2039,7 @@ html.dark {
 
     // Focus state
     &:focus-visible {
-      outline: 2px solid rgba(247, 88, 12, 0.5);
+      outline: 2px solid color-mix(in srgb, var(--jensify-primary) 50%, transparent);
       outline-offset: 2px;
     }
   }
@@ -2054,10 +2067,10 @@ html.dark {
         rgba(255, 255, 255, 0.1) 0%,
         rgba(255, 255, 255, 0.04) 100%
       ) !important;
-      border-color: rgba(247, 88, 12, 0.5) !important;
+      border-color: color-mix(in srgb, var(--jensify-primary) 50%, transparent) !important;
       box-shadow:
         0 4px 12px rgba(0, 0, 0, 0.2),
-        0 0 16px rgba(247, 88, 12, 0.1),
+        0 0 16px color-mix(in srgb, var(--jensify-primary) 10%, transparent),
         inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
       transform: translateY(-1px);
     }
@@ -2083,76 +2096,63 @@ html.dark {
   .mat-mdc-outlined-button.mat-primary,
   .mat-mdc-stroked-button.mat-primary,
   button[mat-stroked-button][color="primary"] {
-    // Semi-transparent orange background for better visibility
-    background: linear-gradient(
-      135deg,
-      rgba(247, 88, 12, 0.15) 0%,
-      rgba(247, 88, 12, 0.08) 100%
-    ) !important;
+    // Semi-transparent background using brand color
+    background: color-mix(in srgb, var(--jensify-primary) 12%, transparent) !important;
 
-    // Orange border with good visibility
-    border: 1px solid rgba(247, 88, 12, 0.5) !important;
+    // Border with brand color
+    border: 1px solid color-mix(in srgb, var(--jensify-primary) 50%, transparent) !important;
 
     // Subtle glow effect
     box-shadow:
-      0 2px 8px rgba(247, 88, 12, 0.15),
+      0 2px 8px color-mix(in srgb, var(--jensify-primary) 15%, transparent),
       inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 
-    // Orange text
-    color: rgb(255, 140, 80) !important;
+    // Brand color text (lightened for dark mode)
+    color: var(--jensify-primary-hover) !important;
 
     // Smooth transitions
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 
     .mat-icon, mat-icon {
-      color: rgb(255, 140, 80) !important;
+      color: var(--jensify-primary-hover) !important;
       transition: color 0.25s ease !important;
     }
 
-    // Hover state - more prominent orange glow
+    // Hover state - more prominent glow
     &:hover:not(:disabled) {
-      background: linear-gradient(
-        135deg,
-        rgba(247, 88, 12, 0.25) 0%,
-        rgba(247, 88, 12, 0.15) 100%
-      ) !important;
-      border-color: rgba(247, 88, 12, 0.7) !important;
+      background: color-mix(in srgb, var(--jensify-primary) 22%, transparent) !important;
+      border-color: color-mix(in srgb, var(--jensify-primary) 70%, transparent) !important;
       box-shadow:
-        0 4px 16px rgba(247, 88, 12, 0.25),
-        0 0 20px rgba(247, 88, 12, 0.15),
+        0 4px 16px color-mix(in srgb, var(--jensify-primary) 25%, transparent),
+        0 0 20px color-mix(in srgb, var(--jensify-primary) 15%, transparent),
         inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
       transform: translateY(-1px);
-      color: rgb(255, 160, 100) !important;
-
-      .mat-icon, mat-icon {
-        color: rgb(255, 160, 100) !important;
-      }
     }
 
     // Active/pressed state
     &:active:not(:disabled) {
       transform: translateY(0);
-      background: rgba(247, 88, 12, 0.3) !important;
+      background: color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
       box-shadow:
-        0 1px 4px rgba(247, 88, 12, 0.2),
+        0 1px 4px color-mix(in srgb, var(--jensify-primary) 20%, transparent),
         inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
     }
 
     // Focus state
     &:focus-visible {
-      outline: 2px solid rgba(247, 88, 12, 0.5);
+      outline: 2px solid color-mix(in srgb, var(--jensify-primary) 50%, transparent);
       outline-offset: 2px;
     }
 
     // Disabled state
     &:disabled {
-      background: rgba(247, 88, 12, 0.08) !important;
-      border-color: rgba(247, 88, 12, 0.2) !important;
-      color: rgba(255, 140, 80, 0.4) !important;
+      background: color-mix(in srgb, var(--jensify-primary) 8%, transparent) !important;
+      border-color: color-mix(in srgb, var(--jensify-primary) 20%, transparent) !important;
+      color: color-mix(in srgb, var(--jensify-primary-hover) 40%, transparent) !important;
       box-shadow: none !important;
 
       .mat-icon, mat-icon {
-        color: rgba(255, 140, 80, 0.4) !important;
+        color: color-mix(in srgb, var(--jensify-primary-hover) 40%, transparent) !important;
       }
     }
   }
@@ -2384,6 +2384,565 @@ $mobile-breakpoint: 767px;
     .card-body {
       padding: var(--jensify-spacing-sm, 0.5rem);
     }
+  }
+}
+
+// ============================================================================
+// STICKY FOOTER FOR MOBILE FORMS
+// Keeps action buttons always visible at the bottom of the screen
+// ============================================================================
+
+.jensify-sticky-footer {
+  display: flex;
+  gap: var(--jensify-spacing-sm, 0.5rem);
+  padding: var(--jensify-spacing-md, 1rem);
+  background: var(--jensify-surface-card);
+  border-top: 1px solid var(--jensify-border-subtle);
+
+  @media (max-width: $mobile-breakpoint) {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: var(--jensify-spacing-md, 1rem);
+    padding-bottom: calc(var(--jensify-spacing-md, 1rem) + env(safe-area-inset-bottom, 0));
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    flex-direction: column;
+
+    // Ensure buttons are full width and stacked
+    button {
+      width: 100%;
+      min-height: 48px;
+      justify-content: center;
+    }
+
+    // Primary button first (reversed from desktop for thumb reach)
+    &.reverse-mobile {
+      flex-direction: column-reverse;
+    }
+  }
+
+  // Dark mode
+  @at-root .dark & {
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(10px);
+    border-top-color: color-mix(in srgb, var(--jensify-primary) 20%, transparent);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  }
+}
+
+// Spacer to prevent content being hidden behind sticky footer
+.jensify-sticky-footer-spacer {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: block;
+    height: 100px; // Approximate height of sticky footer
+  }
+}
+
+// ============================================================================
+// BOTTOM SHEET DIALOG STYLING FOR MOBILE
+// Converts dialogs to bottom sheets on mobile devices
+// ============================================================================
+
+@media (max-width: $mobile-breakpoint) {
+  // Global dialog mobile optimization
+  .mat-mdc-dialog-container {
+    .mdc-dialog__surface {
+      border-radius: var(--jensify-radius-xl, 16px) var(--jensify-radius-xl, 16px) 0 0 !important;
+    }
+  }
+
+  // Bottom sheet style dialogs
+  .jensify-bottom-sheet-dialog {
+    .mat-mdc-dialog-container {
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      top: auto !important;
+      max-height: 90vh !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+
+      .mdc-dialog__surface {
+        border-radius: var(--jensify-radius-xl, 16px) var(--jensify-radius-xl, 16px) 0 0 !important;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+    }
+
+    // Handle indicator at top
+    .jensify-dialog-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--jensify-border-medium);
+      border-radius: 2px;
+      margin: var(--jensify-spacing-sm) auto var(--jensify-spacing-md);
+    }
+  }
+
+  // Dialog content improvements
+  .mat-mdc-dialog-content {
+    max-height: calc(90vh - 140px) !important;
+    padding: var(--jensify-spacing-md) !important;
+  }
+
+  // Dialog actions - full width buttons
+  .mat-mdc-dialog-actions {
+    padding: var(--jensify-spacing-md) !important;
+    padding-bottom: calc(var(--jensify-spacing-md) + env(safe-area-inset-bottom, 0)) !important;
+    flex-direction: column !important;
+    gap: var(--jensify-spacing-sm) !important;
+
+    button {
+      width: 100% !important;
+      min-height: 48px !important;
+      margin: 0 !important;
+    }
+  }
+}
+
+// ============================================================================
+// SWIPE ACTIONS FOR CARDS (CSS-only foundation)
+// Can be enhanced with Hammer.js or similar for full swipe support
+// ============================================================================
+
+.jensify-swipeable-card {
+  position: relative;
+  overflow: hidden;
+
+  .swipe-actions {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+
+    &.swipe-left {
+      right: 0;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+
+    &.swipe-right {
+      left: 0;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+
+    button {
+      height: 100%;
+      min-width: 80px;
+      border-radius: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+
+      mat-icon {
+        font-size: 24px;
+      }
+
+      span {
+        font-size: 0.75rem;
+      }
+    }
+
+    .swipe-delete {
+      background: var(--jensify-danger);
+      color: white;
+    }
+
+    .swipe-edit {
+      background: var(--jensify-primary);
+      color: white;
+    }
+
+    .swipe-approve {
+      background: var(--jensify-success);
+      color: white;
+    }
+  }
+
+  // When swiped, show actions
+  &.swiped-left .swipe-actions.swipe-left {
+    transform: translateX(0);
+  }
+
+  &.swiped-right .swipe-actions.swipe-right {
+    transform: translateX(0);
+  }
+}
+
+// ============================================================================
+// PULL TO REFRESH INDICATOR
+// Visual indicator for pull-to-refresh functionality
+// ============================================================================
+
+.jensify-pull-refresh {
+  position: relative;
+
+  .pull-indicator {
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--jensify-surface-card);
+    box-shadow: var(--jensify-shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+
+    mat-icon {
+      color: var(--jensify-primary);
+      transition: transform 0.3s ease;
+    }
+
+    &.pulling {
+      opacity: 1;
+      top: 10px;
+    }
+
+    &.refreshing {
+      opacity: 1;
+      top: 10px;
+
+      mat-icon {
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ============================================================================
+// RESPONSIVE GRID UTILITIES
+// For consistent responsive layouts across the app
+// ============================================================================
+
+.jensify-grid {
+  display: grid;
+  gap: var(--jensify-spacing-md);
+
+  // Auto-fit columns with minimum width
+  &.auto-fit {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  // Fixed column counts with mobile fallback
+  &.cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+    @media (max-width: $mobile-breakpoint) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &.cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (max-width: $mobile-breakpoint) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &.cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (max-width: $mobile-breakpoint) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// ============================================================================
+// MOBILE-ONLY / DESKTOP-ONLY UTILITIES
+// ============================================================================
+
+.mobile-only {
+  display: none !important;
+  @media (max-width: $mobile-breakpoint) {
+    display: block !important;
+  }
+}
+
+.mobile-only-flex {
+  display: none !important;
+  @media (max-width: $mobile-breakpoint) {
+    display: flex !important;
+  }
+}
+
+.desktop-only {
+  display: block;
+  @media (max-width: $mobile-breakpoint) {
+    display: none !important;
+  }
+}
+
+.desktop-only-flex {
+  display: flex;
+  @media (max-width: $mobile-breakpoint) {
+    display: none !important;
+  }
+}
+
+// ============================================================================
+// TOUCH TARGET UTILITIES (48px minimum for mobile accessibility)
+// ============================================================================
+
+// Minimum touch target size (48x48px per Google Material Design guidelines)
+.jensify-touch-target {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+// For clickable items that should have larger touch areas on mobile
+.jensify-touch-item {
+  @media (max-width: $mobile-breakpoint) {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+// Apply to list items for better mobile touch targets
+.jensify-touch-list-item {
+  @media (max-width: $mobile-breakpoint) {
+    min-height: 56px;
+    padding: var(--jensify-spacing-sm) var(--jensify-spacing-md) !important;
+  }
+}
+
+// Material button overrides for mobile touch targets
+@media (max-width: $mobile-breakpoint) {
+  // Icon buttons should be at least 48px
+  .mat-mdc-icon-button {
+    min-width: 48px !important;
+    min-height: 48px !important;
+    padding: 12px !important;
+  }
+
+  // Chips/tags should have better touch targets
+  .mat-mdc-chip {
+    min-height: 40px;
+    padding: var(--jensify-spacing-xs) var(--jensify-spacing-sm);
+  }
+
+  // Form field hint/error text should be more readable
+  .mat-mdc-form-field-hint,
+  .mat-mdc-form-field-error {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  // Checkboxes and radio buttons need larger touch areas
+  .mat-mdc-checkbox,
+  .mat-mdc-radio-button {
+    padding: var(--jensify-spacing-xs);
+
+    .mdc-checkbox,
+    .mdc-radio {
+      padding: 8px;
+    }
+  }
+
+  // Menu items should have adequate height
+  .mat-mdc-menu-item {
+    min-height: 52px !important;
+    font-size: 1rem !important;
+  }
+
+  // Tab labels should be tappable
+  .mat-mdc-tab {
+    min-width: 80px;
+    min-height: 52px;
+    padding: var(--jensify-spacing-sm) var(--jensify-spacing-md) !important;
+  }
+
+  // Buttons in cards/dialogs should be full width and stacked
+  .jensify-card-actions,
+  .mat-mdc-dialog-actions {
+    flex-direction: column !important;
+    gap: var(--jensify-spacing-sm);
+
+    button,
+    a[mat-button],
+    a[mat-stroked-button],
+    a[mat-flat-button],
+    a[mat-raised-button] {
+      width: 100% !important;
+      min-height: 48px !important;
+    }
+  }
+}
+
+// Larger tap targets for table action buttons
+.jensify-table {
+  @media (max-width: $mobile-breakpoint) {
+    .mat-mdc-icon-button {
+      width: 48px !important;
+      height: 48px !important;
+    }
+  }
+}
+
+// ============================================================================
+// GLOBAL MAT-SLIDE-TOGGLE THEMING
+// Override Material's default colors to use dynamic primary color
+// Must target CDK overlay container since mat-menu renders there
+// ============================================================================
+
+mat-slide-toggle,
+.mat-mdc-slide-toggle,
+.cdk-overlay-container mat-slide-toggle,
+.cdk-overlay-container .mat-mdc-slide-toggle {
+  // Selected (ON) state - track and handle colors
+  --mdc-switch-selected-track-color: var(--jensify-primary) !important;
+  --mdc-switch-selected-hover-track-color: var(--jensify-primary-hover) !important;
+  --mdc-switch-selected-focus-track-color: var(--jensify-primary) !important;
+  --mdc-switch-selected-pressed-track-color: var(--jensify-primary-strong) !important;
+  --mdc-switch-selected-handle-color: var(--jensify-primary) !important;
+  --mdc-switch-selected-hover-handle-color: var(--jensify-primary-hover) !important;
+  --mdc-switch-selected-focus-handle-color: var(--jensify-primary) !important;
+  --mdc-switch-selected-pressed-handle-color: var(--jensify-primary-strong) !important;
+  --mdc-switch-selected-icon-color: #fff !important;
+
+  // Additional MDC token overrides for complete theming
+  --mat-switch-selected-track-color: var(--jensify-primary) !important;
+  --mat-switch-selected-handle-color: var(--jensify-primary) !important;
+  --mat-switch-selected-ripple-color: color-mix(in srgb, var(--jensify-primary) 20%, transparent) !important;
+  --mat-switch-selected-hover-track-color: var(--jensify-primary-hover) !important;
+  --mat-switch-selected-hover-handle-color: var(--jensify-primary-hover) !important;
+  --mat-switch-selected-focus-track-color: var(--jensify-primary) !important;
+  --mat-switch-selected-focus-handle-color: var(--jensify-primary) !important;
+  --mat-switch-selected-pressed-track-color: var(--jensify-primary-strong) !important;
+  --mat-switch-selected-pressed-handle-color: var(--jensify-primary-strong) !important;
+}
+
+// Force override for the switch handle element directly
+.mat-mdc-slide-toggle .mdc-switch--selected .mdc-switch__handle::after,
+.cdk-overlay-container .mat-mdc-slide-toggle .mdc-switch--selected .mdc-switch__handle::after {
+  background-color: var(--jensify-primary) !important;
+}
+
+.mat-mdc-slide-toggle .mdc-switch--selected .mdc-switch__track::before,
+.mat-mdc-slide-toggle .mdc-switch--selected .mdc-switch__track::after,
+.cdk-overlay-container .mat-mdc-slide-toggle .mdc-switch--selected .mdc-switch__track::before,
+.cdk-overlay-container .mat-mdc-slide-toggle .mdc-switch--selected .mdc-switch__track::after {
+  background-color: color-mix(in srgb, var(--jensify-primary) 50%, transparent) !important;
+}
+
+// ============================================================================
+// TOAST SNACKBAR NOTIFICATIONS
+// Custom styling for notification toasts
+// ============================================================================
+
+.jensify-toast {
+  --mdc-snackbar-container-color: var(--jensify-surface-card);
+  --mdc-snackbar-supporting-text-color: var(--jensify-text-strong);
+  --mat-snack-bar-button-color: var(--jensify-primary);
+
+  .mdc-snackbar__surface {
+    border-radius: var(--jensify-radius-lg) !important;
+    box-shadow: var(--jensify-shadow-lg) !important;
+    border-left: 4px solid transparent;
+    min-width: 320px;
+    max-width: 480px;
+  }
+
+  .mdc-snackbar__label {
+    font-weight: 500;
+    padding: 14px 16px;
+  }
+
+  .mdc-snackbar__actions {
+    padding-right: 12px;
+
+    button {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  // Success toast - green accent
+  &.jensify-toast-success {
+    .mdc-snackbar__surface {
+      border-left-color: var(--jensify-success);
+      background: linear-gradient(90deg, var(--jensify-success-soft) 0%, var(--jensify-surface-card) 20%);
+    }
+    --mat-snack-bar-button-color: var(--jensify-success-strong);
+  }
+
+  // Error toast - red accent
+  &.jensify-toast-error {
+    .mdc-snackbar__surface {
+      border-left-color: var(--jensify-danger);
+      background: linear-gradient(90deg, var(--jensify-danger-soft) 0%, var(--jensify-surface-card) 20%);
+    }
+    --mat-snack-bar-button-color: var(--jensify-danger-strong);
+  }
+
+  // Warning toast - amber accent
+  &.jensify-toast-warning {
+    .mdc-snackbar__surface {
+      border-left-color: var(--jensify-warning);
+      background: linear-gradient(90deg, var(--jensify-warning-soft) 0%, var(--jensify-surface-card) 20%);
+    }
+    --mat-snack-bar-button-color: var(--jensify-warning-strong);
+  }
+
+  // Info toast - primary color accent
+  &.jensify-toast-info {
+    .mdc-snackbar__surface {
+      border-left-color: var(--jensify-info);
+      background: linear-gradient(90deg, var(--jensify-info-soft) 0%, var(--jensify-surface-card) 20%);
+    }
+    --mat-snack-bar-button-color: var(--jensify-info-strong);
+  }
+}
+
+// Dark mode adjustments for toasts
+.dark .jensify-toast {
+  --mdc-snackbar-container-color: var(--jensify-surface-elevated);
+
+  .mdc-snackbar__surface {
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  }
+
+  &.jensify-toast-success .mdc-snackbar__surface {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--jensify-success) 15%, transparent) 0%, var(--jensify-surface-elevated) 25%);
+  }
+
+  &.jensify-toast-error .mdc-snackbar__surface {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--jensify-danger) 15%, transparent) 0%, var(--jensify-surface-elevated) 25%);
+  }
+
+  &.jensify-toast-warning .mdc-snackbar__surface {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--jensify-warning) 15%, transparent) 0%, var(--jensify-surface-elevated) 25%);
+  }
+
+  &.jensify-toast-info .mdc-snackbar__surface {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--jensify-info) 15%, transparent) 0%, var(--jensify-surface-elevated) 25%);
   }
 }
 

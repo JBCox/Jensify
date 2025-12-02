@@ -114,7 +114,7 @@ export interface TrackingResult {
     }
 
     .jensify-tracking-active {
-      background: var(--jensify-primary-soft, rgba(255, 89, 0, 0.08));
+      background: var(--jensify-primary-soft, color-mix(in srgb, var(--jensify-primary) 8%, transparent));
       border-radius: 8px;
       padding: 20px;
     }

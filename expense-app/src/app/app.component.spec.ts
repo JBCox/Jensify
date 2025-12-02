@@ -1,12 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, NavigationEnd } from '@angular/router';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, of } from 'rxjs';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialog } from '@angular/material/dialog';
 import { App } from './app';
 import { AuthService } from './core/services/auth.service';
 import { KeyboardShortcutsService } from './core/services/keyboard-shortcuts.service';
 import { PwaService } from './core/services/pwa.service';
+import { OrganizationService } from './core/services/organization.service';
+import { ThemeService } from './core/services/theme.service';
 import { User } from './core/models/user.model';
 import { UserRole } from './core/models/enums';
 
@@ -18,6 +20,8 @@ describe('App Component', () => {
   let mockDialog: jasmine.SpyObj<MatDialog>;
   let mockKeyboardShortcuts: jasmine.SpyObj<KeyboardShortcutsService>;
   let mockPwaService: jasmine.SpyObj<PwaService>;
+  let mockOrganizationService: jasmine.SpyObj<OrganizationService>;
+  let mockThemeService: jasmine.SpyObj<ThemeService>;
   let userProfileSubject: BehaviorSubject<User | null>;
   let sessionSubject: BehaviorSubject<any>;
   let routerEventsSubject: Subject<any>;
@@ -71,6 +75,16 @@ describe('App Component', () => {
     mockPwaService = jasmine.createSpyObj('PwaService', ['checkForUpdate', 'activateUpdate', 'canInstall', 'promptInstall']);
     mockPwaService.canInstall.and.returnValue(false);
 
+    mockOrganizationService = jasmine.createSpyObj('OrganizationService', ['getUserOrganizationContext'], {
+      currentOrganization$: of(null)
+    });
+    mockOrganizationService.getUserOrganizationContext.and.returnValue(of(null));
+
+    mockThemeService = jasmine.createSpyObj('ThemeService', ['applyBrandColor', 'resetBrandColor', 'toggleTheme'], {
+      isDarkMode$: of(false),
+      isDarkMode: false
+    });
+
     await TestBed.configureTestingModule({
       imports: [App, NoopAnimationsModule],
       providers: [
@@ -78,7 +92,9 @@ describe('App Component', () => {
         { provide: Router, useValue: mockRouter },
         { provide: MatDialog, useValue: mockDialog },
         { provide: KeyboardShortcutsService, useValue: mockKeyboardShortcuts },
-        { provide: PwaService, useValue: mockPwaService }
+        { provide: PwaService, useValue: mockPwaService },
+        { provide: OrganizationService, useValue: mockOrganizationService },
+        { provide: ThemeService, useValue: mockThemeService }
       ]
     }).compileComponents();
 

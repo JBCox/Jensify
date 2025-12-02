@@ -12,10 +12,11 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { BudgetService } from '../../../core/services/budget.service';
-import { BudgetWithTracking, BudgetType, BudgetFilters } from '../../../core/models/budget.model';
+import { BudgetWithTracking, BudgetType } from '../../../core/models/budget.model';
 import { BudgetDialogComponent, BudgetDialogData, BudgetDialogResult } from './budget-dialog.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { PullToRefresh } from '../../../shared/components/pull-to-refresh/pull-to-refresh';
 
 @Component({
   selector: 'app-budget-management',
@@ -33,7 +34,8 @@ import { EmptyState } from '../../../shared/components/empty-state/empty-state';
     MatChipsModule,
     MatDialogModule,
     MatTooltipModule,
-    EmptyState
+    EmptyState,
+    PullToRefresh
   ],
   templateUrl: './budget-management.component.html',
   styleUrl: './budget-management.component.scss',
@@ -47,6 +49,7 @@ export class BudgetManagementComponent implements OnInit {
   budgets = signal<BudgetWithTracking[]>([]);
   loading = signal(true);
   selectedType = signal<BudgetType | 'all'>('all');
+  refreshing = signal(false);
 
   // Computed
   filteredBudgets = computed(() => {
@@ -89,6 +92,12 @@ export class BudgetManagementComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  onRefresh(): void {
+    this.refreshing.set(true);
+    this.loadBudgets();
+    setTimeout(() => this.refreshing.set(false), 1000);
   }
 
   openCreateDialog(): void {

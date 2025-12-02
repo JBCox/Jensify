@@ -1,0 +1,385 @@
+<div class="policy-settings">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Expense Policies</h1>
+      <p class="subtitle">Configure spending limits, approval thresholds, and compliance rules</p>
+    </div>
+    <div class="header-actions">
+      @if (!showForm()) {
+        <button mat-stroked-button [matMenuTriggerFor]="presetMenu" [disabled]="presets().length === 0">
+          <mat-icon>playlist_add</mat-icon>
+          Apply Preset
+        </button>
+        <button mat-flat-button color="primary" (click)="openCreateForm()">
+          <mat-icon>add</mat-icon>
+          Create Policy
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Preset Menu -->
+  <mat-menu #presetMenu="matMenu">
+    @for (preset of presets(); track preset.id) {
+      <button mat-menu-item (click)="applyPreset(preset)">
+        <mat-icon>{{ preset.preset_type === 'tier' ? 'layers' : 'category' }}</mat-icon>
+        <span>{{ preset.name }}</span>
+      </button>
+    }
+  </mat-menu>
+
+  <!-- Stats Cards -->
+  @if (policyStats(); as stats) {
+    <div class="stats-row">
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ stats.total }}</div>
+          <div class="stat-label">Total Policies</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-value active">{{ stats.active }}</div>
+          <div class="stat-label">Active</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ stats.byScope['category'] || 0 }}</div>
+          <div class="stat-label">Category Rules</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ stats.byScope['user'] || 0 }}</div>
+          <div class="stat-label">User-Specific</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Policy Form -->
+  @if (showForm()) {
+    <mat-card class="policy-form-card">
+      <mat-card-header>
+        <mat-card-title>
+          {{ editingPolicy() ? 'Edit Policy' : 'Create New Policy' }}
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="policyForm" (ngSubmit)="savePolicy()">
+          <!-- Basic Info -->
+          <div class="form-section">
+            <h3>Basic Information</h3>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Policy Name</mat-label>
+                <input matInput formControlName="name" placeholder="e.g., Standard Employee Limits">
+                @if (policyForm.get('name')?.hasError('required')) {
+                  <mat-error>Name is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Description</mat-label>
+                <textarea matInput formControlName="description" rows="2"
+                  placeholder="What does this policy do?"></textarea>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Scope -->
+          <div class="form-section">
+            <h3>Scope</h3>
+            <div class="form-row two-col">
+              <mat-form-field appearance="outline">
+                <mat-label>Applies To</mat-label>
+                <mat-select formControlName="scope_type">
+                  @for (scope of scopeTypes; track scope.value) {
+                    <mat-option [value]="scope.value">
+                      <mat-icon>{{ scope.icon }}</mat-icon>
+                      {{ scope.label }}
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              @if (policyForm.get('scope_type')?.value === 'role') {
+                <mat-form-field appearance="outline">
+                  <mat-label>Role</mat-label>
+                  <mat-select formControlName="scope_value">
+                    @for (role of roleOptions; track role) {
+                      <mat-option [value]="role">{{ role | titlecase }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              } @else if (policyForm.get('scope_type')?.value === 'category') {
+                <mat-form-field appearance="outline">
+                  <mat-label>Category</mat-label>
+                  <mat-select formControlName="scope_value">
+                    @for (cat of categories; track cat) {
+                      <mat-option [value]="cat">{{ cat }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              } @else if (policyForm.get('scope_type')?.value !== 'organization') {
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ policyForm.get('scope_type')?.value === 'user' ? 'User ID' : 'Department Name' }}</mat-label>
+                  <input matInput formControlName="scope_value">
+                </mat-form-field>
+              }
+            </div>
+
+            @if (policyForm.get('scope_type')?.value !== 'category') {
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Category Filter (optional)</mat-label>
+                  <mat-select formControlName="category">
+                    <mat-option [value]="''">All Categories</mat-option>
+                    @for (cat of categories; track cat) {
+                      <mat-option [value]="cat">{{ cat }}</mat-option>
+                    }
+                  </mat-select>
+                  <mat-hint>Leave empty to apply to all categories</mat-hint>
+                </mat-form-field>
+              </div>
+            }
+          </div>
+
+          <!-- Spending Limits -->
+          <div class="form-section">
+            <h3>Spending Limits</h3>
+            <div class="form-row three-col">
+              <mat-form-field appearance="outline">
+                <mat-label>Max per Transaction</mat-label>
+                <input matInput type="number" formControlName="max_amount" placeholder="e.g., 500">
+                <span matPrefix>$&nbsp;</span>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Max per Day</mat-label>
+                <input matInput type="number" formControlName="max_daily_total" placeholder="e.g., 1000">
+                <span matPrefix>$&nbsp;</span>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Max per Month</mat-label>
+                <input matInput type="number" formControlName="max_monthly_total" placeholder="e.g., 5000">
+                <span matPrefix>$&nbsp;</span>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Requirements -->
+          <div class="form-section">
+            <h3>Requirements</h3>
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Max Receipt Age (days)</mat-label>
+                <input matInput type="number" formControlName="max_receipt_age_days">
+                <mat-hint>Receipts older than this will be flagged</mat-hint>
+              </mat-form-field>
+            </div>
+            <div class="toggle-row">
+              <mat-slide-toggle formControlName="require_receipt">
+                Require receipt for all expenses
+              </mat-slide-toggle>
+              <mat-slide-toggle formControlName="require_description">
+                Require description/notes
+              </mat-slide-toggle>
+              <mat-slide-toggle formControlName="allow_weekends">
+                Allow weekend expenses
+              </mat-slide-toggle>
+            </div>
+          </div>
+
+          <!-- Approval Thresholds -->
+          <div class="form-section">
+            <h3>Approval Thresholds</h3>
+            <div class="form-row two-col">
+              <mat-form-field appearance="outline">
+                <mat-label>Auto-approve under</mat-label>
+                <input matInput type="number" formControlName="auto_approve_under" placeholder="e.g., 50">
+                <span matPrefix>$&nbsp;</span>
+                <mat-hint>Expenses below this skip approval</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Require approval over</mat-label>
+                <input matInput type="number" formControlName="require_approval_over" placeholder="e.g., 100">
+                <span matPrefix>$&nbsp;</span>
+                <mat-hint>Additional approval for high amounts</mat-hint>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Priority & Status -->
+          <div class="form-section">
+            <h3>Priority & Status</h3>
+            <div class="form-row two-col">
+              <mat-form-field appearance="outline">
+                <mat-label>Priority</mat-label>
+                <input matInput type="number" formControlName="priority" min="0" max="1000">
+                <mat-hint>Higher priority wins conflicts (0-1000)</mat-hint>
+              </mat-form-field>
+              <div class="toggle-container">
+                <mat-slide-toggle formControlName="is_active">
+                  Policy is active
+                </mat-slide-toggle>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelForm()">Cancel</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+              @if (saving()) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                {{ editingPolicy() ? 'Update Policy' : 'Create Policy' }}
+              }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Policy List -->
+  @if (!showForm()) {
+    @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading policies...</p>
+      </div>
+    } @else if (policies().length === 0) {
+      <app-empty-state
+        icon="policy"
+        title="No Policies Configured"
+        message="Create expense policies to set spending limits, approval thresholds, and compliance rules."
+        actionLabel="Create Policy"
+        actionIcon="add"
+        (action)="openCreateForm()">
+      </app-empty-state>
+    } @else {
+      <mat-card class="policy-list-card">
+        <mat-card-content>
+          <table mat-table [dataSource]="policies()" matSort (matSortChange)="sortPolicies($event)">
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Policy Name</th>
+              <td mat-cell *matCellDef="let policy">
+                <div class="policy-name">
+                  <span>{{ policy.name }}</span>
+                  @if (policy.description) {
+                    <span class="policy-desc">{{ policy.description }}</span>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Scope Column -->
+            <ng-container matColumnDef="scope">
+              <th mat-header-cell *matHeaderCellDef>Scope</th>
+              <td mat-cell *matCellDef="let policy">
+                <div class="scope-cell">
+                  <mat-icon>{{ getScopeIcon(policy.scope_type) }}</mat-icon>
+                  <span>{{ getScopeDisplay(policy) }}</span>
+                  @if (policy.category && policy.scope_type !== 'category') {
+                    <mat-chip class="category-chip">{{ policy.category }}</mat-chip>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Limits Column -->
+            <ng-container matColumnDef="limits">
+              <th mat-header-cell *matHeaderCellDef>Limits</th>
+              <td mat-cell *matCellDef="let policy">
+                <span class="limits-text">{{ getLimitsDisplay(policy) }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let policy">
+                <mat-chip [class]="policy.is_active ? 'active-chip' : 'inactive-chip'">
+                  {{ policy.is_active ? 'Active' : 'Inactive' }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <!-- Priority Column -->
+            <ng-container matColumnDef="priority">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Priority</th>
+              <td mat-cell *matCellDef="let policy">
+                <span class="priority-badge">{{ policy.priority }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let policy">
+                <button mat-icon-button [matMenuTriggerFor]="actionMenu" matTooltip="Actions">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #actionMenu="matMenu">
+                  <button mat-menu-item (click)="openEditForm(policy)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit</span>
+                  </button>
+                  <button mat-menu-item (click)="duplicatePolicy(policy)">
+                    <mat-icon>content_copy</mat-icon>
+                    <span>Duplicate</span>
+                  </button>
+                  <button mat-menu-item (click)="togglePolicy(policy)">
+                    <mat-icon>{{ policy.is_active ? 'pause' : 'play_arrow' }}</mat-icon>
+                    <span>{{ policy.is_active ? 'Deactivate' : 'Activate' }}</span>
+                  </button>
+                  <mat-divider></mat-divider>
+                  <button mat-menu-item class="delete-action" (click)="deletePolicy(policy)">
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Help Section -->
+      <mat-expansion-panel class="help-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>help_outline</mat-icon>
+            How Policies Work
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+        <div class="help-content">
+          <h4>Policy Priority</h4>
+          <p>When multiple policies apply to an expense, the most specific one wins:</p>
+          <ol>
+            <li><strong>User-specific</strong> policies override everything</li>
+            <li><strong>Category-specific</strong> policies for the expense type</li>
+            <li><strong>Department</strong> policies for the user's department</li>
+            <li><strong>Role-based</strong> policies (employee, manager, etc.)</li>
+            <li><strong>Organization-wide</strong> policies as fallback</li>
+          </ol>
+          <p>Within each scope level, higher priority numbers win.</p>
+
+          <h4>Spending Limits</h4>
+          <p>Configure maximum amounts per transaction, per day, or per month. Expenses exceeding limits will be flagged for review.</p>
+
+          <h4>Approval Thresholds</h4>
+          <p>Set auto-approval for small expenses and require additional approval for large ones.</p>
+        </div>
+      </mat-expansion-panel>
+    }
+  }
+</div>

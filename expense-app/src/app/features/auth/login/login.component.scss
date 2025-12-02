@@ -35,17 +35,17 @@
     font-weight: 600;
     letter-spacing: 0.5px;
     background: linear-gradient(135deg, var(--jensify-primary) 0%, var(--jensify-primary-strong) 100%);
-    box-shadow: 0 4px 12px rgba(255, 89, 0, 0.3);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--jensify-primary) 30%, transparent);
     transition: all 0.3s ease;
 
     &:hover:not([disabled]) {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(255, 89, 0, 0.4);
+      box-shadow: 0 8px 20px color-mix(in srgb, var(--jensify-primary) 40%, transparent);
     }
 
     &:active:not([disabled]) {
       transform: translateY(1px); // Pressed down effect
-      box-shadow: 0 2px 8px rgba(255, 89, 0, 0.3);
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--jensify-primary) 30%, transparent);
     }
 
     &[disabled] {

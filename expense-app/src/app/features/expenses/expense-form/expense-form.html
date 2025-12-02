@@ -112,8 +112,23 @@
         <mat-form-field appearance="fill" floatLabel="always" class="jensify-full-width">
           <mat-label>Category</mat-label>
           <mat-select formControlName="category">
-            <mat-option *ngFor="let c of categories; trackBy: trackByCategory" [value]="c">{{ c }}</mat-option>
+            <mat-option *ngFor="let c of categories(); trackBy: trackByCategory" [value]="c.id">
+              <span class="category-option">
+                <span class="category-icon" [style.background]="c.color">
+                  <mat-icon>{{ c.icon }}</mat-icon>
+                </span>
+                <span class="category-name">{{ c.name }}</span>
+              </span>
+            </mat-option>
           </mat-select>
+          <mat-hint *ngIf="currentGlCode() as glCode" class="gl-code-hint">
+            <mat-icon class="gl-code-icon">account_tree</mat-icon>
+            GL Code: <strong>{{ glCode }}</strong>
+            <span *ngIf="currentGlCodeName() as glName" class="gl-code-name">({{ glName }})</span>
+          </mat-hint>
+          <mat-hint *ngIf="selectedCategory()?.description as desc" class="category-hint">
+            {{ desc }}
+          </mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="fill" floatLabel="always" class="jensify-full-width">
@@ -126,7 +141,10 @@
           <input matInput formControlName="notes" />
         </mat-form-field>
 
-        <div class="jensify-form-actions">
+        <!-- Spacer for sticky footer on mobile -->
+        <div class="jensify-sticky-footer-spacer"></div>
+
+        <div class="jensify-form-actions jensify-sticky-footer">
           <a mat-stroked-button routerLink="/expenses" class="jensify-button">Cancel</a>
           <button mat-raised-button color="primary" [disabled]="loading" class="jensify-button">Save</button>
         </div>

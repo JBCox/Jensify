@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +11,7 @@ import { OrganizationService } from '../../../core/services/organization.service
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { ChangeType } from '../../../shared/components/metric-card/metric-card';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { PullToRefresh } from '../../../shared/components/pull-to-refresh/pull-to-refresh';
 
 interface AdminMetrics {
   activeUsers: number;
@@ -55,7 +56,8 @@ interface TopSpender {
     MatButtonModule,
     MatIconModule,
     EmptyState,
-    NgxChartsModule
+    NgxChartsModule,
+    PullToRefresh
   ],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
@@ -73,8 +75,9 @@ export class AdminDashboard implements OnInit {
   topVendors$!: Observable<TopVendor[]>;
   topSpenders$!: Observable<TopSpender[]>;
   loading = true;
+  refreshing = signal(false);
 
-  // Chart configuration
+  // Chart configuration - static color scheme to avoid change detection issues
   readonly chartColorScheme: Color = {
     name: 'Jensify',
     selectable: true,
@@ -94,6 +97,17 @@ export class AdminDashboard implements OnInit {
   ngOnInit(): void {
     this.loadDashboardData();
     this.loadChartData();
+  }
+
+  /**
+   * Handle pull-to-refresh
+   */
+  onRefresh(): void {
+    this.refreshing.set(true);
+    this.loadDashboardData();
+    this.loadChartData();
+    // Allow time for observables to emit new values
+    setTimeout(() => this.refreshing.set(false), 1000);
   }
 
   private loadDashboardData(): void {

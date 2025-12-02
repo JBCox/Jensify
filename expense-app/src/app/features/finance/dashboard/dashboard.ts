@@ -1,15 +1,37 @@
 import { Component, OnInit, OnDestroy, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, CurrencyPipe, DecimalPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Subject } from 'rxjs';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTableModule } from '@angular/material/table';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { Subject, forkJoin } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ReportService } from '../../../core/services/report.service';
+import { PayoutService } from '../../../core/services/payout.service';
+import { OrganizationService } from '../../../core/services/organization.service';
+import { AnalyticsService } from '../../../core/services/analytics.service';
 import { ExpenseReport, ReportStatus } from '../../../core/models/report.model';
+import { PendingPayoutSummary, PayoutMethod } from '../../../core/models/payout.model';
 import { Receipt } from '../../../core/models/receipt.model';
+import {
+  AnalyticsDashboardData,
+  AnalyticsFilters,
+  DateRangePreset,
+  DATE_RANGE_PRESETS,
+  getDateRangeForPreset,
+  formatChange,
+  ANALYTICS_COLORS
+} from '../../../core/models/analytics.model';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loading-skeleton';
 import { MetricCard } from '../../../shared/components/metric-card/metric-card';
@@ -25,14 +47,25 @@ import { SNACKBAR_DURATION } from '../../../shared/constants/ui.constants';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatCheckboxModule,
     MatSnackBarModule,
+    MatChipsModule,
+    MatProgressSpinnerModule,
+    MatTabsModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    MatTableModule,
+    MatProgressBarModule,
+    RouterModule,
     EmptyState,
     LoadingSkeleton,
-    MetricCard
+    MetricCard,
+    CurrencyPipe,
+    DecimalPipe,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
@@ -42,6 +75,9 @@ export class FinanceDashboardComponent implements OnInit, OnDestroy {
   private reportService = inject(ReportService);
   private snackBar = inject(MatSnackBar);
   private supabase = inject(SupabaseService);
+  private payoutService = inject(PayoutService);
+  private orgService = inject(OrganizationService);
+  private analyticsService = inject(AnalyticsService);
 
   private readonly RECEIPT_BUCKET = 'receipts';
   private destroy$ = new Subject<void>();
@@ -55,8 +91,36 @@ export class FinanceDashboardComponent implements OnInit, OnDestroy {
   totalAmount = computed(() => this.approvedReports().reduce((sum, r) => sum + (r.total_amount || 0), 0));
   selectedCount = computed(() => this.selectedReportIds().size);
 
+  // Payout-related signals
+  pendingPayouts = signal<PendingPayoutSummary[]>([]);
+  payoutMethod = signal<PayoutMethod>('manual');
+  stripeConnected = signal(false);
+  loadingPayouts = signal(false);
+  processingPayoutFor = signal<string | null>(null);
+  activeTab = signal(0);
+
+  // Analytics-related signals and properties
+  analyticsData = signal<AnalyticsDashboardData | null>(null);
+  loadingAnalytics = signal(false);
+  datePresets = DATE_RANGE_PRESETS;
+  selectedPreset: DateRangePreset = 'this_month';
+  chartColors = ANALYTICS_COLORS.chart;
+
+  summaryMetrics = [
+    { key: 'total_expenses', label: 'Total Spending', icon: 'payments', color: '#ff5900', isCurrency: true },
+    { key: 'expense_count', label: 'Total Expenses', icon: 'receipt_long', color: '#3b82f6', isCurrency: false },
+    { key: 'avg_expense', label: 'Avg Expense', icon: 'calculate', color: '#22c55e', isCurrency: true },
+    { key: 'pending_amount', label: 'Pending Approval', icon: 'hourglass_empty', color: '#f59e0b', isCurrency: true },
+  ];
+
+  totalPayoutAmount = computed(() =>
+    this.pendingPayouts().reduce((sum, p) => sum + p.total_amount_cents, 0) / 100
+  );
+  totalPayoutCount = computed(() => this.pendingPayouts().length);
+
   ngOnInit(): void {
     this.loadApprovedReports();
+    this.loadPayoutData();
   }
 
   ngOnDestroy(): void {
@@ -244,6 +308,176 @@ export class FinanceDashboardComponent implements OnInit, OnDestroy {
   formatDate(dateString?: string): string {
     if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  
+  loadPayoutData(): void {
+    const orgId = this.orgService.currentOrganizationId;
+    if (!orgId) return;
+
+    this.loadingPayouts.set(true);
+
+    // Load payout settings and pending payouts in parallel
+    forkJoin({
+      status: this.payoutService.getStripeAccountStatus(orgId),
+      payouts: this.payoutService.getApprovedExpensesForPayout(orgId)
+    }).pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ status, payouts }) => {
+          this.payoutMethod.set(status.payout_method);
+          this.stripeConnected.set(status.connected);
+          this.pendingPayouts.set(payouts);
+          this.loadingPayouts.set(false);
+        },
+        error: (err) => {
+          console.error('Failed to load payout data:', err);
+          this.loadingPayouts.set(false);
+        }
+      });
+  }
+
+  processStripePayout(summary: PendingPayoutSummary): void {
+    const orgId = this.orgService.currentOrganizationId;
+    if (!orgId || !this.stripeConnected()) {
+      this.showError('Stripe is not connected. Please configure payout settings first.');
+      return;
+    }
+
+    this.processingPayoutFor.set(summary.user_id);
+
+    this.payoutService.createPayout(
+      orgId,
+      summary.user_id,
+      summary.total_amount_cents,
+      summary.expense_ids
+    ).pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.showSuccess(`Payout of ${this.formatCurrency(summary.total_amount_cents / 100)} initiated for ${summary.user_name}`);
+            this.loadPayoutData();
+            this.loadApprovedReports();
+          } else {
+            this.showError(response.error || 'Failed to process payout');
+          }
+          this.processingPayoutFor.set(null);
+        },
+        error: (err) => {
+          this.showError(err?.message || 'Failed to process payout');
+          this.processingPayoutFor.set(null);
+        }
+      });
+  }
+
+  createManualPayout(summary: PendingPayoutSummary): void {
+    const orgId = this.orgService.currentOrganizationId;
+    if (!orgId) return;
+
+    this.processingPayoutFor.set(summary.user_id);
+
+    this.payoutService.createManualPayout(
+      orgId,
+      summary.user_id,
+      summary.total_amount_cents,
+      summary.expense_ids,
+      undefined,
+      'Manual payout from finance dashboard'
+    ).pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.showSuccess(`Manual payout record created for ${summary.user_name}`);
+          this.loadPayoutData();
+          this.processingPayoutFor.set(null);
+        },
+        error: (err) => {
+          this.showError(err?.message || 'Failed to create payout record');
+          this.processingPayoutFor.set(null);
+        }
+      });
+  }
+
+  exportPayoutsToCSV(): void {
+    const payouts = this.pendingPayouts();
+    if (payouts.length === 0) {
+      this.showError('No pending payouts to export');
+      return;
+    }
+
+    const data = this.payoutService.generatePayoutExportData(payouts);
+    this.payoutService.exportPayoutsToCSV(data);
+    this.showSuccess(`Exported ${payouts.length} payout records to CSV`);
+  }
+
+  isProcessing(userId: string): boolean {
+    return this.processingPayoutFor() === userId;
+  }
+
+  onTabChange(index: number): void {
+    this.activeTab.set(index);
+    // Load analytics when switching to the Analytics tab (index 2)
+    if (index === 2 && !this.analyticsData()) {
+      this.loadAnalyticsData();
+    }
+  }
+
+  // Analytics methods
+  loadAnalyticsData(): void {
+    this.loadingAnalytics.set(true);
+    const range = getDateRangeForPreset(this.selectedPreset);
+
+    const filters: AnalyticsFilters = {
+      start_date: range.start_date,
+      end_date: range.end_date,
+      interval: 'month',
+    };
+
+    this.analyticsService.loadDashboardData(filters)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.analyticsData.set(data);
+          this.loadingAnalytics.set(false);
+        },
+        error: (err) => {
+          console.error('Error loading analytics:', err);
+          this.showError('Failed to load analytics data');
+          this.loadingAnalytics.set(false);
+        },
+      });
+  }
+
+  onDateRangeChange(): void {
+    this.loadAnalyticsData();
+  }
+
+  getMetricValue(key: string): number {
+    const summary = this.analyticsData()?.summary;
+    if (!summary) return 0;
+    const metric = summary.find(m => m.metric_key === key);
+    return metric?.metric_value ?? 0;
+  }
+
+  getMetricChange(key: string): { text: string; class: string; icon: string } | null {
+    const summary = this.analyticsData()?.summary;
+    if (!summary) return null;
+    const metric = summary.find(m => m.metric_key === key);
+    if (!metric || metric.change_percent === 0) return null;
+    return formatChange(metric.change_percent);
+  }
+
+  exportAnalyticsData(): void {
+    const data = this.analyticsData();
+    if (!data) return;
+
+    // Export category breakdown as CSV
+    if (data.categoryBreakdown?.length) {
+      this.analyticsService.exportToCsv(
+        data.categoryBreakdown as unknown as Record<string, unknown>[],
+        'category_breakdown'
+      );
+    }
+
+    this.showSuccess('Analytics data exported successfully');
   }
 
   private showSuccess(message: string): void {

@@ -17,10 +17,13 @@ import { ScrollingModule } from "@angular/cdk/scrolling";
 import { forkJoin, Subject } from "rxjs";
 import { takeUntil } from "rxjs/operators";
 import { ExpenseService } from "../../../core/services/expense.service";
+import { OrganizationService } from "../../../core/services/organization.service";
+import { CategoryService } from "../../../core/services/category.service";
 import { SanitizationService } from "../../../core/services/sanitization.service";
 import { SupabaseService } from "../../../core/services/supabase.service";
 import { Expense } from "../../../core/models/expense.model";
 import { ExpenseReport } from "../../../core/models/report.model";
+import { CustomExpenseCategory } from "../../../core/models/gl-code.model";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { ExpenseStatus } from "../../../core/models/enums";
 import {
@@ -29,6 +32,7 @@ import {
 } from "../../../shared/components/status-badge/status-badge";
 import { EmptyState } from "../../../shared/components/empty-state/empty-state";
 import { LoadingSkeleton } from "../../../shared/components/loading-skeleton/loading-skeleton";
+import { PullToRefresh } from "../../../shared/components/pull-to-refresh/pull-to-refresh";
 import { Router } from "@angular/router";
 import { AddToReportDialogComponent } from "../add-to-report-dialog/add-to-report-dialog";
 import { ExpenseFiltersComponent, ExpenseFilterState } from "../expense-filters/expense-filters";
@@ -51,6 +55,7 @@ import { ExpenseFiltersComponent, ExpenseFilterState } from "../expense-filters/
     EmptyState,
     LoadingSkeleton,
     ExpenseFiltersComponent,
+    PullToRefresh,
   ],
   templateUrl: "./expense-list.html",
   styleUrl: "./expense-list.scss",
@@ -58,6 +63,8 @@ import { ExpenseFiltersComponent, ExpenseFilterState } from "../expense-filters/
 })
 export class ExpenseList implements OnInit, OnDestroy {
   private expenseService = inject(ExpenseService);
+  private organizationService = inject(OrganizationService);
+  private categoryService = inject(CategoryService);
   private sanitizationService = inject(SanitizationService);
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
@@ -71,6 +78,9 @@ export class ExpenseList implements OnInit, OnDestroy {
   expenses = signal<Expense[]>([]);
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
+
+  // Categories for icon/color lookup
+  categories = signal<CustomExpenseCategory[]>([]);
 
   // Selection state for batch operations
   selectedExpenseIds = signal<Set<string>>(new Set());
@@ -182,11 +192,37 @@ export class ExpenseList implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadExpenses();
+    this.loadCategories();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /**
+   * Load categories for icon/color lookup
+   */
+  private loadCategories(): void {
+    this.categoryService.getCategories()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (categories) => this.categories.set(categories),
+        error: () => {
+          // Silently fail - categories are optional for display
+        }
+      });
+  }
+
+  /**
+   * Get category info by name for icon/color display
+   */
+  getCategoryInfo(categoryName: string): { icon: string; color: string } | null {
+    const category = this.categories().find(c => c.name === categoryName);
+    if (category) {
+      return { icon: category.icon, color: category.color };
+    }
+    return null;
   }
 
   /**
@@ -245,7 +281,8 @@ export class ExpenseList implements OnInit, OnDestroy {
   }
 
   /**
-   * Export to CSV (placeholder)
+   * Export to CSV with GL code mappings
+   * GL codes are configurable by finance admin in Organization Settings
    */
   exportToCSV(): void {
     const rows = this.filteredExpenses();
@@ -259,8 +296,10 @@ export class ExpenseList implements OnInit, OnDestroy {
       "Merchant",
       "Amount",
       "Category",
+      "GL Code",
       "Expense Date",
       "Status",
+      "Notes",
       "Receipt Attached",
       "Receipt File Name",
       "Receipt URL",
@@ -272,14 +311,18 @@ export class ExpenseList implements OnInit, OnDestroy {
       const receiptUrl = expense.receipt?.file_path
         ? this.expenseService.getReceiptUrl(expense.receipt.file_path)
         : "";
+      // Get GL code based on organization's category mapping
+      const glCode = this.organizationService.getGLCodeForCategory(expense.category);
 
       return [
         expense.id,
         expense.merchant,
         expense.amount.toFixed(2),
         expense.category,
+        glCode,
         expense.expense_date,
         expense.status,
+        expense.notes || "",
         receiptAttached,
         receiptFile,
         receiptUrl,
@@ -300,7 +343,7 @@ export class ExpenseList implements OnInit, OnDestroy {
     URL.revokeObjectURL(url);
 
     this.snackBar.open(
-      `Exported ${rows.length} expense${rows.length > 1 ? "s" : ""} to CSV.`,
+      `Exported ${rows.length} expense${rows.length > 1 ? "s" : ""} to CSV with GL codes.`,
       "Close",
       {
         duration: 4000,

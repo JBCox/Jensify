@@ -315,8 +315,8 @@ export class ApprovalService {
       return throwError(() => new Error("User not authenticated"));
     }
 
-    // ✅ FIX: Manual join to bypass stale PostgREST schema cache
-    // 1. Fetch base approvals
+    // Query expense_approvals with filter by current_approver_id
+    // RLS policy allows org members to see pending approvals in their org
     let query = this.supabase.client
       .from("expense_approvals")
       .select("*")
@@ -370,7 +370,7 @@ export class ApprovalService {
           promises.push(
             this.supabase.client
               .from("expenses")
-              .select("*, user:users(*)")
+              .select("*, user:users!expenses_user_id_fkey(*)")
               .in("id", expenseIds)
               .then((res) => ({ type: "expenses", data: res.data })),
           );
@@ -381,7 +381,7 @@ export class ApprovalService {
           promises.push(
             this.supabase.client
               .from("expense_reports")
-              .select("*, user:users(*)")
+              .select("*, user:users!expense_reports_user_id_fkey(*)")
               .in("id", reportIds)
               .then((res) => ({ type: "reports", data: res.data })),
           );

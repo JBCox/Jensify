@@ -3,7 +3,9 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 import { SupabaseService } from './supabase.service';
+import { OrganizationService } from './organization.service';
 import { LoggerService } from './logger.service';
+import { NotificationService } from './notification.service';
 import { User } from '../models/user.model';
 import { LoginCredentials, RegisterCredentials } from '../models';
 import { UserRole } from '../models/enums';
@@ -11,9 +13,12 @@ import { UserRole } from '../models/enums';
 describe('AuthService', () => {
   let service: AuthService;
   let mockSupabaseService: jasmine.SpyObj<SupabaseService>;
+  let mockOrganizationService: jasmine.SpyObj<OrganizationService>;
   let mockRouter: jasmine.SpyObj<Router>;
   let mockLoggerService: jasmine.SpyObj<LoggerService>;
+  let mockNotificationService: jasmine.SpyObj<NotificationService>;
   let currentUserSubject: BehaviorSubject<any>;
+  let sessionInitializedSubject: BehaviorSubject<boolean>;
 
   const mockUser: User = {
     id: 'user-123',
@@ -33,8 +38,9 @@ describe('AuthService', () => {
   };
 
   beforeEach(() => {
-    // Create BehaviorSubject for currentUser$
+    // Create BehaviorSubjects for observable streams
     currentUserSubject = new BehaviorSubject<any>(null);
+    sessionInitializedSubject = new BehaviorSubject<boolean>(true); // Start initialized
 
     // Create mock services
     mockSupabaseService = jasmine.createSpyObj('SupabaseService', [
@@ -45,6 +51,7 @@ describe('AuthService', () => {
       'updatePassword'
     ], {
       currentUser$: currentUserSubject.asObservable(),
+      sessionInitialized$: sessionInitializedSubject.asObservable(),
       isAuthenticated: false,
       userId: null,
       client: {
@@ -52,15 +59,28 @@ describe('AuthService', () => {
       }
     });
 
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
+    mockOrganizationService = jasmine.createSpyObj('OrganizationService', [
+      'clearCurrentOrganization',
+      'loadUserOrganizations'
+    ], {
+      currentOrganizationId: null,
+      organizationInitialized$: of(true)
+    });
+
+    mockRouter = jasmine.createSpyObj('Router', ['navigate'], {
+      url: '/home'
+    });
     mockLoggerService = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
+    mockNotificationService = jasmine.createSpyObj('NotificationService', ['success', 'error', 'warn', 'info']);
 
     TestBed.configureTestingModule({
       providers: [
         AuthService,
         { provide: SupabaseService, useValue: mockSupabaseService },
+        { provide: OrganizationService, useValue: mockOrganizationService },
         { provide: Router, useValue: mockRouter },
-        { provide: LoggerService, useValue: mockLoggerService }
+        { provide: LoggerService, useValue: mockLoggerService },
+        { provide: NotificationService, useValue: mockNotificationService }
       ]
     });
 

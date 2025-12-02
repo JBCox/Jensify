@@ -48,15 +48,15 @@
   button[mat-flat-button] {
     &:not(:disabled) { background-color: var(--jensify-primary, #ff5900) !important; color: white !important; }
     &:disabled {
-      background-color: rgba(255, 89, 0, 0.3) !important;
+      background-color: color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
       color: rgba(255, 255, 255, 0.5) !important;
       opacity: 1 !important;
       mat-icon { color: rgba(255, 255, 255, 0.5) !important; }
     }
     :host-context(.dark) &:disabled {
-      background-color: rgba(255, 89, 0, 0.25) !important;
+      background-color: color-mix(in srgb, var(--jensify-primary) 25%, transparent) !important;
       color: rgba(255, 255, 255, 0.4) !important;
-      border: 1px solid rgba(255, 89, 0, 0.3) !important;
+      border: 1px solid color-mix(in srgb, var(--jensify-primary) 30%, transparent) !important;
       mat-icon { color: rgba(255, 255, 255, 0.4) !important; }
     }
   }
@@ -68,7 +68,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--jensify-spacing-sm, 0.5rem) var(--jensify-spacing-md, 1rem);
-  background: var(--jensify-primary-soft, rgba(255, 89, 0, 0.08));
+  background: var(--jensify-primary-soft, color-mix(in srgb, var(--jensify-primary) 8%, transparent));
   border: 1px solid var(--jensify-primary, #ff5900);
   border-radius: var(--jensify-radius-md, 6px);
   margin-bottom: var(--jensify-spacing-md, 1rem);
@@ -96,7 +96,7 @@
 
   :host-context(.dark) & {
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-    border-color: rgba(247, 88, 12, 0.15);
+    border-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
   }
 }
 
@@ -286,11 +286,11 @@
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
 
   &:hover { box-shadow: var(--jensify-shadow-md); }
-  &.selected { border-color: var(--jensify-primary, #ff5900); background: var(--jensify-primary-soft, rgba(255, 89, 0, 0.04)); }
+  &.selected { border-color: var(--jensify-primary, #ff5900); background: var(--jensify-primary-soft, color-mix(in srgb, var(--jensify-primary) 4%, transparent)); }
   :host-context(.dark) & {
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-    border-color: rgba(247, 88, 12, 0.15);
-    &.selected { border-color: var(--jensify-primary, #ff5900); background: rgba(255, 89, 0, 0.08); }
+    border-color: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
+    &.selected { border-color: var(--jensify-primary, #ff5900); background: color-mix(in srgb, var(--jensify-primary) 8%, transparent); }
   }
 }
 
@@ -334,7 +334,7 @@
   img { width: 100%; height: 100%; object-fit: cover; }
   .jensify-thumbnail-placeholder {
     display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;
-    background: var(--jensify-primary-soft, rgba(255, 89, 0, 0.08));
+    background: var(--jensify-primary-soft, color-mix(in srgb, var(--jensify-primary) 8%, transparent));
     mat-icon { font-size: 24px; width: 24px; height: 24px; color: var(--jensify-primary, #ff5900); }
   }
   :host-context(.dark) & { background: rgba(255, 255, 255, 0.05); }
@@ -356,6 +356,30 @@
   .jensify-meta-item, span { display: inline; white-space: nowrap; }
   .jensify-meta-divider { opacity: 0.5; flex-shrink: 0; }
   .jensify-in-report { color: var(--jensify-primary, #ff5900); font-weight: 500; }
+
+  // Category item with icon
+  .jensify-category-item {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 4px;
+
+    .category-icon-mini {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      flex-shrink: 0;
+
+      mat-icon {
+        color: white;
+        font-size: 12px;
+        width: 12px;
+        height: 12px;
+      }
+    }
+  }
 }
 
 .jensify-expense-notes {

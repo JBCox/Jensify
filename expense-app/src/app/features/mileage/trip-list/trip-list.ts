@@ -16,6 +16,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { StatusBadge, ExpenseStatus as BadgeStatus } from '../../../shared/components/status-badge/status-badge';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loading-skeleton';
+import { PullToRefresh } from '../../../shared/components/pull-to-refresh/pull-to-refresh';
 import { Router } from '@angular/router';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { TripFiltersComponent, TripFilterState } from '../trip-filters/trip-filters';
@@ -37,6 +38,7 @@ import { TripFiltersComponent, TripFilterState } from '../trip-filters/trip-filt
     EmptyState,
     LoadingSkeleton,
     TripFiltersComponent,
+    PullToRefresh,
   ],
   templateUrl: './trip-list.html',
   styleUrl: './trip-list.scss',

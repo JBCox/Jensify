@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +11,7 @@ import { ExpenseStatus } from '../../../core/models/enums';
 import { ChangeType } from '../../../shared/components/metric-card/metric-card';
 import { StatusBadge, ExpenseStatus as BadgeStatus } from '../../../shared/components/status-badge/status-badge';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { PullToRefresh } from '../../../shared/components/pull-to-refresh/pull-to-refresh';
 
 interface FinanceMetrics {
   pendingApprovals: number;
@@ -43,7 +44,8 @@ interface LineChartSeries {
     MatIconModule,
     StatusBadge,
     EmptyState,
-    NgxChartsModule
+    NgxChartsModule,
+    PullToRefresh
   ],
   templateUrl: './finance-dashboard.html',
   styleUrl: './finance-dashboard.scss',
@@ -60,8 +62,9 @@ export class FinanceDashboard implements OnInit {
   spendTrendData$!: Observable<LineChartSeries[]>;
   statusBreakdownData$!: Observable<ChartDataPoint[]>;
   loading = true;
+  refreshing = signal(false);
 
-  // Chart configuration
+  // Chart configuration - static color scheme to avoid change detection issues
   readonly pieColorScheme: Color = {
     name: 'JensifyPie',
     selectable: true,
@@ -87,6 +90,16 @@ export class FinanceDashboard implements OnInit {
 
   ngOnInit(): void {
     this.loadDashboardData();
+  }
+
+  /**
+   * Handle pull-to-refresh
+   */
+  onRefresh(): void {
+    this.refreshing.set(true);
+    this.loadDashboardData();
+    // Allow time for observables to emit new values
+    setTimeout(() => this.refreshing.set(false), 1000);
   }
 
   private loadDashboardData(): void {

@@ -1,4 +1,4 @@
-import { Component, Inject, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -136,9 +136,9 @@ export interface BudgetDialogResult {
 
         <!-- Alert Threshold -->
         <div class="slider-field">
-          <label>Alert Threshold: {{ form.get('alert_threshold_percent')?.value }}%</label>
+          <label for="alert-threshold-slider">Alert Threshold: {{ form.get('alert_threshold_percent')?.value }}%</label>
           <mat-slider min="50" max="100" step="5" discrete>
-            <input matSliderThumb formControlName="alert_threshold_percent">
+            <input matSliderThumb formControlName="alert_threshold_percent" id="alert-threshold-slider">
           </mat-slider>
           <mat-hint>You'll be warned when spending reaches this percentage</mat-hint>
         </div>
@@ -212,12 +212,13 @@ export class BudgetDialogComponent implements OnInit {
   private budgetService = inject(BudgetService);
   private organizationService = inject(OrganizationService);
   private dialogRef = inject(MatDialogRef<BudgetDialogComponent>);
+  data = inject<BudgetDialogData>(MAT_DIALOG_DATA);
 
   form!: FormGroup;
   saving = signal(false);
   departments = signal<string[]>([]);
 
-  isEditMode: boolean;
+  isEditMode = this.data.mode === 'edit';
 
   budgetTypes: { value: BudgetType; label: string; icon: string }[] = [
     { value: 'organization', label: 'Organization-wide', icon: 'business' },
@@ -234,10 +235,6 @@ export class BudgetDialogComponent implements OnInit {
   ];
 
   categories = Object.values(ExpenseCategory);
-
-  constructor(@Inject(MAT_DIALOG_DATA) public data: BudgetDialogData) {
-    this.isEditMode = data.mode === 'edit';
-  }
 
   ngOnInit(): void {
     this.initForm();

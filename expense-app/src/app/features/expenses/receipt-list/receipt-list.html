@@ -1,3 +1,8 @@
+<app-pull-to-refresh
+  [refreshing]="refreshing()"
+  (refresh)="onRefresh()">
+</app-pull-to-refresh>
+
 <div class="jensify-container">
   <!-- Page Header -->
   <div class="jensify-page-header">
@@ -105,19 +110,19 @@
       @if (ocrCompleted()) {
         <div class="ocr-results">
           <div class="ocr-field">
-            <label>Merchant</label>
-            <input type="text" [ngModel]="extractedMerchant()" (ngModelChange)="extractedMerchant.set($event)">
+            <label for="ocr-merchant-input">Merchant</label>
+            <input id="ocr-merchant-input" type="text" [ngModel]="extractedMerchant()" (ngModelChange)="extractedMerchant.set($event)">
           </div>
           <div class="ocr-field">
-            <label>Amount</label>
+            <label for="ocr-amount-input">Amount</label>
             <div class="amount-input">
               <span>$</span>
-              <input type="number" step="0.01" [ngModel]="extractedAmount()" (ngModelChange)="extractedAmount.set($event)">
+              <input id="ocr-amount-input" type="number" step="0.01" [ngModel]="extractedAmount()" (ngModelChange)="extractedAmount.set($event)">
             </div>
           </div>
           <div class="ocr-field">
-            <label>Date</label>
-            <input type="text" [ngModel]="extractedDate()" (ngModelChange)="extractedDate.set($event)">
+            <label for="ocr-date-input">Date</label>
+            <input id="ocr-date-input" type="text" [ngModel]="extractedDate()" (ngModelChange)="extractedDate.set($event)">
           </div>
         </div>
       }

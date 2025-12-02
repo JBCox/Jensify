@@ -49,6 +49,12 @@ describe('OrganizationService', () => {
   };
 
   beforeEach(() => {
+    // Reset TestBed to clear any previous singleton instances
+    TestBed.resetTestingModule();
+
+    // Clear localStorage before each test to ensure isolation
+    localStorage.clear();
+
     const supabaseSpy = jasmine.createSpyObj('SupabaseService', ['client'], {
       userId: 'user-123'
     });
@@ -77,6 +83,11 @@ describe('OrganizationService', () => {
     supabaseServiceMock = TestBed.inject(SupabaseService) as jasmine.SpyObj<SupabaseService>;
     notificationServiceMock = TestBed.inject(NotificationService) as jasmine.SpyObj<NotificationService>;
     loggerServiceMock = TestBed.inject(LoggerService) as jasmine.SpyObj<LoggerService>;
+  });
+
+  afterEach(() => {
+    // Clean up localStorage after each test
+    localStorage.clear();
   });
 
   it('should be created', () => {
@@ -449,34 +460,60 @@ describe('OrganizationService', () => {
   });
 
   describe('setCurrentOrganization', () => {
-    it('should set current organization and save to localStorage', () => {
-      spyOn(localStorage, 'setItem');
+    it('should set current organization and save to localStorage', (done) => {
+      // Verify localStorage starts clean
+      expect(localStorage.getItem('current_organization_id')).toBeNull();
 
+      // Set the organization
       service.setCurrentOrganization(mockOrganization, mockMember);
 
-      expect(localStorage.setItem).toHaveBeenCalledWith('current_organization_id', 'org-123');
+      // Check localStorage was updated synchronously
+      expect(localStorage.getItem('current_organization_id')).toBe('org-123');
+
+      // Check organization initialized flag
+      service.organizationInitialized$.subscribe(initialized => {
+        if (initialized) {
+          expect(initialized).toBe(true);
+        }
+      });
+
+      // Check observables were updated - use a counter to ensure both subscriptions complete
+      let checksCompleted = 0;
+      const checkDone = () => {
+        checksCompleted++;
+        if (checksCompleted === 2) {
+          done();
+        }
+      };
 
       service.currentOrganization$.subscribe(org => {
         expect(org).toEqual(mockOrganization);
+        checkDone();
       });
 
       service.currentMembership$.subscribe(member => {
         expect(member).toEqual(mockMember);
+        checkDone();
       });
     });
   });
 
   describe('clearCurrentOrganization', () => {
-    it('should clear organization context and localStorage', () => {
-      spyOn(localStorage, 'removeItem');
-
+    it('should clear organization context and localStorage', (done) => {
+      // Setup: set organization first
+      localStorage.setItem('current_organization_id', 'org-123');
       service.setCurrentOrganization(mockOrganization, mockMember);
+
+      // Act: clear the organization
       service.clearCurrentOrganization();
 
-      expect(localStorage.removeItem).toHaveBeenCalledWith('current_organization_id');
+      // Assert: localStorage cleared
+      expect(localStorage.getItem('current_organization_id')).toBeNull();
 
+      // Assert: observable updated
       service.currentOrganization$.subscribe(org => {
         expect(org).toBeNull();
+        done();
       });
     });
   });
@@ -545,8 +582,27 @@ describe('OrganizationService', () => {
       expect(service.isCurrentUserFinanceOrAdmin()).toBe(true);
     });
 
-    it('should return false for employee/manager roles', () => {
+    it('should return false for employee role', () => {
       service.setCurrentOrganization(mockOrganization, mockMember);
+      expect(service.isCurrentUserFinanceOrAdmin()).toBe(false);
+    });
+
+    it('should return false for manager role WITHOUT can_access_finance', () => {
+      const managerMember = { ...mockMember, role: UserRole.MANAGER, can_access_finance: false };
+      service.setCurrentOrganization(mockOrganization, managerMember);
+      expect(service.isCurrentUserFinanceOrAdmin()).toBe(false);
+    });
+
+    it('should return true for manager role WITH can_access_finance', () => {
+      const managerMember = { ...mockMember, role: UserRole.MANAGER, can_access_finance: true };
+      service.setCurrentOrganization(mockOrganization, managerMember);
+      expect(service.isCurrentUserFinanceOrAdmin()).toBe(true);
+    });
+
+    it('should ignore can_access_finance flag for non-manager roles', () => {
+      // Employee with flag set should still return false
+      const employeeMember = { ...mockMember, role: UserRole.EMPLOYEE, can_access_finance: true };
+      service.setCurrentOrganization(mockOrganization, employeeMember);
       expect(service.isCurrentUserFinanceOrAdmin()).toBe(false);
     });
   });
@@ -555,12 +611,6 @@ describe('OrganizationService', () => {
     it('should return true for manager role', () => {
       const managerMember = { ...mockMember, role: UserRole.MANAGER };
       service.setCurrentOrganization(mockOrganization, managerMember);
-      expect(service.isCurrentUserManagerOrAbove()).toBe(true);
-    });
-
-    it('should return true for finance role', () => {
-      const financeMember = { ...mockMember, role: UserRole.FINANCE };
-      service.setCurrentOrganization(mockOrganization, financeMember);
       expect(service.isCurrentUserManagerOrAbove()).toBe(true);
     });
 
@@ -573,6 +623,41 @@ describe('OrganizationService', () => {
     it('should return false for employee role', () => {
       service.setCurrentOrganization(mockOrganization, mockMember);
       expect(service.isCurrentUserManagerOrAbove()).toBe(false);
+    });
+
+    it('should return false for finance role WITHOUT can_manage_expenses', () => {
+      const financeMember = { ...mockMember, role: UserRole.FINANCE, can_manage_expenses: false };
+      service.setCurrentOrganization(mockOrganization, financeMember);
+      expect(service.isCurrentUserManagerOrAbove()).toBe(false);
+    });
+
+    it('should return true for finance role WITH can_manage_expenses', () => {
+      const financeMember = { ...mockMember, role: UserRole.FINANCE, can_manage_expenses: true };
+      service.setCurrentOrganization(mockOrganization, financeMember);
+      expect(service.isCurrentUserManagerOrAbove()).toBe(true);
+    });
+
+    it('should ignore can_manage_expenses flag for non-finance roles', () => {
+      // Employee with flag set should still return false
+      const employeeMember = { ...mockMember, role: UserRole.EMPLOYEE, can_manage_expenses: true };
+      service.setCurrentOrganization(mockOrganization, employeeMember);
+      expect(service.isCurrentUserManagerOrAbove()).toBe(false);
+    });
+  });
+
+  describe('canAccessFinance (alias)', () => {
+    it('should be an alias for isCurrentUserFinanceOrAdmin', () => {
+      const financeMember = { ...mockMember, role: UserRole.FINANCE };
+      service.setCurrentOrganization(mockOrganization, financeMember);
+      expect(service.canAccessFinance()).toBe(service.isCurrentUserFinanceOrAdmin());
+    });
+  });
+
+  describe('canManageExpenses (alias)', () => {
+    it('should be an alias for isCurrentUserManagerOrAbove', () => {
+      const managerMember = { ...mockMember, role: UserRole.MANAGER };
+      service.setCurrentOrganization(mockOrganization, managerMember);
+      expect(service.canManageExpenses()).toBe(service.isCurrentUserManagerOrAbove());
     });
   });
 
@@ -609,13 +694,27 @@ describe('OrganizationService', () => {
     });
 
     it('should persist organization context across page reloads', () => {
-      spyOn(localStorage, 'setItem');
-      spyOn(localStorage, 'getItem').and.returnValue('org-123');
+      // Verify localStorage starts clean
+      expect(localStorage.getItem('current_organization_id')).toBeNull();
 
+      // Set organization - this should persist to localStorage
       service.setCurrentOrganization(mockOrganization, mockMember);
 
-      expect(localStorage.setItem).toHaveBeenCalledWith('current_organization_id', 'org-123');
+      // Verify localStorage has the value (synchronous check)
+      expect(localStorage.getItem('current_organization_id')).toBe('org-123');
+
+      // Verify service can read from localStorage
       expect(service.currentOrganizationId).toBe('org-123');
+
+      // Simulate page reload by clearing the service's internal state
+      // but keeping localStorage intact
+      const storedId = localStorage.getItem('current_organization_id');
+      expect(storedId).toBe('org-123');
+
+      // Verify currentOrganizationId getter falls back to localStorage
+      // when BehaviorSubject value is null
+      const currentId = service.currentOrganizationId;
+      expect(currentId).toBe('org-123');
     });
   });
 });

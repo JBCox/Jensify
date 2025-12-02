@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 
 describe('ReceiptUpload', () => {
@@ -47,6 +48,7 @@ describe('ReceiptUpload', () => {
         MatButtonModule,
         MatIconModule,
         MatProgressBarModule,
+        MatProgressSpinner,
         MatCardModule
       ],
       providers: [
@@ -62,6 +64,7 @@ describe('ReceiptUpload', () => {
           MatButtonModule,
           MatIconModule,
           MatProgressBarModule,
+          MatProgressSpinner,
           MatCardModule
           // Explicitly exclude MatSnackBarModule to use spy
         ]
@@ -215,29 +218,37 @@ describe('ReceiptUpload', () => {
   });
 
   describe('Upload Receipt', () => {
-    xit('should upload receipt successfully', (done) => {
+    it('should upload receipt successfully', (done) => {
       const mockFile = new File(['test'], 'receipt.jpg', { type: 'image/jpeg' });
       component.selectedFile.set(mockFile);
 
+      // Mock uploadReceipt to return observable with mock data
       expenseServiceSpy.uploadReceipt.and.returnValue(of(mockReceipt));
 
+      // Spy on getReceiptById to prevent actual polling (return observable immediately)
+      expenseServiceSpy.getReceiptById = jasmine.createSpy('getReceiptById').and.returnValue(
+        of(mockReceipt.receipt)
+      );
+
       component.uploadReceipt();
-      fixture.detectChanges();
 
-      expect(component.isUploading()).toBe(true);
+      // Expect uploadReceipt to have been called
+      expect(expenseServiceSpy.uploadReceipt).toHaveBeenCalledWith(mockFile);
 
+      // Wait for observable to complete and component state to update
       setTimeout(() => {
         fixture.detectChanges();
-        expect(expenseServiceSpy.uploadReceipt).toHaveBeenCalledWith(mockFile);
+        // After async completion, uploadedReceipt is set and isUploading is false
         expect(component.uploadedReceipt()).toEqual(mockReceipt.receipt);
-        // Note: Success message is shown in the expense form via SmartScan status,
-        // not via snackbar in this component
-        expect(routerSpy.navigate).toHaveBeenCalledWith(
-          ['/expenses/new'],
-          { queryParams: { receiptId: mockReceipt.receipt.id } }
+        expect(component.isUploading()).toBe(false);
+        expect(component.uploadProgress()).toBe(100);
+        expect(snackBarSpy.open).toHaveBeenCalledWith(
+          'Receipt uploaded successfully!',
+          'Close',
+          jasmine.objectContaining({ duration: 3000, panelClass: ['success-snackbar'] })
         );
         done();
-      }, 250);
+      }, 200);
     });
 
     it('should handle upload error', (done) => {
@@ -283,21 +294,18 @@ describe('ReceiptUpload', () => {
       expect(expenseServiceSpy.uploadReceipt).not.toHaveBeenCalled();
     });
 
-    xit('should navigate to expense form after successful upload', (done) => {
-      const mockFile = new File(['test'], 'receipt.jpg', { type: 'image/jpeg' });
-      component.selectedFile.set(mockFile);
+    it('should navigate to expense form when navigateToExpenseForm is called', () => {
+      // Set up the uploaded receipt
+      component.uploadedReceipt.set(mockReceipt.receipt);
 
-      expenseServiceSpy.uploadReceipt.and.returnValue(of(mockReceipt));
+      // Call the navigation method
+      component.navigateToExpenseForm();
 
-      component.uploadReceipt();
-
-      setTimeout(() => {
-        expect(routerSpy.navigate).toHaveBeenCalledWith(
-          ['/expenses/new'],
-          { queryParams: { receiptId: mockReceipt.receipt.id } }
-        );
-        done();
-      }, 1100); // Wait for navigation delay
+      // Verify navigation occurred with correct params
+      expect(routerSpy.navigate).toHaveBeenCalledWith(
+        ['/expenses/new'],
+        jasmine.objectContaining({ queryParams: jasmine.objectContaining({ receiptId: mockReceipt.receipt.id }) })
+      );
     });
   });
 

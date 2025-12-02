@@ -242,6 +242,7 @@ export class ExpenseService {
   /**
    * Submit expense for approval
    * Creates approval chain and assigns to first approver
+   * Pre-checks for manager assignment if workflow requires it
    */
   submitExpense(id: string): Observable<Expense> {
     const userId = this.supabase.userId;
@@ -249,13 +250,23 @@ export class ExpenseService {
       return throwError(() => new Error('User not authenticated'));
     }
 
-    // Call database function to create approval chain
-    return from(
-      this.supabase.client.rpc('create_approval_chain', {
-        p_expense_id: id,
-        p_report_id: null
-      })
-    ).pipe(
+    // Pre-check: Verify user has a manager assigned (required for most approval workflows)
+    return this.checkManagerAssignment().pipe(
+      switchMap((hasManager) => {
+        if (!hasManager) {
+          const errorMsg = 'Cannot submit for approval: You do not have a manager assigned. Please contact your organization administrator to assign a manager to your account.';
+          this.notificationService.showError(errorMsg);
+          return throwError(() => new Error(errorMsg));
+        }
+
+        // Call database function to create approval chain
+        return from(
+          this.supabase.client.rpc('create_approval_chain', {
+            p_expense_id: id,
+            p_report_id: null
+          })
+        );
+      }),
       switchMap(() => this.getExpenseById(id)),
       map((expense) => {
         this.notificationService.showSuccess('Expense submitted for approval');
@@ -263,11 +274,67 @@ export class ExpenseService {
       }),
       catchError((error) => {
         this.logger.error('Failed to submit expense for approval', error);
-        this.notificationService.showError(
-          error.message || 'Failed to submit expense for approval'
-        );
-        return throwError(() => error);
+
+        // Provide user-friendly error messages for common issues
+        let errorMessage = error.message || 'Failed to submit expense for approval';
+
+        if (errorMessage.includes('no active manager')) {
+          errorMessage = 'Cannot submit for approval: You do not have a manager assigned. Please contact your organization administrator to assign a manager to your account.';
+        } else if (errorMessage.includes('No eligible user found with role')) {
+          errorMessage = 'Cannot submit for approval: No approver is available for the required role. Please contact your organization administrator.';
+        }
+
+        this.notificationService.showError(errorMessage);
+        return throwError(() => new Error(errorMessage));
       })
+    );
+  }
+
+  /**
+   * Check if current user has a manager assigned in the current organization
+   * Returns true if manager is assigned and active, false otherwise
+   */
+  private checkManagerAssignment(): Observable<boolean> {
+    const userId = this.supabase.userId;
+    const organizationId = this.organizationService.currentOrganizationId;
+
+    if (!userId || !organizationId) {
+      return of(false);
+    }
+
+    return from(
+      this.supabase.client
+        .from('organization_members')
+        .select('manager_id')
+        .eq('user_id', userId)
+        .eq('organization_id', organizationId)
+        .eq('is_active', true)
+        .single()
+    ).pipe(
+      switchMap(({ data, error }) => {
+        if (error || !data) {
+          return of(false);
+        }
+
+        // Check if manager_id is set and refers to an active member
+        if (!data.manager_id) {
+          return of(false);
+        }
+
+        // Verify manager is active
+        return from(
+          this.supabase.client
+            .from('organization_members')
+            .select('id')
+            .eq('id', data.manager_id)
+            .eq('is_active', true)
+            .single()
+        ).pipe(
+          map(({ data: managerData }) => !!managerData),
+          catchError(() => of(false))
+        );
+      }),
+      catchError(() => of(false))
     );
   }
 
