@@ -12,7 +12,12 @@
       <div class="header-stats">
         <span class="stat">{{ totalCount() }} {{ totalCount() === 1 ? 'expense' : 'expenses' }}</span>
         <span class="stat-divider">•</span>
-        <span class="stat">{{ formatCurrency(totalAmount()) }}</span>
+        <span class="stat">
+          {{ formatCurrency(totalAmount(), primaryCurrency()) }}
+          @if (hasMixedCurrencies()) {
+            <span class="mixed-currency-indicator" title="Multiple currencies">*</span>
+          }
+        </span>
         @if (draftExpenses().length > 0) {
           <span class="stat-divider">•</span>
           <span class="stat draft-count">{{ draftExpenses().length }} {{ draftExpenses().length === 1 ? 'draft' : 'drafts' }}</span>
@@ -160,7 +165,7 @@
             <!-- Merchant & Amount Row -->
             <div class="jensify-card-main">
               <h3 class="jensify-merchant-name">{{ expense.merchant }}</h3>
-              <span class="jensify-expense-amount">{{ formatCurrency(expense.amount) }}</span>
+              <span class="jensify-expense-amount">{{ formatCurrency(expense.amount, expense.currency) }}</span>
             </div>
 
             <!-- Meta Info -->

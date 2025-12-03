@@ -12,6 +12,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ExpenseService } from '../../../core/services/expense.service';
 import { CategoryService } from '../../../core/services/category.service';
+import { OrganizationService } from '../../../core/services/organization.service';
 import { DuplicateDetectionService, PotentialDuplicate } from '../../../core/services/duplicate-detection.service';
 import { ExpenseCategory, OcrStatus } from '../../../core/models/enums';
 import { CustomExpenseCategory } from '../../../core/models/gl-code.model';
@@ -68,6 +69,11 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   categories = signal<CustomExpenseCategory[]>([]);
   categoriesLoading = signal(false);
 
+  // Currency support
+  currencies = signal<{ code: string; name: string; symbol: string }[]>([]);
+  currenciesLoading = signal(false);
+  selectedCurrency = signal<string>('USD');
+
   // Selected category details (icon, color, GL code)
   selectedCategory = computed(() => {
     const categoryId = this.form?.get('category')?.value;
@@ -107,6 +113,7 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private expenses = inject(ExpenseService);
   private categoryService = inject(CategoryService);
+  private organizationService = inject(OrganizationService);
   private duplicateService = inject(DuplicateDetectionService);
   private ocrService = inject(OcrService);
   private dialog = inject(MatDialog);
@@ -118,6 +125,7 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
     this.form = this.fb.group({
       merchant: ['', [Validators.required, Validators.minLength(2)]],
       amount: [null, [Validators.required, Validators.min(0.01)]],
+      currency: ['USD', [Validators.required]],
       category: [null, [Validators.required]],
       expense_date: [new Date().toISOString().slice(0,10), [Validators.required]],
       notes: ['']
@@ -125,6 +133,9 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
 
     // Load active categories from database
     this.loadCategories();
+
+    // Load available currencies
+    this.loadCurrencies();
 
     this.receiptId = this.route.snapshot.queryParamMap.get('receiptId');
     if (this.receiptId) {
@@ -178,6 +189,45 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
           this.categories.set(fallbackCategories);
           this.form.patchValue({ category: fallbackCategories[0]?.id });
         }
+      });
+  }
+
+  /**
+   * Load available currencies from database
+   * Sets default currency from user preferences
+   */
+  private loadCurrencies(): void {
+    this.currenciesLoading.set(true);
+    this.organizationService.getAvailableCurrencies()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (currencies) => {
+          this.currencies.set(currencies);
+          this.currenciesLoading.set(false);
+
+          // Set default currency from user preferences
+          const userDefaultCurrency = this.organizationService.getCurrentUserDefaultCurrency();
+          this.form.patchValue({ currency: userDefaultCurrency });
+          this.selectedCurrency.set(userDefaultCurrency);
+        },
+        error: () => {
+          // Fallback to common currencies
+          this.currencies.set([
+            { code: 'USD', name: 'US Dollar', symbol: '$' },
+            { code: 'EUR', name: 'Euro', symbol: '€' },
+            { code: 'GBP', name: 'British Pound', symbol: '£' },
+            { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' }
+          ]);
+          this.currenciesLoading.set(false);
+          this.form.patchValue({ currency: 'USD' });
+        }
+      });
+
+    // Update selectedCurrency signal when form changes
+    this.form.get('currency')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((currency: string) => {
+        this.selectedCurrency.set(currency);
       });
   }
 
@@ -265,6 +315,7 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
       ...this.form.value,
       category: selectedCategory?.name || this.form.value.category, // Use name, not ID
       category_id: selectedCategory?.id || null, // Also store the category ID for reference
+      currency: this.form.value.currency || 'USD',
       receipt_id: this.receiptId || undefined
     };
 
@@ -450,6 +501,15 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
       updated = true;
     }
 
+    // Apply extracted currency from OCR if available
+    if ((receipt as { extracted_currency?: string }).extracted_currency && !controls['currency']?.dirty) {
+      const extractedCurrency = (receipt as { extracted_currency?: string }).extracted_currency;
+      if (extractedCurrency) {
+        controls['currency']?.setValue(extractedCurrency);
+        updated = true;
+      }
+    }
+
     // Extract line items from OCR data for split suggestion
     this.extractLineItemsFromReceipt(receipt);
 
@@ -517,6 +577,7 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
       ...this.form.value,
       category: selectedCategory?.name || this.form.value.category,
       category_id: selectedCategory?.id || null,
+      currency: this.form.value.currency || 'USD',
       receipt_id: this.receiptId || undefined
     };
 
@@ -580,12 +641,13 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Format currency for display
+   * Format currency for display using selected currency
    */
   formatCurrency(amount: number): string {
+    const currency = this.selectedCurrency() || 'USD';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: currency
     }).format(amount);
   }
 
@@ -621,5 +683,21 @@ export class ExpenseFormComponent implements OnInit, OnDestroy {
   getSelectedCategoryName(): string {
     const selected = this.selectedCategory();
     return selected?.name || '';
+  }
+
+  /**
+   * TrackBy function for currency list - improves ngFor performance
+   */
+  trackByCurrency(_index: number, currency: { code: string }): string {
+    return currency.code;
+  }
+
+  /**
+   * Get currency symbol for the selected currency
+   */
+  getSelectedCurrencySymbol(): string {
+    const code = this.selectedCurrency();
+    const currency = this.currencies().find(c => c.code === code);
+    return currency?.symbol || '$';
   }
 }

@@ -156,6 +156,7 @@ export interface ApprovalWithDetails extends ExpenseApproval {
     merchant: string;
     amount: number;
     category: string;
+    currency?: string;
     user: {
       full_name: string;
       email: string;

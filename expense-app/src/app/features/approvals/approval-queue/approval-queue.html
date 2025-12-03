@@ -97,7 +97,7 @@
                   <div class="submitter-meta">{{formatDate(approval.submitted_at)}}</div>
                 </div>
               </div>
-              <div class="card-amount">{{formatCurrency(getAmount(approval))}}</div>
+              <div class="card-amount">{{formatCurrency(getAmount(approval), getCurrency(approval))}}</div>
             </div>
 
             <div class="card-body">
@@ -169,7 +169,7 @@
             <th mat-header-cell *matHeaderCellDef>Amount</th>
             <td mat-cell *matCellDef="let approval">
               <div class="amount-cell">
-                <span class="amount-value">{{formatCurrency(getAmount(approval))}}</span>
+                <span class="amount-value">{{formatCurrency(getAmount(approval), getCurrency(approval))}}</span>
                 <span class="merchant-name">{{getMerchant(approval)}}</span>
               </div>
             </td>

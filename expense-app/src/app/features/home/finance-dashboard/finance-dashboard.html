@@ -149,7 +149,7 @@
                   <span class="submitter">{{ getUserName(expense) }}</span>
                   <span class="merchant">{{ expense.merchant || 'No merchant' }}</span>
                 </div>
-                <div class="expense-amount">{{ formatCurrency(expense.amount) }}</div>
+                <div class="expense-amount">{{ formatCurrency(expense.amount, expense.currency) }}</div>
                 <div class="expense-actions">
                   <button mat-button color="primary" (click)="onViewExpense(expense)" title="Review expense details">
                     <mat-icon>open_in_new</mat-icon>
@@ -188,7 +188,7 @@
                   <span class="merchant">{{ expense.merchant || 'No merchant' }}</span>
                   <span class="date">{{ getUserName(expense) }} - {{ formatDate(expense.expense_date) }}</span>
                 </div>
-                <div class="expense-amount">{{ formatCurrency(expense.amount) }}</div>
+                <div class="expense-amount">{{ formatCurrency(expense.amount, expense.currency) }}</div>
                 <app-status-badge [status]="mapStatus(expense.status)" size="small"></app-status-badge>
               </div>
             }

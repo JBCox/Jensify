@@ -47,7 +47,7 @@
             <app-status-badge [status]="getBadgeStatus(report()!.status)"></app-status-badge>
             <div class="total-amount">
               <span class="amount-label">Total</span>
-              <span class="amount-value">{{ formatCurrency(report()!.total_amount) }}</span>
+              <span class="amount-value">{{ formatCurrency(report()!.total_amount, report()!.currency) }}</span>
             </div>
           </div>
         </div>

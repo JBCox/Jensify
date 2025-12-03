@@ -1,0 +1,50 @@
+# Netlify configuration for Jensify Expense App
+# Angular 20+ PWA application
+
+[build]
+  # Build command
+  command = "npm run build"
+  # Output directory (Angular 17+ with application builder)
+  publish = "dist/expense-app/browser"
+
+# SPA fallback - redirect all routes to index.html for Angular routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security and caching
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Cache static assets aggressively
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache hashed JS/CSS files (Angular's outputHashing)
+[[headers]]
+  for = "/*.*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Service worker - don't cache
+[[headers]]
+  for = "/ngsw-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/ngsw.json"
+  [headers.values]
+    Cache-Control = "no-cache"

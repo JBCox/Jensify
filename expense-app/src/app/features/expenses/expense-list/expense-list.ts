@@ -148,8 +148,27 @@ export class ExpenseList implements OnInit, OnDestroy {
   // Computed summary metrics
   totalCount = computed(() => this.filteredExpenses().length);
   totalAmount = computed(() =>
-    this.filteredExpenses().reduce((sum, e) => sum + e.amount, 0)
-  );
+    this.filteredExpenses().reduce((sum, e) => sum + e.amount, 0));
+
+  hasMixedCurrencies = computed(() => {
+    const expenses = this.filteredExpenses();
+    if (expenses.length === 0) return false;
+    const currencies = new Set(expenses.map(e => e.currency || 'USD'));
+    return currencies.size > 1;
+  });
+
+  primaryCurrency = computed(() => {
+    const expenses = this.filteredExpenses();
+    if (expenses.length === 0) return 'USD';
+    // Return the most common currency
+    const currencyCount = expenses.reduce((acc, e) => {
+      const curr = e.currency || 'USD';
+      acc[curr] = (acc[curr] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    return Object.entries(currencyCount).sort((a, b) => b[1] - a[1])[0][0];
+  });
+
 
   // Computed selection metrics
   draftExpenses = computed(() =>
@@ -295,6 +314,7 @@ export class ExpenseList implements OnInit, OnDestroy {
       "Expense ID",
       "Merchant",
       "Amount",
+      "Currency",
       "Category",
       "GL Code",
       "Expense Date",
@@ -318,6 +338,7 @@ export class ExpenseList implements OnInit, OnDestroy {
         expense.id,
         expense.merchant,
         expense.amount.toFixed(2),
+        expense.currency || 'USD',
         expense.category,
         glCode,
         expense.expense_date,
@@ -398,12 +419,12 @@ export class ExpenseList implements OnInit, OnDestroy {
   }
 
   /**
-   * Format currency
+   * Format currency with multi-currency support
    */
-  formatCurrency(amount: number): string {
+  formatCurrency(amount: number, currency: string = 'USD'): string {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: currency,
     }).format(amount);
   }
 

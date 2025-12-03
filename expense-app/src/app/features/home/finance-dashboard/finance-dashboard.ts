@@ -276,10 +276,10 @@ export class FinanceDashboard implements OnInit {
     return statusMap[status.toLowerCase()] || status;
   }
 
-  formatCurrency(amount: number): string {
+  formatCurrency(amount: number, currency: string = 'USD'): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: currency
     }).format(amount);
   }
 

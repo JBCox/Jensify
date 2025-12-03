@@ -138,6 +138,11 @@ export interface OrganizationMember {
    * Allows managers to process payouts and view finance data
    */
   can_access_finance?: boolean;
+  /**
+   * User's preferred default currency (ISO 4217 code, e.g., 'USD', 'EUR')
+   * Used for expense entry and display
+   */
+  default_currency?: string;
   /** Timestamp when member joined organization */
   joined_at: string;
   /** Timestamp when membership was created */
@@ -276,6 +281,8 @@ export interface UpdateOrganizationMemberDto {
   can_manage_expenses?: boolean;
   /** Grant finance dashboard access (for managers to process payouts) */
   can_access_finance?: boolean;
+  /** User's preferred default currency (ISO 4217 code, e.g., 'USD', 'EUR') */
+  default_currency?: string;
 }
 
 /**

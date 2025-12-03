@@ -91,6 +91,60 @@ mat-card-content {
     grid-column: 1 / -1;
   }
 
+  // Amount and Currency row - side by side
+  .amount-currency-row {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: var(--jensify-spacing-md);
+    align-items: flex-start;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      gap: var(--jensify-spacing-sm);
+    }
+
+    .amount-field {
+      flex: 2;
+      min-width: 0;
+
+      input {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--jensify-primary);
+        text-align: right;
+        padding: var(--jensify-spacing-xs) 0;
+      }
+
+      mat-label {
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      // Currency symbol prefix styling
+      [matTextPrefix] {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--jensify-primary);
+        opacity: 0.8;
+      }
+    }
+
+    .currency-field {
+      flex: 1;
+      min-width: 120px;
+      max-width: 160px;
+
+      @media (max-width: 480px) {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      mat-select {
+        font-weight: 600;
+      }
+    }
+  }
+
   // Amount field - make it prominent and full width on mobile, half on desktop
   mat-form-field:has([formControlName="amount"]) {
     @media (min-width: 640px) {

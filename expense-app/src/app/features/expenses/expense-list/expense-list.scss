@@ -36,6 +36,11 @@
       color: var(--jensify-text-muted, #666);
       .stat-divider { margin: 0 var(--jensify-spacing-xs, 0.25rem); opacity: 0.5; }
       .draft-count { color: var(--jensify-primary, #ff5900); font-weight: 600; }
+      .mixed-currency-indicator {
+        color: var(--jensify-warning);
+        font-weight: 600;
+        margin-left: 2px;
+      }
     }
   }
 

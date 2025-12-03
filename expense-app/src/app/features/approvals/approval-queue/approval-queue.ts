@@ -183,6 +183,14 @@ export class ApprovalQueue implements OnInit {
     return 0;
   }
 
+  getCurrency(approval: ApprovalWithDetails): string {
+    if (approval.expense) {
+      return approval.expense.currency || 'USD';
+    }
+    // For reports, use USD as default since reports aggregate multiple expenses
+    return 'USD';
+  }
+
   getCategory(approval: ApprovalWithDetails): string {
     if (approval.expense) {
       return approval.expense.category;
@@ -306,10 +314,10 @@ export class ApprovalQueue implements OnInit {
     this.filterForm.reset();
   }
 
-  formatCurrency(amount: number): string {
+  formatCurrency(amount: number, currency: string = 'USD'): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: currency,
     }).format(amount);
   }
 

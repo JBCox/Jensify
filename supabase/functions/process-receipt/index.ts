@@ -23,6 +23,7 @@ interface OcrResult {
   amount: number | null;
   date: string | null;
   tax: number | null;
+  currency: string | null;
   rawText: string;
   confidence: {
     overall: number;
@@ -30,8 +31,30 @@ interface OcrResult {
     amount: number;
     date: number;
     tax: number;
+    currency: number;
   };
 }
+
+// Currency symbol to code mapping
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  "$": "USD",
+  "€": "EUR",
+  "£": "GBP",
+  "¥": "JPY",
+  "R$": "BRL",
+  "C$": "CAD",
+  "A$": "AUD",
+};
+
+// Currency keyword to code mapping
+const CURRENCY_KEYWORDS: Record<string, string> = {
+  "USD": "USD",
+  "EUR": "EUR",
+  "GBP": "GBP",
+  "EURO": "EUR",
+  "DOLLAR": "USD",
+  "POUND": "GBP",
+};
 
 // Allowed origins (production and development)
 const ALLOWED_ORIGINS = [
@@ -46,7 +69,7 @@ const ALLOWED_ORIGINS = [
  * Get CORS headers with origin validation
  */
 function getCorsHeaders(origin: string | null): Record<string, string> {
-  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin)
+  const allowedOrigin = origin && (ALLOWED_ORIGINS.includes(origin) || origin.endsWith(".netlify.app"))
     ? origin
     : ALLOWED_ORIGINS[0]; // Default to first allowed origin
 
@@ -176,6 +199,7 @@ serve(async (req: Request) => {
           extracted_amount: ocrResult.amount,
           extracted_date: ocrResult.date,
           extracted_tax: ocrResult.tax,
+          extracted_currency: ocrResult.currency,
           ocr_status: "completed",
           updated_at: new Date().toISOString(),
         })
@@ -211,6 +235,34 @@ serve(async (req: Request) => {
 });
 
 /**
+ * Extract currency from receipt text
+ */
+function extractCurrency(text: string, hasAmounts: boolean): { currency: string | null; confidence: number } {
+  const upperText = text.toUpperCase();
+
+  // First, look for explicit currency codes (USD, EUR, GBP, etc.)
+  for (const [keyword, code] of Object.entries(CURRENCY_KEYWORDS)) {
+    if (upperText.includes(keyword)) {
+      return { currency: code, confidence: 0.90 };
+    }
+  }
+
+  // Then, look for currency symbols ($, €, £, etc.)
+  for (const [symbol, code] of Object.entries(CURRENCY_SYMBOLS)) {
+    if (text.includes(symbol)) {
+      return { currency: code, confidence: 0.85 };
+    }
+  }
+
+  // Default to USD if amounts found but no currency symbol
+  if (hasAmounts) {
+    return { currency: "USD", confidence: 0.50 };
+  }
+
+  return { currency: null, confidence: 0 };
+}
+
+/**
  * Parse extracted text to identify receipt fields
  */
 function parseReceiptText(text: string): OcrResult {
@@ -222,6 +274,7 @@ function parseReceiptText(text: string): OcrResult {
     amount: null,
     date: null,
     tax: null,
+    currency: null,
     rawText: text,
     confidence: {
       overall: 0,
@@ -229,6 +282,7 @@ function parseReceiptText(text: string): OcrResult {
       amount: 0,
       date: 0,
       tax: 0,
+      currency: 0,
     },
   };
 
@@ -290,12 +344,18 @@ function parseReceiptText(text: string): OcrResult {
     }
   }
 
+  // Extract currency
+  const currencyResult = extractCurrency(text, amounts.length > 0);
+  result.currency = currencyResult.currency;
+  result.confidence.currency = currencyResult.confidence;
+
   // Calculate overall confidence
   const confidenceValues = [
     result.confidence.merchant,
     result.confidence.amount,
     result.confidence.date,
     result.confidence.tax,
+    result.confidence.currency,
   ].filter((c) => c > 0);
 
   result.confidence.overall = confidenceValues.reduce((sum, c) => sum + c, 0) /

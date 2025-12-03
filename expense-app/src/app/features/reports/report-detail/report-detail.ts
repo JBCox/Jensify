@@ -330,8 +330,8 @@ export class ReportDetailComponent implements OnInit, OnDestroy {
     return map[status] || "draft";
   }
 
-  formatCurrency(amount: number): string {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+  formatCurrency(amount: number, currency: string = 'USD'): string {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: currency }).format(amount);
   }
 
   formatDate(dateString?: string | null): string {
