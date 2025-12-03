@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { BehaviorSubject, Observable, from } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, from, of, throwError, timer } from 'rxjs';
+import { map, switchMap, filter, take, timeout, catchError } from 'rxjs/operators';
 
 export interface LatLng {
   lat: number;
@@ -67,15 +67,22 @@ export class GoogleMapsService {
   }
 
   /**
-   * Wait for Google Maps to be loaded
+   * Wait for Google Maps to be loaded (with timeout)
    */
   private waitForMaps(): Observable<any> {
     return this.loaderSubject.pipe(
-      map(loaded => {
-        if (!loaded || !this.googleMaps) {
+      filter(loaded => loaded === true),
+      take(1),
+      timeout(10000), // 10 second timeout
+      map(() => {
+        if (!this.googleMaps) {
           throw new Error('Google Maps not loaded');
         }
         return this.googleMaps;
+      }),
+      catchError(err => {
+        console.error('Google Maps loading error:', err);
+        return throwError(() => new Error('Google Maps failed to load'));
       })
     );
   }
@@ -174,6 +181,15 @@ export class GoogleMapsService {
    * Used by Start/Stop tracking mode
    */
   getRouteByCoords(origin: LatLng, destination: LatLng): Observable<{ distanceMiles: number; durationMinutes: number }> {
+    // Check if start and end are essentially the same location (within ~100 meters)
+    const latDiff = Math.abs(origin.lat - destination.lat);
+    const lngDiff = Math.abs(origin.lng - destination.lng);
+    if (latDiff < 0.001 && lngDiff < 0.001) {
+      // Same location - return 0 distance immediately
+      console.log('Start/End locations are the same, returning 0 distance');
+      return of({ distanceMiles: 0, durationMinutes: 0 });
+    }
+
     return this.waitForMaps().pipe(
       switchMap(maps => {
         const service = new maps.DistanceMatrixService();
@@ -186,12 +202,18 @@ export class GoogleMapsService {
           })
         );
       }),
+      timeout(15000), // 15 second timeout for the API call
       map((result: any) => {
         if (!result.rows || !result.rows[0] || !result.rows[0].elements[0]) {
           throw new Error('Unable to calculate route');
         }
 
         const element = result.rows[0].elements[0];
+        // Handle various status codes gracefully
+        if (element.status === 'ZERO_RESULTS' || element.status === 'NOT_FOUND') {
+          console.log('Google Maps returned no results, using 0 distance');
+          return { distanceMiles: 0, durationMinutes: 0 };
+        }
         if (element.status !== 'OK') {
           throw new Error(`Route calculation failed: ${element.status}`);
         }
@@ -200,6 +222,11 @@ export class GoogleMapsService {
           distanceMiles: element.distance.value / 1609.34, // meters to miles
           durationMinutes: element.duration.value / 60 // seconds to minutes
         };
+      }),
+      catchError(err => {
+        console.error('Route calculation error:', err);
+        // Return 0 distance on error instead of failing
+        return of({ distanceMiles: 0, durationMinutes: 0 });
       })
     );
   }
