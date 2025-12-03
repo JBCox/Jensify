@@ -250,6 +250,7 @@ export class ReceiptService {
   getReceiptUrl(filePath: string): string {
     return this.supabase.getPublicUrl(this.RECEIPT_BUCKET, filePath);
   }
+/**   * Get signed URL for receipt file (for private bucket access)   * Returns a temporary URL that allows authenticated access to the file   * @param filePath Path to the file in storage   * @param expiresInSeconds URL expiration time (default: 1 hour)   */  async getReceiptSignedUrl(filePath: string, expiresInSeconds = 3600): Promise<string> {    const { signedUrl, error } = await this.supabase.getSignedUrl(      this.RECEIPT_BUCKET,      filePath,      expiresInSeconds    );    if (error) {      this.logger.error('Failed to get signed URL', error, 'ReceiptService');      return '';    }    return signedUrl;  }
 
   /**
    * Validate receipt file (MIME type and size only)

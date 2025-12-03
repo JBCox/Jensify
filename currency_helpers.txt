@@ -1,0 +1,49 @@
+  // ============================================================================
+  // CURRENCY HELPERS
+  // ============================================================================
+
+  /**
+   * Get the current user's default currency
+   * Returns 'USD' if not set
+   */
+  getCurrentUserDefaultCurrency(): string {
+    return this.currentMembershipSubject.value?.default_currency || 'USD';
+  }
+
+  /**
+   * Update the current user's default currency
+   * @param currency ISO 4217 currency code (e.g., 'USD', 'EUR')
+   */
+  updateCurrentUserDefaultCurrency(currency: string): Observable<OrganizationMember> {
+    const membership = this.currentMembershipSubject.value;
+    if (!membership) {
+      return throwError(() => new Error('No current membership'));
+    }
+
+    return this.updateOrganizationMember(membership.id, { default_currency: currency }).pipe(
+      tap((updatedMember) => {
+        // Update the current membership subject with new currency
+        this.currentMembershipSubject.next(updatedMember);
+      })
+    );
+  }
+
+  /**
+   * Get list of available currencies from database
+   */
+  getAvailableCurrencies(): Observable<{ code: string; name: string; symbol: string }[]> {
+    return from(
+      this.supabase.client
+        .from('currencies')
+        .select('code, name, symbol')
+        .eq('is_active', true)
+        .order('code')
+    ).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        return (data || []) as { code: string; name: string; symbol: string }[];
+      }),
+      catchError(this.handleError)
+    );
+  }
+

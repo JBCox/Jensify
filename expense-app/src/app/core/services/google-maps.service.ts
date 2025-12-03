@@ -118,11 +118,17 @@ export class GoogleMapsService {
         const geocoder = new maps.Geocoder();
         return from(geocoder.geocode({ location: { lat, lng } }));
       }),
+      timeout(10000), // 10 second timeout for geocoding
       map((result: any) => {
         if (!result.results || result.results.length === 0) {
           throw new Error('No address found for coordinates');
         }
         return result.results[0].formatted_address;
+      }),
+      catchError(err => {
+        console.error('Reverse geocode error:', err);
+        // Return coordinates as fallback
+        return of(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
       })
     );
   }

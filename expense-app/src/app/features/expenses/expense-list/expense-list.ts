@@ -86,6 +86,9 @@ export class ExpenseList implements OnInit, OnDestroy {
   selectedExpenseIds = signal<Set<string>>(new Set());
   submittingBatch = signal<boolean>(false);
 
+  // Cached signed URLs for receipt thumbnails
+  receiptUrls = signal<Map<string, string>>(new Map());
+
   // Filter signals
   selectedStatus = signal<ExpenseStatus | "all">("all");
   searchQuery = signal<string>("");
@@ -257,6 +260,7 @@ export class ExpenseList implements OnInit, OnDestroy {
         next: (expenses) => {
           this.expenses.set(expenses);
           this.loading.set(false);
+          this.loadReceiptUrls(expenses);
         },
         error: (err: Error) => {
           this.error.set(err.message || "Failed to load expenses");
@@ -373,29 +377,53 @@ export class ExpenseList implements OnInit, OnDestroy {
   }
 
   /**
-   * Get receipt thumbnail URL
-   * Returns URL of primary receipt or first receipt in expense_receipts array
+   * Load signed URLs for receipt thumbnails
    */
-  getReceiptThumbnail(expense: Expense): string | null {
-    // Try primary receipt from expense_receipts array first
-    const primaryReceipt = expense.expense_receipts?.find((er) => er.is_primary)
-      ?.receipt;
-    if (primaryReceipt?.file_path) {
-      return this.expenseService.getReceiptUrl(primaryReceipt.file_path);
+  private async loadReceiptUrls(expenses: Expense[]): Promise<void> {
+    const urlMap = new Map<string, string>();
+
+    for (const expense of expenses) {
+      const filePath = this.getReceiptFilePath(expense);
+      if (filePath && !urlMap.has(expense.id)) {
+        try {
+          const signedUrl = await this.expenseService.getReceiptSignedUrl(filePath);
+          if (signedUrl) {
+            urlMap.set(expense.id, signedUrl);
+          }
+        } catch (error) {
+          console.error('Failed to get signed URL for expense', expense.id, error);
+        }
+      }
     }
 
-    // Fall back to first receipt in array
+    this.receiptUrls.set(urlMap);
+  }
+
+  /**
+   * Get receipt file path from expense
+   */
+  private getReceiptFilePath(expense: Expense): string | null {
+    const primaryReceipt = expense.expense_receipts?.find((er) => er.is_primary)?.receipt;
+    if (primaryReceipt?.file_path) {
+      return primaryReceipt.file_path;
+    }
     const firstReceipt = expense.expense_receipts?.[0]?.receipt;
     if (firstReceipt?.file_path) {
-      return this.expenseService.getReceiptUrl(firstReceipt.file_path);
+      return firstReceipt.file_path;
     }
-
-    // Fall back to old single receipt (backward compatibility)
     if (expense.receipt?.file_path) {
-      return this.expenseService.getReceiptUrl(expense.receipt.file_path);
+      return expense.receipt.file_path;
     }
-
     return null;
+  }
+
+  /**
+   * Get receipt thumbnail URL from cache
+   * Returns cached signed URL for the expense's primary receipt
+   */
+  getReceiptThumbnail(expense: Expense): string | null {
+    // Return from cache
+    return this.receiptUrls().get(expense.id) || null;
   }
 
   /**

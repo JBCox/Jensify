@@ -424,6 +424,15 @@ export class ExpenseService {
     return this.receiptService.getReceiptUrl(filePath);
   }
 
+  
+  /**
+   * Get signed URL for receipt file (for private bucket access)
+   * Use this instead of getReceiptUrl for displaying receipt images
+   */
+  getReceiptSignedUrl(filePath: string): Promise<string> {
+    return this.receiptService.getReceiptSignedUrl(filePath);
+  }
+
   validateReceiptFile(file: File): string | null {
     return this.receiptService.validateReceiptFile(file);
   }

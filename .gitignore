@@ -37,3 +37,6 @@ coverage/
 
 # Archived files (cleanup)
 _archived/
+
+# Local Netlify folder
+.netlify

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, from, of, forkJoin } from 'rxjs';
-import { map, switchMap, catchError } from 'rxjs/operators';
+import { Observable, from, of, forkJoin, throwError } from 'rxjs';
+import { map, switchMap, catchError, timeout } from 'rxjs/operators';
 import { GeolocationService } from './geolocation.service';
 import { GoogleMapsService } from './google-maps.service';
 
@@ -123,31 +123,44 @@ export class StartStopTrackingService {
    */
   stopTrip(): Observable<StartStopResult> {
     if (!this.currentState || !this.currentState.isActive) {
-      throw new Error('No active trip to stop');
+      return throwError(() => new Error('No active trip to stop'));
     }
 
     const startState = this.currentState;
     const endTime = new Date().toISOString();
 
     return this.geolocationService.getCurrentPosition().pipe(
+      timeout(15000), // 15 second timeout for GPS
       switchMap(position => {
         // Get end address and calculate route distance in parallel
         return forkJoin({
           endAddress: this.googleMapsService.reverseGeocode(position.latitude, position.longitude).pipe(
+            timeout(10000), // 10 second timeout
             catchError(() => of(`${position.latitude.toFixed(6)}, ${position.longitude.toFixed(6)}`))
           ),
           route: this.googleMapsService.getRouteByCoords(
             { lat: startState.startLat, lng: startState.startLng },
             { lat: position.latitude, lng: position.longitude }
           ).pipe(
+            timeout(15000), // 15 second timeout
             catchError(() => of({ distanceMiles: 0, durationMinutes: 0 }))
           )
         }).pipe(
+          timeout(20000), // 20 second timeout for the forkJoin
           map(({ endAddress, route }) => ({
             position,
             endAddress: endAddress || `${position.latitude.toFixed(6)}, ${position.longitude.toFixed(6)}`,
             route
-          }))
+          })),
+          catchError(() => {
+            // If forkJoin times out, return fallback values
+            console.log('forkJoin timeout - using fallback values');
+            return of({
+              position,
+              endAddress: `${position.latitude.toFixed(6)}, ${position.longitude.toFixed(6)}`,
+              route: { distanceMiles: 0, durationMinutes: 0 }
+            });
+          })
         );
       }),
       map(({ position, endAddress, route }) => {
@@ -173,6 +186,31 @@ export class StartStopTrackingService {
         this.clearState();
 
         return result;
+      }),
+      timeout(30000), // 30 second master timeout for entire operation
+      catchError(err => {
+        console.error('Stop trip error:', err);
+        // Return a fallback result even on error to prevent UI from hanging
+        const endDate = new Date(endTime);
+        const startDate = new Date(startState.startTime);
+        const durationSeconds = Math.floor((endDate.getTime() - startDate.getTime()) / 1000);
+
+        // Clear the state even on error
+        this.clearState();
+
+        // Return a minimal result with 0 distance - user can edit if needed
+        return of({
+          startLat: startState.startLat,
+          startLng: startState.startLng,
+          startAddress: startState.startAddress,
+          endLat: startState.startLat, // Use start as end on error
+          endLng: startState.startLng,
+          endAddress: 'Unable to determine location',
+          distanceMiles: 0,
+          durationSeconds: durationSeconds,
+          startTime: startState.startTime,
+          endTime: endTime
+        } as StartStopResult);
       })
     );
   }
