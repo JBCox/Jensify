@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, from, map, catchError, throwError } from 'rxjs';
+import { Observable, from, map, catchError, throwError, switchMap } from 'rxjs';
 import { SupabaseService } from './supabase.service';
 import { OrganizationService } from './organization.service';
 import {
@@ -221,20 +221,31 @@ export class MileageService {
   // ============================================================================
 
   submitTrip(id: string): Observable<MileageTrip> {
-    return from(
-      this.supabase.client
-        .from('mileage_trips')
-        .update({
-          status: 'submitted',
-          submitted_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single()
-    ).pipe(
-      map(({ data, error }) => {
-        if (error) throw error;
-        return data as MileageTrip;
+    // First fetch the trip to validate required fields
+    return this.getTripById(id).pipe(
+      switchMap(trip => {
+        // Validate purpose is filled in before submitting
+        if (!trip.purpose || trip.purpose.trim().length === 0) {
+          return throwError(() => new Error('Purpose is required before submitting. Please edit the trip and add a purpose.'));
+        }
+
+        // Proceed with submission
+        return from(
+          this.supabase.client
+            .from('mileage_trips')
+            .update({
+              status: 'submitted',
+              submitted_at: new Date().toISOString()
+            })
+            .eq('id', id)
+            .select()
+            .single()
+        ).pipe(
+          map(({ data, error }) => {
+            if (error) throw error;
+            return data as MileageTrip;
+          })
+        );
       }),
       catchError(this.handleError)
     );

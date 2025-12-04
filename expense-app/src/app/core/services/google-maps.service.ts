@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { BehaviorSubject, Observable, from, of, throwError, timer } from 'rxjs';
+import { BehaviorSubject, Observable, from, of, throwError, timer, firstValueFrom } from 'rxjs';
 import { map, switchMap, filter, take, timeout, catchError } from 'rxjs/operators';
 
 export interface LatLng {
@@ -161,8 +161,8 @@ export class GoogleMapsService {
 
         // Get coordinates for both addresses
         return from(Promise.all([
-          this.geocodeAddress(origin).toPromise(),
-          this.geocodeAddress(destination).toPromise()
+          firstValueFrom(this.geocodeAddress(origin)),
+          firstValueFrom(this.geocodeAddress(destination))
         ])).pipe(
           map(([originCoords, destCoords]) => {
             if (!originCoords || !destCoords) {
@@ -185,19 +185,27 @@ export class GoogleMapsService {
   /**
    * Calculate driving distance between two coordinate points
    * Used by Start/Stop tracking mode
+   *
+   * Returns actual driving distance from Google Distance Matrix API.
+   * If API fails, returns 0 distance - user must fill in manually.
+   *
+   * If Distance Matrix API fails, check Google Cloud Console:
+   * 1. Distance Matrix API must be ENABLED (separate from Maps JavaScript API)
+   * 2. Billing must be enabled on the project
+   * 3. API key must not have restrictions excluding Distance Matrix API
    */
-  getRouteByCoords(origin: LatLng, destination: LatLng): Observable<{ distanceMiles: number; durationMinutes: number }> {
+  getRouteByCoords(origin: LatLng, destination: LatLng): Observable<{ distanceMiles: number; durationMinutes: number; apiSuccess: boolean }> {
     // Check if start and end are essentially the same location (within ~100 meters)
     const latDiff = Math.abs(origin.lat - destination.lat);
     const lngDiff = Math.abs(origin.lng - destination.lng);
     if (latDiff < 0.001 && lngDiff < 0.001) {
-      // Same location - return 0 distance immediately
-      console.log('Start/End locations are the same, returning 0 distance');
-      return of({ distanceMiles: 0, durationMinutes: 0 });
+      console.log('[GoogleMapsService] Start/End locations are the same, returning 0 distance');
+      return of({ distanceMiles: 0, durationMinutes: 0, apiSuccess: true });
     }
 
     return this.waitForMaps().pipe(
       switchMap(maps => {
+        console.log('[GoogleMapsService] Calling Distance Matrix API with coords:', origin, destination);
         const service = new maps.DistanceMatrixService();
         return from(
           service.getDistanceMatrix({
@@ -208,31 +216,53 @@ export class GoogleMapsService {
           })
         );
       }),
-      timeout(15000), // 15 second timeout for the API call
+      timeout(15000),
       map((result: any) => {
+        console.log('[GoogleMapsService] Distance Matrix API response:', result);
+
         if (!result.rows || !result.rows[0] || !result.rows[0].elements[0]) {
-          throw new Error('Unable to calculate route');
+          console.warn('[GoogleMapsService] Distance Matrix API returned invalid structure');
+          console.warn('[GoogleMapsService] User will need to enter distance manually');
+          return { distanceMiles: 0, durationMinutes: 0, apiSuccess: false };
         }
 
         const element = result.rows[0].elements[0];
-        // Handle various status codes gracefully
+        console.log('[GoogleMapsService] Distance Matrix element status:', element.status);
+
+        // Handle various API error statuses - return 0 so user fills in manually
         if (element.status === 'ZERO_RESULTS' || element.status === 'NOT_FOUND') {
-          console.log('Google Maps returned no results, using 0 distance');
-          return { distanceMiles: 0, durationMinutes: 0 };
+          console.warn('[GoogleMapsService] Distance Matrix: no route found');
+          console.warn('[GoogleMapsService] User will need to enter distance manually');
+          return { distanceMiles: 0, durationMinutes: 0, apiSuccess: false };
+        }
+        if (element.status === 'REQUEST_DENIED') {
+          console.error('[GoogleMapsService] Distance Matrix API REQUEST_DENIED!');
+          console.error('[GoogleMapsService] DIAGNOSTIC: Enable "Distance Matrix API" in Google Cloud Console');
+          console.error('[GoogleMapsService] DIAGNOSTIC: API Key may be restricted - check API restrictions');
+          return { distanceMiles: 0, durationMinutes: 0, apiSuccess: false };
+        }
+        if (element.status === 'OVER_QUERY_LIMIT') {
+          console.error('[GoogleMapsService] Distance Matrix API OVER_QUERY_LIMIT - billing may need attention');
+          return { distanceMiles: 0, durationMinutes: 0, apiSuccess: false };
         }
         if (element.status !== 'OK') {
-          throw new Error(`Route calculation failed: ${element.status}`);
+          console.warn(`[GoogleMapsService] Distance Matrix status: ${element.status}`);
+          console.warn('[GoogleMapsService] User will need to enter distance manually');
+          return { distanceMiles: 0, durationMinutes: 0, apiSuccess: false };
         }
 
-        return {
-          distanceMiles: element.distance.value / 1609.34, // meters to miles
-          durationMinutes: element.duration.value / 60 // seconds to minutes
-        };
+        const distanceMiles = Math.round((element.distance.value / 1609.34) * 100) / 100;
+        const durationMinutes = Math.round(element.duration.value / 60);
+        console.log(`[GoogleMapsService] Distance Matrix SUCCESS: ${distanceMiles} miles, ${durationMinutes} min`);
+
+        return { distanceMiles, durationMinutes, apiSuccess: true };
       }),
       catchError(err => {
-        console.error('Route calculation error:', err);
-        // Return 0 distance on error instead of failing
-        return of({ distanceMiles: 0, durationMinutes: 0 });
+        // This catches network errors, timeouts, and API load failures
+        console.error('[GoogleMapsService] Distance Matrix API error:', err?.message || err);
+        console.warn('[GoogleMapsService] TIP: Check if Distance Matrix API is enabled in Google Cloud Console');
+        console.warn('[GoogleMapsService] User will need to enter distance manually');
+        return of({ distanceMiles: 0, durationMinutes: 0, apiSuccess: false });
       })
     );
   }

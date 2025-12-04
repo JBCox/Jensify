@@ -82,6 +82,13 @@
     </mat-card>
   }
 
+  <!-- Statistics Widget -->
+  <app-mileage-stats-widget
+    [startDate]="filterState().dateFrom?.toISOString()"
+    [endDate]="filterState().dateTo?.toISOString()"
+    [showBreakdown]="true">
+  </app-mileage-stats-widget>
+
   <!-- Filters Component -->
   <app-trip-filters
     [filters]="filterState()"
@@ -139,7 +146,9 @@
         <mat-card
           *cdkVirtualFor="let trip of filteredTrips(); trackBy: trackByTripId"
           class="jensify-card jensify-trip-card"
-          [class.selected]="isSelected(trip.id)">
+          [class.selected]="isSelected(trip.id)"
+          role="article"
+          [attr.aria-label]="'Trip on ' + formatDate(trip.trip_date) + ' from ' + trip.origin_address + ' to ' + trip.destination_address + ', ' + trip.total_miles + ' miles, status ' + trip.status + ', reimbursement ' + formatCurrency(trip.reimbursement_amount)">
           <div class="jensify-card-content">
             <!-- Selection Checkbox (only for draft trips) -->
             @if (trip.status === 'draft') {
@@ -147,7 +156,8 @@
                 <mat-checkbox
                   [checked]="isSelected(trip.id)"
                   (change)="toggleSelection(trip)"
-                  (click)="$event.stopPropagation()">
+                  (click)="$event.stopPropagation()"
+                  [attr.aria-label]="'Select trip from ' + trip.origin_address + ' to ' + trip.destination_address">
                 </mat-checkbox>
               </div>
             }
@@ -187,14 +197,23 @@
                 </div>
                 <div class="jensify-meta-item">
                   <mat-icon>description</mat-icon>
-                  <span>{{ trip.purpose }}</span>
+                  <span>{{ trip.purpose || '(No purpose)' }}</span>
                 </div>
               </div>
 
               <div class="jensify-trip-mileage-info">
                 <div class="jensify-mileage-item">
                   <span class="jensify-mileage-label">Distance:</span>
-                  <span class="jensify-mileage-value">{{ trip.distance_miles }} mi {{ trip.is_round_trip ? '(round trip)' : '' }}</span>
+                  <span class="jensify-mileage-value">
+                    {{ trip.distance_miles }} mi {{ trip.is_round_trip ? '(round trip)' : '' }}
+                    @if (trip.distance_manually_modified) {
+                      <mat-icon
+                        class="distance-modified-icon"
+                        matTooltip="Distance manually modified from {{ trip.original_gps_distance }} mi">
+                        warning
+                      </mat-icon>
+                    }
+                  </span>
                 </div>
                 <div class="jensify-mileage-item">
                   <span class="jensify-mileage-label">Total Miles:</span>
@@ -219,30 +238,53 @@
           </div>
 
           <!-- Card Actions -->
-          <div class="jensify-card-actions">
-            <button mat-button (click)="goToDetails(trip)" class="jensify-button">
-              <mat-icon>visibility</mat-icon>
+          <div class="jensify-card-actions" role="group" [attr.aria-label]="'Actions for trip on ' + formatDate(trip.trip_date)">
+            <button
+              mat-button
+              (click)="goToDetails(trip)"
+              class="jensify-button"
+              [attr.aria-label]="'View details for trip from ' + trip.origin_address + ' to ' + trip.destination_address">
+              <mat-icon aria-hidden="true">visibility</mat-icon>
               Details
             </button>
             @if (canConvertToExpense(trip)) {
-              <button mat-button color="accent" (click)="convertToExpense(trip)" class="jensify-button">
-                <mat-icon>receipt_long</mat-icon>
+              <button
+                mat-button
+                color="accent"
+                (click)="convertToExpense(trip)"
+                class="jensify-button"
+                [attr.aria-label]="'Convert this trip to an expense'">
+                <mat-icon aria-hidden="true">receipt_long</mat-icon>
                 To Expense
               </button>
             }
             @if (trip.expense_id) {
-              <button mat-button (click)="viewLinkedExpense(trip)" class="jensify-button">
-                <mat-icon>open_in_new</mat-icon>
+              <button
+                mat-button
+                (click)="viewLinkedExpense(trip)"
+                class="jensify-button"
+                [attr.aria-label]="'View linked expense for this trip'">
+                <mat-icon aria-hidden="true">open_in_new</mat-icon>
                 View Expense
               </button>
             }
             @if (trip.status === 'draft') {
-              <button mat-button color="primary" (click)="goToEdit(trip)" class="jensify-button">
-                <mat-icon>edit</mat-icon>
+              <button
+                mat-button
+                color="primary"
+                (click)="goToEdit(trip)"
+                class="jensify-button"
+                [attr.aria-label]="'Edit this trip'">
+                <mat-icon aria-hidden="true">edit</mat-icon>
                 Edit
               </button>
-              <button mat-button color="warn" (click)="deleteTrip(trip)" class="jensify-button">
-                <mat-icon>delete</mat-icon>
+              <button
+                mat-button
+                color="warn"
+                (click)="deleteTrip(trip)"
+                class="jensify-button"
+                [attr.aria-label]="'Delete this trip'">
+                <mat-icon aria-hidden="true">delete</mat-icon>
                 Delete
               </button>
             }

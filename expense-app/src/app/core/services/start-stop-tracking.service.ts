@@ -133,6 +133,7 @@ export class StartStopTrackingService {
       timeout(15000), // 15 second timeout for GPS
       switchMap(position => {
         // Get end address and calculate route distance in parallel
+        // If Distance Matrix API fails, distance will be 0 and user must fill in manually
         return forkJoin({
           endAddress: this.googleMapsService.reverseGeocode(position.latitude, position.longitude).pipe(
             timeout(10000), // 10 second timeout
@@ -141,24 +142,30 @@ export class StartStopTrackingService {
           route: this.googleMapsService.getRouteByCoords(
             { lat: startState.startLat, lng: startState.startLng },
             { lat: position.latitude, lng: position.longitude }
-          ).pipe(
-            timeout(15000), // 15 second timeout
-            catchError(() => of({ distanceMiles: 0, durationMinutes: 0 }))
           )
         }).pipe(
           timeout(20000), // 20 second timeout for the forkJoin
-          map(({ endAddress, route }) => ({
-            position,
-            endAddress: endAddress || `${position.latitude.toFixed(6)}, ${position.longitude.toFixed(6)}`,
-            route
-          })),
+          map(({ endAddress, route }) => {
+            if (!route.apiSuccess) {
+              console.log('[StartStopTracking] Distance Matrix API failed - user must enter distance manually');
+            } else {
+              console.log('[StartStopTracking] Distance calculated:', route.distanceMiles, 'miles');
+            }
+            return {
+              position,
+              endAddress: endAddress || `${position.latitude.toFixed(6)}, ${position.longitude.toFixed(6)}`,
+              route,
+              apiSuccess: route.apiSuccess
+            };
+          }),
           catchError(() => {
-            // If forkJoin times out, return fallback values
-            console.log('forkJoin timeout - using fallback values');
+            // If forkJoin times out, return 0 distance - user must fill in manually
+            console.log('[StartStopTracking] forkJoin timeout - user must enter distance manually');
             return of({
               position,
               endAddress: `${position.latitude.toFixed(6)}, ${position.longitude.toFixed(6)}`,
-              route: { distanceMiles: 0, durationMinutes: 0 }
+              route: { distanceMiles: 0, durationMinutes: 0, apiSuccess: false },
+              apiSuccess: false
             });
           })
         );

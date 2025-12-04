@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { Observable, from, throwError } from 'rxjs';
+import { Observable, from, throwError, firstValueFrom } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
 import { OrganizationService } from './organization.service';
@@ -375,7 +375,7 @@ export class PlaidService {
       this.convertTransaction({ transaction_id: id, category })
     );
 
-    return from(Promise.all(conversions.map(o => o.toPromise()))).pipe(
+    return from(Promise.all(conversions.map(o => firstValueFrom(o)))).pipe(
       map(results => results.filter((r): r is string => r !== undefined)),
       catchError(this.handleError)
     );

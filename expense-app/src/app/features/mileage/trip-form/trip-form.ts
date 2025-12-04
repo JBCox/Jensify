@@ -15,7 +15,9 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { PromptDialogComponent, PromptDialogData } from '../../../shared/components/prompt-dialog/prompt-dialog';
 import { MileageService } from '../../../core/services/mileage.service';
 import { MileageCategory, CreateMileageTripDto, UpdateMileageTripDto, TripCoordinate, TrackingMethod } from '../../../core/models/mileage.model';
 import { GeolocationService, GeolocationPosition } from '../../../core/services/geolocation.service';
@@ -46,6 +48,7 @@ import { OrganizationService } from '../../../core/services/organization.service
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatTabsModule,
+    MatDialogModule,
     TripGpsTrackingComponent,
   ],
   templateUrl: './trip-form.html',
@@ -75,6 +78,11 @@ export class TripForm implements OnInit, OnDestroy {
   isTracking = signal(false);
   trackedCoordinates: TripCoordinate[] = [];
 
+  // GPS distance lock - when distance is auto-calculated via GPS, lock it from editing
+  distanceFromGps = signal(false);
+  originalGpsDistance: number | null = null; // Store original GPS distance for fraud tracking
+  distanceModificationReason: string | null = null; // Reason for modifying GPS-calculated distance
+
   // Edit mode
   tripId: string | null = null;
   isEditMode = false;
@@ -93,6 +101,7 @@ export class TripForm implements OnInit, OnDestroy {
   private router = inject(Router);
   private mileageService = inject(MileageService);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
   private geolocation = inject(GeolocationService);
   private googleMaps = inject(GoogleMapsService);
   private trackingService = inject(TripTrackingService);
@@ -106,7 +115,7 @@ export class TripForm implements OnInit, OnDestroy {
       destination_address: ['', [Validators.required, Validators.minLength(3)]],
       distance_miles: [null, [Validators.required, Validators.min(0.1)]],
       is_round_trip: [false],
-      purpose: ['', [Validators.required, Validators.minLength(3)]],
+      purpose: [''],  // Optional for quick logging - required before submitting to expense report
       category: ['business' as MileageCategory, [Validators.required]],
       department: [''],
       project_code: [''],
@@ -138,6 +147,17 @@ export class TripForm implements OnInit, OnDestroy {
       )
       .subscribe(() => {
         this.updateCalculation();
+      });
+
+    // Watch for manual distance modifications (fraud prevention)
+    this.form.get('distance_miles')?.valueChanges
+      .pipe(
+        debounceTime(500),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((newDistance: number) => {
+        this.checkDistanceModification(newDistance);
       });
   }
 
@@ -244,10 +264,17 @@ export class TripForm implements OnInit, OnDestroy {
    * Create new trip
    */
   private createTrip(): void {
+    const trackingMethod = this.distanceFromGps() ? 'start_stop' :
+                           (this.trackedCoordinates.length > 0 ? 'full_gps' : 'manual');
+
     const dto: CreateMileageTripDto = {
       ...this.form.value,
       // Add tracking method
-      tracking_method: this.trackedCoordinates.length > 0 ? 'gps_tracked' : 'manual',
+      tracking_method: trackingMethod,
+      // Include original GPS distance for fraud tracking (only for GPS-based trips)
+      original_gps_distance: this.originalGpsDistance ?? undefined,
+      // Include modification reason if distance was changed from GPS value
+      distance_modification_reason: this.distanceModificationReason ?? undefined,
       // Remove empty optional fields
       department: this.form.value.department || undefined,
       project_code: this.form.value.project_code || undefined,
@@ -463,8 +490,34 @@ export class TripForm implements OnInit, OnDestroy {
     this.isTracking.set(false);
     this.trackedCoordinates = result.coordinates;
 
-    // Set distance immediately
-    this.form.patchValue({ distance_miles: Math.round(result.distance * 100) / 100 });
+    const gpsDistance = Math.round(result.distance * 100) / 100;
+
+    // If distance is 0 (API failed), leave field editable for user to fill in manually
+    // If distance > 0 (API succeeded), lock it and store original for fraud tracking
+    if (gpsDistance > 0) {
+      this.form.patchValue({ distance_miles: gpsDistance });
+      this.distanceFromGps.set(true);
+      this.originalGpsDistance = gpsDistance;
+      this.snackBar.open(`GPS tracking complete: ${gpsDistance} miles`, 'Close', { duration: 3000 });
+    } else {
+      // Distance API failed - provide helpful guidance
+      this.form.patchValue({ distance_miles: null });
+      this.distanceFromGps.set(false);
+      this.originalGpsDistance = null;
+
+      // Show detailed error message with actionable guidance
+      this.snackBar.open(
+        'GPS coordinates captured, but distance calculation failed. Please enter the actual driving distance manually (check your odometer or use a mapping app).',
+        'Got it',
+        { duration: 8000 }
+      );
+
+      // Focus the distance field to guide user
+      setTimeout(() => {
+        const distanceField = document.querySelector('input[formControlName="distance_miles"]') as HTMLInputElement;
+        distanceField?.focus();
+      }, 500);
+    }
 
     // Handle Start/Stop mode - addresses are already provided
     if (result.originAddress && result.destinationAddress) {
@@ -512,6 +565,57 @@ export class TripForm implements OnInit, OnDestroy {
   onTrackingCancelled(): void {
     this.isTracking.set(false);
     this.trackedCoordinates = [];
+    this.distanceFromGps.set(false);
+    this.originalGpsDistance = null;
+  }
+
+  /**
+   * Check if distance was manually modified from GPS-calculated value
+   * Show dialog asking for reason (fraud prevention)
+   */
+  private checkDistanceModification(newDistance: number): void {
+    // Only check if:
+    // 1. Distance was originally from GPS
+    // 2. User manually changed it
+    // 3. Change is significant (> 0.5 miles)
+    // 4. We haven't already captured a reason
+    if (
+      this.originalGpsDistance &&
+      this.distanceFromGps() &&
+      Math.abs(newDistance - this.originalGpsDistance) > 0.5 &&
+      !this.distanceModificationReason
+    ) {
+      // Unlock the field for editing
+      this.distanceFromGps.set(false);
+
+      // Show dialog to capture reason
+      const dialogRef = this.dialog.open(PromptDialogComponent, {
+        data: {
+          title: 'Distance Modified',
+          message: `GPS calculated ${this.originalGpsDistance.toFixed(1)} miles, but you changed it to ${newDistance.toFixed(1)} miles. Please provide a reason for this modification:`,
+          placeholder: 'e.g., Odometer reading was different, took a detour, GPS route was incorrect',
+          required: true,
+          confirmText: 'Save Reason',
+          confirmColor: 'primary',
+          icon: 'warning',
+          iconColor: '#ff9800'
+        } as PromptDialogData,
+        disableClose: true, // Force user to provide reason
+        minWidth: '400px'
+      });
+
+      dialogRef.afterClosed().subscribe((reason: string | null) => {
+        if (reason) {
+          this.distanceModificationReason = reason;
+          this.snackBar.open('Modification reason recorded', 'Close', { duration: 3000 });
+        } else {
+          // User cancelled - restore original distance
+          this.form.patchValue({ distance_miles: this.originalGpsDistance }, { emitEvent: false });
+          this.distanceFromGps.set(true);
+          this.snackBar.open('Distance restored to GPS value', 'Close', { duration: 3000 });
+        }
+      });
+    }
   }
 
   /**

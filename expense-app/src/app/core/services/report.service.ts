@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, from, throwError } from 'rxjs';
+import { Observable, from, throwError, firstValueFrom } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
 import { OrganizationService } from './organization.service';
@@ -532,7 +532,7 @@ export class ReportService {
     return from(
       (async () => {
         // Load report with expenses/receipts for validation
-        const detail = await this.getReportById(reportId).toPromise();
+        const detail = await firstValueFrom(this.getReportById(reportId));
         if (!detail) {
           throw new Error('Report not found');
         }
@@ -569,7 +569,7 @@ export class ReportService {
         }
 
         // Fetch updated report with approval details
-        const updatedReport = await this.getReportById(reportId).toPromise();
+        const updatedReport = await firstValueFrom(this.getReportById(reportId));
         if (!updatedReport) {
           throw new Error('Failed to fetch updated report');
         }

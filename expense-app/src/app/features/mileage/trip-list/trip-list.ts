@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { Subject, forkJoin } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -20,6 +21,7 @@ import { PullToRefresh } from '../../../shared/components/pull-to-refresh/pull-t
 import { Router } from '@angular/router';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { TripFiltersComponent, TripFilterState } from '../trip-filters/trip-filters';
+import { MileageStatsWidgetComponent } from '../../../shared/components/mileage-stats-widget/mileage-stats-widget';
 
 /**
  * Trip List Component
@@ -33,12 +35,14 @@ import { TripFiltersComponent, TripFilterState } from '../trip-filters/trip-filt
     MatButtonModule,
     MatIconModule,
     MatCheckboxModule,
+    MatTooltipModule,
     ScrollingModule,
     StatusBadge,
     EmptyState,
     LoadingSkeleton,
     TripFiltersComponent,
     PullToRefresh,
+    MileageStatsWidgetComponent,
   ],
   templateUrl: './trip-list.html',
   styleUrl: './trip-list.scss',
@@ -87,7 +91,7 @@ export class TripList implements OnInit, OnDestroy {
       result = result.filter(t =>
         t.origin_address.toLowerCase().includes(query) ||
         t.destination_address.toLowerCase().includes(query) ||
-        t.purpose.toLowerCase().includes(query) ||
+        t.purpose?.toLowerCase().includes(query) ||
         t.notes?.toLowerCase().includes(query)
       );
     }
@@ -276,6 +280,24 @@ export class TripList implements OnInit, OnDestroy {
       return;
     }
 
+    // Calculate summary statistics
+    const totalMiles = rows.reduce((sum, trip) => sum + trip.total_miles, 0);
+    const totalReimbursement = rows.reduce((sum, trip) => sum + trip.reimbursement_amount, 0);
+
+    // Generate summary section
+    const summaryRows = [
+      ['Mileage Trip Export'],
+      ['Generated:', new Date().toLocaleString()],
+      ['Total Trips:', rows.length.toString()],
+      ['Total Miles:', totalMiles.toFixed(2)],
+      ['Total Reimbursement:', `$${totalReimbursement.toFixed(2)}`],
+      this.filterState().dateFrom || this.filterState().dateTo
+        ? ['Date Range:', `${this.filterState().dateFrom?.toISOString().split('T')[0] || 'Start'} to ${this.filterState().dateTo?.toISOString().split('T')[0] || 'End'}`]
+        : null,
+      [''], // Empty row separator
+    ].filter(row => row !== null).map(row => row!.join(','));
+
+    // Enhanced headers with more detail
     const headers = [
       'Trip ID',
       'Trip Date',
@@ -289,8 +311,17 @@ export class TripList implements OnInit, OnDestroy {
       'IRS Rate',
       'Reimbursement',
       'Status',
+      'Tracking Method',
+      'GPS Distance',
+      'Distance Modified',
+      'Modification Reason',
       'Department',
-      'Project Code'
+      'Project Code',
+      'Notes',
+      'Created At',
+      'Submitted At',
+      'Approved At',
+      'Reimbursed At'
     ];
 
     const csvRows = rows.map(trip => {
@@ -299,7 +330,7 @@ export class TripList implements OnInit, OnDestroy {
         trip.trip_date,
         trip.origin_address,
         trip.destination_address,
-        trip.purpose,
+        trip.purpose || '(No purpose)',
         trip.category,
         trip.distance_miles.toString(),
         trip.is_round_trip ? 'Yes' : 'No',
@@ -307,26 +338,43 @@ export class TripList implements OnInit, OnDestroy {
         `$${trip.irs_rate.toFixed(3)}`,
         `$${trip.reimbursement_amount.toFixed(2)}`,
         trip.status,
+        trip.tracking_method || 'manual',
+        trip.original_gps_distance ? trip.original_gps_distance.toFixed(2) : '',
+        trip.distance_manually_modified ? 'Yes' : 'No',
+        trip.distance_modification_reason || '',
         trip.department || '',
-        trip.project_code || ''
+        trip.project_code || '',
+        trip.notes || '',
+        trip.created_at ? new Date(trip.created_at).toLocaleString() : '',
+        trip.submitted_at ? new Date(trip.submitted_at).toLocaleString() : '',
+        trip.approved_at ? new Date(trip.approved_at).toLocaleString() : '',
+        trip.reimbursed_at ? new Date(trip.reimbursed_at).toLocaleString() : ''
       ].map(value => this.sanitizationService.sanitizeCsvValue(value ?? '')).join(',');
     });
 
-    const csvContent = [headers.join(','), ...csvRows].join('\r\n');
+    const csvContent = [...summaryRows, headers.join(','), ...csvRows].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
 
+    // Better filename with date range if applicable
+    const dateRange = this.filterState().dateFrom && this.filterState().dateTo
+      ? `${this.filterState().dateFrom?.toISOString().split('T')[0]}_to_${this.filterState().dateTo?.toISOString().split('T')[0]}`
+      : new Date().toISOString().split('T')[0];
+    const filename = `mileage-trips-${dateRange}.csv`;
+
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `mileage-trips-${new Date().toISOString()}.csv`);
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    this.snackBar.open(`Exported ${rows.length} trip${rows.length > 1 ? 's' : ''} to CSV.`, 'Close', {
-      duration: 4000
-    });
+    this.snackBar.open(
+      `Exported ${rows.length} trip${rows.length > 1 ? 's' : ''} (${totalMiles.toFixed(1)} miles, ${this.formatCurrency(totalReimbursement)}) to CSV.`,
+      'Close',
+      { duration: 5000 }
+    );
   }
 
   /**

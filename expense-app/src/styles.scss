@@ -606,48 +606,77 @@ body {
 }
 
 .jensify-auth-benefits {
-  background: linear-gradient(135deg, var(--jensify-primary) 0%, var(--jensify-primary-strong) 100%);
-  color: white;
+  // Modern glassmorphic design instead of solid orange
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(247, 88, 12, 0.15);
+  color: var(--jensify-text-strong);
   padding: var(--jensify-spacing-3xl);
   display: flex;
   flex-direction: column;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  border-radius: var(--jensify-radius-lg); // Rounded corners
-  box-shadow: var(--jensify-shadow-lg); // Add shadow for depth
+  border-radius: var(--jensify-radius-lg);
+  box-shadow:
+    0 8px 32px rgba(74, 44, 26, 0.12),
+    0 0 60px color-mix(in srgb, var(--jensify-primary) 8%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 
-  // Premium pattern overlay
+  // Subtle gradient overlay (not solid)
   &::before {
     content: "";
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(
-      rgba(255, 255, 255, 0.1) 1px,
-      transparent 1px
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--jensify-primary) 8%, transparent) 0%,
+      transparent 50%,
+      color-mix(in srgb, var(--jensify-primary-strong) 6%, transparent) 100%
     );
-    background-size: 30px 30px;
-    opacity: 0.1;
+    pointer-events: none;
+    z-index: 0;
   }
 
-  // Vibrant glow effect
+  // Subtle glow effect (not vibrant)
   &::after {
     content: "";
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    top: -30%;
+    right: -30%;
+    width: 60%;
+    height: 60%;
     background: radial-gradient(
       circle,
-      rgba(255, 255, 255, 0.15) 0%,
+      color-mix(in srgb, var(--jensify-primary) 10%, transparent) 0%,
       transparent 70%
     );
     pointer-events: none;
+    filter: blur(40px);
   }
 
   @media (max-width: 960px) {
     display: none;
+  }
+
+  // Dark mode adjustments
+  @at-root .dark & {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid color-mix(in srgb, var(--jensify-primary) 25%, transparent);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.5),
+      0 0 60px color-mix(in srgb, var(--jensify-primary) 15%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+    &::before {
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--jensify-primary) 15%, transparent) 0%,
+        transparent 50%,
+        color-mix(in srgb, var(--jensify-primary-strong) 12%, transparent) 100%
+      );
+    }
   }
 
   .jensify-brand-header {
@@ -670,8 +699,12 @@ body {
       font-size: 1.75rem;
       font-weight: 800;
       margin: 0;
-      color: white;
+      color: var(--jensify-text-strong);
       letter-spacing: -0.02em;
+
+      @at-root .dark & {
+        color: var(--jensify-text-strong);
+      }
     }
   }
 
@@ -680,15 +713,17 @@ body {
     font-weight: 800;
     line-height: 1.1;
     margin-bottom: var(--jensify-spacing-2xl);
-    color: white;
     letter-spacing: -0.03em;
     position: relative;
     z-index: 1;
+    color: var(--jensify-text-strong);
 
-    background: linear-gradient(to right, #ffffff, #e0e0e0);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    @at-root .dark & {
+      background: linear-gradient(to right, #ffffff, #d0d0d0);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
   }
 }
 
@@ -707,23 +742,39 @@ body {
     align-items: center;
     gap: var(--jensify-spacing-md);
     font-size: 1.125rem;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--jensify-text-medium);
     font-weight: 500;
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
+    padding: var(--jensify-spacing-sm);
+    border-radius: var(--jensify-radius-md);
 
     &:hover {
       transform: translateX(5px);
-      color: white;
+      color: var(--jensify-text-strong);
+      background: color-mix(in srgb, var(--jensify-primary) 5%, transparent);
 
       mat-icon {
         transform: scale(1.1);
-        filter: drop-shadow(0 0 5px color-mix(in srgb, var(--jensify-primary) 50%, transparent));
+        filter: drop-shadow(0 0 8px color-mix(in srgb, var(--jensify-primary) 40%, transparent));
       }
     }
 
     mat-icon {
       color: var(--jensify-primary);
       transition: all 0.3s ease;
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+
+    // Dark mode
+    @at-root .dark & {
+      color: rgba(255, 255, 255, 0.8);
+
+      &:hover {
+        color: rgba(255, 255, 255, 1);
+        background: color-mix(in srgb, var(--jensify-primary) 15%, transparent);
+      }
     }
   }
 }
@@ -892,7 +943,7 @@ body {
 
 /* Angular Material prefix icon alignment */
 .mat-mdc-form-field.mat-mdc-form-field-has-icon-prefix {
-  $jensify-prefix-width: 44px;
+  $jensify-prefix-width: 36px; // Icon is 24px + 12px padding - sweet spot between compact and not cutting off
 
   .mat-mdc-text-field-wrapper {
     padding-left: 0 !important;
@@ -931,11 +982,44 @@ body {
   }
 
   .mat-mdc-form-field-infix {
-    padding-left: calc(#{$jensify-prefix-width} + 0.5rem) !important;
+    padding-left: calc(#{$jensify-prefix-width}) !important; // No gap - text right after icon
+    padding-right: 8px !important; // Reduce right padding to prevent text cutoff
 
     input {
       padding-left: 0 !important;
+      padding-right: 8px !important; // Ensure text has room on the right
     }
+  }
+}
+
+// Handle fields with suffix icons (like password visibility toggle)
+.mat-mdc-form-field.mat-mdc-form-field-has-icon-suffix {
+  .mat-mdc-form-field-infix {
+    padding-right: 0 !important; // No padding when suffix icon is present
+    flex: 1 1 auto; // Allow infix to grow
+  }
+
+  .mat-mdc-input-element {
+    padding-right: 8px !important; // Small padding to prevent text from touching suffix icon
+  }
+
+  // Ensure suffix button doesn't compress the input
+  .mat-mdc-form-field-icon-suffix {
+    padding: 0 4px 0 0 !important; // Minimal padding on suffix
+    margin: 0 !important;
+    flex-shrink: 0;
+    width: 40px; // Fixed width for suffix button
+  }
+}
+
+// Handle fields with BOTH prefix and suffix icons
+.mat-mdc-form-field.mat-mdc-form-field-has-icon-prefix.mat-mdc-form-field-has-icon-suffix {
+  .mat-mdc-form-field-infix {
+    padding-right: 0 !important;
+  }
+
+  .mat-mdc-input-element {
+    padding-right: 4px !important;
   }
 }
 
@@ -1207,13 +1291,18 @@ mat-card, .mat-mdc-card {
   // Input text - LIGHT MODE
   .mat-mdc-input-element {
     color: var(--jensify-text-strong) !important;
-    padding: 12px 20px !important;
+    padding: 12px 12px 12px 0 !important; // Zero left padding - text right next to icon
     height: auto !important;
     min-height: 48px;
+    width: 100% !important;
+    text-overflow: ellipsis;
 
     &::placeholder {
       color: var(--jensify-text-muted) !important;
       opacity: 0.7;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
     }
   }
 
@@ -1221,7 +1310,7 @@ mat-card, .mat-mdc-card {
   .mat-mdc-floating-label {
     top: 50% !important;
     transform: translateY(-50%) !important;
-    left: 20px !important;
+    left: 12px !important; // Tight spacing to align with minimal padding
     color: var(--jensify-text-muted) !important;
     font-size: 14px !important;
   }

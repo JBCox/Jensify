@@ -3,6 +3,51 @@
  * Uses Jensify design tokens for consistency
  */
 
+// Distance Modified Warning Banner
+.distance-modified-warning {
+  background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%) !important;
+  border: 2px solid #ffc107 !important;
+  margin-bottom: var(--jensify-spacing-md);
+
+  .warning-content {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--jensify-spacing-md);
+  }
+
+  .warning-icon {
+    color: #ff9800;
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  .warning-text {
+    flex: 1;
+
+    strong {
+      color: #e65100;
+      font-size: 1rem;
+    }
+
+    p {
+      margin: var(--jensify-spacing-xs) 0 0 0;
+      color: #795548;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+    }
+
+    .modification-reason {
+      margin-top: var(--jensify-spacing-sm);
+      padding: var(--jensify-spacing-sm);
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: var(--jensify-radius-sm);
+      color: #5d4037;
+    }
+  }
+}
+
 // Detail Grid Layout
 .detail-grid {
   display: grid;

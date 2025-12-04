@@ -113,6 +113,18 @@
   }
 }
 
+// GPS-locked distance field
+.gps-locked-icon {
+  color: var(--jensify-primary);
+  opacity: 0.8;
+}
+
+// Readonly input styling
+input[readonly] {
+  background-color: color-mix(in srgb, var(--jensify-primary) 5%, transparent);
+  cursor: not-allowed;
+}
+
 // Mobile responsive
 @media (max-width: 600px) {
   .jensify-tracking-stats {

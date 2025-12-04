@@ -96,17 +96,21 @@
           <input
             matInput
             formControlName="origin_address"
-            placeholder="123 Main St, City, ST">
-          <button
-            mat-icon-button
-            matSuffix
-            type="button"
-            [disabled]="!gpsAvailable()"
-            (click)="captureOriginGPS()"
-            matTooltip="Capture current location"
-            aria-label="Capture current GPS location for origin">
-            <mat-icon>my_location</mat-icon>
-          </button>
+            placeholder="123 Main St, City, ST"
+            [readonly]="trackingMode() === 'gps' && distanceFromGps()">
+          <!-- Only show capture button in Quick Entry mode -->
+          @if (trackingMode() === 'quick' || !gpsTrackingEnabled()) {
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              [disabled]="!gpsAvailable()"
+              (click)="captureOriginGPS()"
+              matTooltip="Capture current location"
+              aria-label="Capture current GPS location for origin">
+              <mat-icon>my_location</mat-icon>
+            </button>
+          }
           @if (hasError('origin_address', 'required')) {
             <mat-error>{{ getErrorMessage('origin_address') }}</mat-error>
           }
@@ -122,17 +126,21 @@
           <input
             matInput
             formControlName="destination_address"
-            placeholder="456 Oak Ave, City, ST">
-          <button
-            mat-icon-button
-            matSuffix
-            type="button"
-            [disabled]="!gpsAvailable()"
-            (click)="captureDestinationGPS()"
-            matTooltip="Capture current location"
-            aria-label="Capture current GPS location for destination">
-            <mat-icon>my_location</mat-icon>
-          </button>
+            placeholder="456 Oak Ave, City, ST"
+            [readonly]="trackingMode() === 'gps' && distanceFromGps()">
+          <!-- Only show capture button in Quick Entry mode -->
+          @if (trackingMode() === 'quick' || !gpsTrackingEnabled()) {
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              [disabled]="!gpsAvailable()"
+              (click)="captureDestinationGPS()"
+              matTooltip="Capture current location"
+              aria-label="Capture current GPS location for destination">
+              <mat-icon>my_location</mat-icon>
+            </button>
+          }
           @if (hasError('destination_address', 'required')) {
             <mat-error>{{ getErrorMessage('destination_address') }}</mat-error>
           }
@@ -143,8 +151,8 @@
 
         <!-- Distance and Round Trip -->
         <div class="jensify-form-row">
-          <mat-form-field appearance="fill" floatLabel="always" class="jensify-half-width">
-            <mat-label>Distance (one-way)</mat-label>
+          <mat-form-field appearance="fill" floatLabel="always" [class.jensify-half-width]="trackingMode() === 'quick' || !gpsTrackingEnabled()" [class.jensify-full-width]="trackingMode() === 'gps' && gpsTrackingEnabled()">
+            <mat-label>{{ distanceFromGps() ? 'Total Distance' : 'Distance (one-way)' }}</mat-label>
             <mat-icon matPrefix>straighten</mat-icon>
             <input
               matInput
@@ -152,53 +160,63 @@
               step="0.1"
               min="0.1"
               formControlName="distance_miles"
-              placeholder="0.0">
-            <button
-              mat-icon-button
-              matSuffix
-              type="button"
-              [disabled]="calculatingDistance()"
-              (click)="autoCalculateDistance()"
-              matTooltip="Auto-calculate distance"
-              aria-label="Auto-calculate distance using Google Maps">
-              @if (calculatingDistance()) {
-                <mat-spinner diameter="20"></mat-spinner>
-              } @else {
-                <mat-icon>route</mat-icon>
-              }
-            </button>
+              placeholder="0.0"
+              [readonly]="distanceFromGps()">
+            <!-- Only show auto-calculate button in Quick Entry mode -->
+            @if (!distanceFromGps() && (trackingMode() === 'quick' || !gpsTrackingEnabled())) {
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                [disabled]="calculatingDistance()"
+                (click)="autoCalculateDistance()"
+                matTooltip="Auto-calculate distance"
+                aria-label="Auto-calculate distance using Google Maps">
+                @if (calculatingDistance()) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                  <mat-icon>route</mat-icon>
+                }
+              </button>
+            }
+            @if (distanceFromGps()) {
+              <mat-icon matSuffix class="gps-locked-icon" matTooltip="Distance calculated via GPS tracking">gps_fixed</mat-icon>
+            }
             @if (hasError('distance_miles', 'required')) {
               <mat-error>{{ getErrorMessage('distance_miles') }}</mat-error>
             }
             @if (hasError('distance_miles', 'min')) {
               <mat-error>{{ getErrorMessage('distance_miles') }}</mat-error>
             }
-            <mat-hint>Click route icon to auto-calculate</mat-hint>
+            @if (distanceFromGps()) {
+              <mat-hint>GPS-calculated total distance (locked)</mat-hint>
+            } @else if (trackingMode() === 'gps' && gpsTrackingEnabled()) {
+              <mat-hint>Use Start/Stop tracking to capture distance</mat-hint>
+            } @else {
+              <mat-hint>Click route icon to auto-calculate</mat-hint>
+            }
           </mat-form-field>
 
-          <div class="jensify-round-trip-field">
-            <mat-checkbox formControlName="is_round_trip">
-              Round Trip
-            </mat-checkbox>
-            <p class="jensify-field-hint">Check if you returned to your starting point</p>
-          </div>
+          <!-- Only show round trip option in Quick Entry mode -->
+          @if (trackingMode() === 'quick' || !gpsTrackingEnabled()) {
+            <div class="jensify-round-trip-field">
+              <mat-checkbox formControlName="is_round_trip">
+                Round Trip
+              </mat-checkbox>
+              <p class="jensify-field-hint">Check if you returned to your starting point</p>
+            </div>
+          }
         </div>
 
-        <!-- Purpose -->
+        <!-- Purpose (optional for quick logging, required before submitting) -->
         <mat-form-field appearance="fill" floatLabel="always" class="jensify-full-width">
-          <mat-label>Purpose</mat-label>
+          <mat-label>Purpose (optional)</mat-label>
           <mat-icon matPrefix>description</mat-icon>
           <input
             matInput
             formControlName="purpose"
             placeholder="Client meeting, site visit, delivery, etc.">
-          @if (hasError('purpose', 'required')) {
-            <mat-error>{{ getErrorMessage('purpose') }}</mat-error>
-          }
-          @if (hasError('purpose', 'minlength')) {
-            <mat-error>{{ getErrorMessage('purpose') }}</mat-error>
-          }
-          <mat-hint>Brief description of the trip purpose</mat-hint>
+          <mat-hint>Can add later - required before submitting for approval</mat-hint>
         </mat-form-field>
 
         <!-- Category -->

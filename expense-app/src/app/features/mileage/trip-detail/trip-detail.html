@@ -29,6 +29,32 @@
 
   <!-- Trip Details -->
   @else if (trip(); as t) {
+    <!-- Distance Modification Warning Banner -->
+    @if (t.distance_manually_modified && t.original_gps_distance) {
+      <mat-card class="jensify-card distance-modified-warning">
+        <mat-card-content>
+          <div class="warning-content">
+            <mat-icon class="warning-icon">warning</mat-icon>
+            <div class="warning-text">
+              <strong>Distance Modified</strong>
+              <p>
+                The GPS-calculated distance was <strong>{{ t.original_gps_distance.toFixed(1) }} miles</strong>
+                but was changed to <strong>{{ t.distance_miles.toFixed(1) }} miles</strong>
+                @if (t.distance_modified_at) {
+                  on {{ formatDateTime(t.distance_modified_at) }}
+                }
+              </p>
+              @if (t.distance_modification_reason) {
+                <p class="modification-reason">
+                  <em>Reason: {{ t.distance_modification_reason }}</em>
+                </p>
+              }
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+
     <!-- Header Card -->
     <mat-card class="jensify-card card-title">
       <mat-card-header>
@@ -145,7 +171,7 @@
         <div class="detail-grid">
           <div class="detail-row">
             <span class="label">Purpose</span>
-            <span class="value">{{ t.purpose }}</span>
+            <span class="value">{{ t.purpose || '(Not specified)' }}</span>
           </div>
 
           <div class="detail-row">

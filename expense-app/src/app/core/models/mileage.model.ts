@@ -38,8 +38,14 @@ export interface MileageTrip {
   irs_rate: number;
   reimbursement_amount: number; // Generated in database
 
+  // Distance modification tracking (for fraud prevention)
+  original_gps_distance?: number; // Original distance calculated by GPS (null if manual entry)
+  distance_manually_modified?: boolean; // True if distance was modified after GPS calculation
+  distance_modified_at?: string; // ISO timestamp of when distance was modified
+  distance_modification_reason?: string; // Optional reason for modification
+
   // Trip Purpose & Classification
-  purpose: string;
+  purpose?: string; // Optional for draft trips - required before submitting
   category: MileageCategory;
   department?: string;
   project_code?: string;
@@ -89,7 +95,7 @@ export interface CreateMileageTripDto {
   destination_address: string;
   distance_miles: number;
   is_round_trip: boolean;
-  purpose: string;
+  purpose?: string; // Optional for quick logging - required before submitting
   category?: MileageCategory; // Defaults to 'business'
   tracking_method?: TrackingMethod; // Defaults to 'manual'
   department?: string;
@@ -101,6 +107,10 @@ export interface CreateMileageTripDto {
   origin_lng?: number;
   destination_lat?: number;
   destination_lng?: number;
+
+  // GPS distance tracking (for fraud prevention)
+  original_gps_distance?: number; // Set to distance_miles when tracking_method is 'start_stop' or 'full_gps'
+  distance_modification_reason?: string; // Reason for modifying GPS-calculated distance
 }
 
 /**
