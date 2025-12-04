@@ -353,7 +353,6 @@ describe('MileageService', () => {
         origin_address: '123 Main St',
         destination_address: '456 Oak Ave',
         distance_miles: 10.5,
-        is_round_trip: true,
         purpose: 'Client meeting'
       };
 
@@ -416,7 +415,6 @@ describe('MileageService', () => {
         origin_address: '123 Main St',
         destination_address: '456 Oak Ave',
         distance_miles: 10.5,
-        is_round_trip: false,
         purpose: 'Business travel'
       };
 
@@ -437,7 +435,6 @@ describe('MileageService', () => {
         origin_address: '123 Main St',
         destination_address: '456 Oak Ave',
         distance_miles: 10.5,
-        is_round_trip: false,
         purpose: 'Business travel'
       };
 
