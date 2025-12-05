@@ -38,7 +38,12 @@ export const authGuard: CanActivateFn = (route, state) => {
       // Allow if profile is present or we already have an authenticated session
       if (user || authService.isAuthenticated) {
         // Check if user has organization (except for setup and invitation routes)
-        if (!organizationService.currentOrganizationId &&
+        // Use localStorage as fallback to prevent race condition where organizationService
+        // hasn't yet loaded the context from the async RPC call
+        const hasOrgInService = organizationService.currentOrganizationId;
+        const hasOrgInStorage = localStorage.getItem('current_organization_id');
+
+        if (!hasOrgInService && !hasOrgInStorage &&
             !state.url.startsWith('/organization/setup') &&
             !state.url.startsWith('/auth/accept-invitation')) {
           return router.parseUrl('/organization/setup');
