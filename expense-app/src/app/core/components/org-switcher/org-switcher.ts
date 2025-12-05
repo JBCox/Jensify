@@ -29,7 +29,11 @@ interface OrgWithMembership {
     @if (organizations().length <= 1) {
       <div class="org-display" [class.collapsed]="collapsed()">
         <div class="org-icon">
-          <mat-icon>business</mat-icon>
+          @if (currentOrg()?.logo_url) {
+            <img [src]="currentOrg()!.logo_url" [alt]="currentOrg()!.name + ' logo'" class="org-logo" />
+          } @else {
+            <mat-icon>business</mat-icon>
+          }
         </div>
         @if (!collapsed()) {
           <div class="org-info">
@@ -50,7 +54,11 @@ interface OrgWithMembership {
         matTooltipPosition="right"
       >
         <div class="org-icon">
-          <mat-icon>business</mat-icon>
+          @if (currentOrg()?.logo_url) {
+            <img [src]="currentOrg()!.logo_url" [alt]="currentOrg()!.name + ' logo'" class="org-logo" />
+          } @else {
+            <mat-icon>business</mat-icon>
+          }
         </div>
         @if (!collapsed()) {
           <div class="org-info">
@@ -69,9 +77,20 @@ interface OrgWithMembership {
             [class.active]="org.organization.id === currentOrg()?.id"
             (click)="switchOrg(org)"
           >
-            <mat-icon>{{ org.organization.id === currentOrg()?.id ? 'check_circle' : 'business' }}</mat-icon>
+            <div class="menu-icon-wrapper">
+              @if (org.organization.logo_url) {
+                <img [src]="org.organization.logo_url" [alt]="org.organization.name + ' logo'" class="menu-org-logo" />
+              } @else {
+                <mat-icon>{{ org.organization.id === currentOrg()?.id ? 'check_circle' : 'business' }}</mat-icon>
+              }
+            </div>
             <div class="menu-item-content">
-              <span class="menu-org-name">{{ org.organization.name }}</span>
+              <span class="menu-org-name">
+                {{ org.organization.name }}
+                @if (org.organization.id === currentOrg()?.id) {
+                  <mat-icon class="active-check">check_circle</mat-icon>
+                }
+              </span>
               <span class="menu-org-role">{{ org.membership.role | titlecase }}</span>
             </div>
           </button>
@@ -122,11 +141,19 @@ interface OrgWithMembership {
       background: var(--jensify-primary, #ff5900);
       color: white;
       flex-shrink: 0;
+      overflow: hidden;
 
       mat-icon {
         font-size: 18px;
         width: 18px;
         height: 18px;
+      }
+
+      .org-logo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: var(--jensify-radius-sm, 4px);
       }
     }
 
@@ -198,16 +225,50 @@ interface OrgWithMembership {
         }
       }
 
+      .menu-icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+
+        mat-icon {
+          width: 24px;
+          height: 24px;
+          font-size: 24px;
+        }
+
+        .menu-org-logo {
+          width: 24px;
+          height: 24px;
+          object-fit: cover;
+          border-radius: var(--jensify-radius-sm, 4px);
+        }
+      }
+
       .menu-item-content {
         display: flex;
         flex-direction: column;
         gap: 2px;
         margin-left: 0.5rem;
+        flex: 1;
       }
 
       .menu-org-name {
         font-size: 0.875rem;
         font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+
+        .active-check {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+          color: var(--jensify-primary, #ff5900);
+          margin-left: auto;
+        }
       }
 
       .menu-org-role {
@@ -310,3 +371,4 @@ export class OrgSwitcher implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 }
+ 
