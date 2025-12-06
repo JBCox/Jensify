@@ -46,14 +46,14 @@
   align-items: center;
 
   .app-logo {
-    height: 140px;
+    height: 48px;
     width: auto;
     object-fit: contain;
   }
 
   @media (max-width: 767px) {
     .app-logo {
-      height: 100px;
+      height: 36px;
     }
   }
 }
