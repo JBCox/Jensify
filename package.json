@@ -2,5 +2,13 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.83.0",
     "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "lint": "cd expense-app && npm run lint",
+    "lint:fix": "cd expense-app && npm run lint -- --fix"
   }
 }

@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Run lint on staged TypeScript files in expense-app
+cd expense-app
+
+# Get list of staged .ts files
+STAGED_TS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.ts$' | grep '^expense-app/' | sed 's|^expense-app/||')
+
+if [ -n "$STAGED_TS_FILES" ]; then
+  echo "Running ESLint on staged TypeScript files..."
+  npx eslint $STAGED_TS_FILES --max-warnings 0
+  LINT_EXIT=$?
+
+  if [ $LINT_EXIT -ne 0 ]; then
+    echo ""
+    echo "❌ ESLint found errors. Please fix them before committing."
+    echo "   Run 'cd expense-app && npm run lint' to see all issues."
+    exit 1
+  fi
+
+  echo "✅ ESLint passed"
+fi
