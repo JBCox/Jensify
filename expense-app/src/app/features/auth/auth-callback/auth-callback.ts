@@ -108,6 +108,9 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
   private supabase = inject(SupabaseService);
   private destroy$ = new Subject<void>();
 
+  /** Timeout ID for fallback redirect */
+  private fallbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
   message = signal('Verifying your email...');
   error = signal<string | null>(null);
 
@@ -118,6 +121,10 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    // Clear any pending timeout
+    if (this.fallbackTimeoutId) {
+      clearTimeout(this.fallbackTimeoutId);
+    }
   }
 
   private handleCallback(): void {
@@ -133,6 +140,21 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
         return;
       }
 
+      // Set up fallback timeout (10 seconds) in case session initialization hangs
+      this.fallbackTimeoutId = setTimeout(() => {
+        // If we're still on this page, something went wrong - try fallback redirect
+        const pendingToken = localStorage.getItem('pending_invitation_token');
+        if (pendingToken) {
+          this.router.navigate(['/auth/accept-invitation'], {
+            queryParams: { token: pendingToken }
+          });
+        } else if (this.supabase.isAuthenticated) {
+          this.router.navigate(['/home']);
+        } else {
+          this.error.set('Verification timed out. Please try logging in manually.');
+        }
+      }, 10000);
+
       // Wait for Supabase to process the tokens and establish session
       this.message.set('Completing verification...');
 
@@ -143,6 +165,12 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
           takeUntil(this.destroy$)
         )
         .subscribe(() => {
+          // Clear the fallback timeout since we got a response
+          if (this.fallbackTimeoutId) {
+            clearTimeout(this.fallbackTimeoutId);
+            this.fallbackTimeoutId = null;
+          }
+
           // Give a moment for session to be fully established
           setTimeout(() => {
             if (this.supabase.isAuthenticated) {
@@ -160,7 +188,15 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
       // No hash fragment - might be a direct visit or different flow
       // Check if already authenticated
       if (this.supabase.isAuthenticated) {
-        this.router.navigate(['/home']);
+        // Check for pending invitation before redirecting to home
+        const pendingToken = localStorage.getItem('pending_invitation_token');
+        if (pendingToken) {
+          this.router.navigate(['/auth/accept-invitation'], {
+            queryParams: { token: pendingToken }
+          });
+        } else {
+          this.router.navigate(['/home']);
+        }
       } else {
         this.error.set('No verification token found. Please check your email link.');
       }
@@ -191,15 +227,17 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
   /**
    * Redirect after successful authentication
    * Checks for pending invitation token and redirects accordingly
+   * NOTE: We do NOT remove the token here - let accept-invitation component
+   * remove it after successfully loading the invitation. This prevents token
+   * loss if navigation fails.
    */
   private redirectAfterAuth(): void {
     // Check if there's a pending invitation to accept
     const pendingInvitationToken = localStorage.getItem('pending_invitation_token');
 
     if (pendingInvitationToken) {
-      // Clear the stored token
-      localStorage.removeItem('pending_invitation_token');
       // Redirect to accept the invitation
+      // Token will be cleared by accept-invitation component after successful load
       this.router.navigate(['/auth/accept-invitation'], {
         queryParams: { token: pendingInvitationToken }
       });

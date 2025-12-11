@@ -67,6 +67,8 @@ export class AcceptInvitationComponent implements OnInit, OnDestroy {
 
   /**
    * Load invitation details
+   * Clears the pending_invitation_token from localStorage after successful load
+   * to prevent redirect loops while preserving the token if load fails.
    */
   private loadInvitation(): void {
     if (!this.token) return;
@@ -77,12 +79,17 @@ export class AcceptInvitationComponent implements OnInit, OnDestroy {
         next: (invitation) => {
           if (!invitation) {
             this.error.set('Invitation not found or expired');
+            // Clear the token since invitation is invalid
+            localStorage.removeItem('pending_invitation_token');
           } else {
             this.invitation.set(invitation);
+            // Successfully loaded - clear the pending token to prevent redirect loops
+            localStorage.removeItem('pending_invitation_token');
           }
           this.isLoading.set(false);
         },
         error: (_error) => {
+          // DON'T remove token on error - user might retry or navigate elsewhere
           this.error.set('Failed to load invitation');
           this.isLoading.set(false);
         }

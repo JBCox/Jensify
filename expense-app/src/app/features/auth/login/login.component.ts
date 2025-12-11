@@ -68,6 +68,22 @@ export class LoginComponent implements OnInit, OnDestroy {
   returnUrl: string | null = null;
 
   ngOnInit(): void {
+    // Check if user is already authenticated with pending invitation
+    // This handles the case where email confirmation succeeded but redirect failed
+    if (this.authService.isAuthenticated) {
+      const pendingToken = localStorage.getItem('pending_invitation_token');
+      if (pendingToken) {
+        // Redirect to accept invitation - token will be cleared there
+        this.router.navigate(['/auth/accept-invitation'], {
+          queryParams: { token: pendingToken }
+        });
+        return;
+      }
+      // Already authenticated without pending invitation - go to default route
+      this.router.navigate([this.authService.getDefaultRoute()]);
+      return;
+    }
+
     // Capture return URL if provided, unless it's one of the legacy default routes
     const incomingReturnUrl = this.route.snapshot.queryParams["returnUrl"] ||
       null;
@@ -129,8 +145,7 @@ export class LoginComponent implements OnInit, OnDestroy {
             let destination: string;
 
             if (pendingInvitationToken) {
-              // Clear the stored token and redirect to accept invitation
-              localStorage.removeItem('pending_invitation_token');
+              // Redirect to accept invitation - token will be cleared by accept-invitation component
               destination = `/auth/accept-invitation?token=${pendingInvitationToken}`;
             } else if (this.returnUrl && !this.authService.shouldUseDefaultRoute(this.returnUrl)) {
               destination = this.returnUrl;

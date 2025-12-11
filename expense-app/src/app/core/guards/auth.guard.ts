@@ -48,6 +48,16 @@ export const authGuard: CanActivateFn = (route, state) => {
             !state.url.startsWith('/organization/setup') &&
             !state.url.startsWith('/auth/accept-invitation') &&
             !state.url.startsWith('/super-admin')) {
+
+          // SAFETY NET: Check if there's a pending invitation token before redirecting to setup
+          // This handles the case where auth-callback failed but user has a pending invitation
+          const pendingInvitationToken = localStorage.getItem('pending_invitation_token');
+          if (pendingInvitationToken) {
+            return router.createUrlTree(['/auth/accept-invitation'], {
+              queryParams: { token: pendingInvitationToken }
+            });
+          }
+
           return router.parseUrl('/organization/setup');
         }
 

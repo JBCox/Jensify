@@ -59,6 +59,23 @@ export class RegisterComponent implements OnInit, OnDestroy {
   hideConfirmPassword = true;
 
   ngOnInit(): void {
+    // Check if user is already authenticated with pending invitation
+    // This handles edge case where user started registration, got interrupted,
+    // and came back with an existing session
+    if (this.authService.isAuthenticated) {
+      const pendingToken = localStorage.getItem('pending_invitation_token');
+      if (pendingToken) {
+        // Redirect to accept invitation - token will be cleared there
+        this.router.navigate(['/auth/accept-invitation'], {
+          queryParams: { token: pendingToken }
+        });
+        return;
+      }
+      // Already authenticated without pending invitation - go to default route
+      this.router.navigate([this.authService.getDefaultRoute()]);
+      return;
+    }
+
     this.checkSignupStatus();
     this.registerForm = this.formBuilder.group({
       fullName: ['', [Validators.required, Validators.minLength(2)]],
