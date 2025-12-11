@@ -391,8 +391,22 @@ See `FEATURES.md` → "Code Review Audit (December 10, 2024)" for examples of ve
 
 ## Git Workflow
 
+### CRITICAL: Deployment Branch Configuration
+
+> **CLOUDFLARE DEPLOYS FROM `main` BRANCH, NOT `master`!**
+>
+> **Always push to `main` for production deployment:**
+> ```bash
+> git checkout main
+> git merge <your-branch>
+> git push origin main
+> ```
+>
+> **December 11, 2024 Incident**: 22+ commits were pushed to `master` but never deployed because Cloudflare was watching `main`. This caused days of debugging "fixes" that never went live. Always verify you're on `main` before pushing production changes.
+
 ### Branch Strategy
-- `main` - Production-ready code
+- `main` - **Production branch (Cloudflare deploys from here!)**
+- `master` - Legacy branch (DO NOT USE for deployment)
 - `develop` - Integration branch
 - `feature/feature-name` - Feature branches
 - `bugfix/bug-name` - Bug fix branches
