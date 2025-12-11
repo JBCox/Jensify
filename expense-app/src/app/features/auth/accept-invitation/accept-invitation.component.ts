@@ -9,7 +9,6 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { InvitationService } from '../../../core/services/invitation.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { NotificationService } from '../../../core/services/notification.service';
 import { Invitation } from '../../../core/models';
 
 /**
@@ -36,7 +35,6 @@ export class AcceptInvitationComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private invitationService = inject(InvitationService);
   protected authService = inject(AuthService);
-  private notificationService = inject(NotificationService);
 
   // Cleanup
   private destroy$ = new Subject<void>();
@@ -114,12 +112,17 @@ export class AcceptInvitationComponent implements OnInit, OnDestroy {
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (_membership) => {
+        next: (membership) => {
           this.isLoading.set(false);
-          this.notificationService.showSuccess(
-            `Successfully joined ${this.invitation()?.organization?.name || 'organization'}!`
-          );
-          // Force reload to get fresh organization context
+          // Note: Success notification is shown by InvitationService
+
+          // CRITICAL: Set organization context before navigating
+          // This ensures auth guard sees the user has an organization
+          if (membership?.organization_id) {
+            localStorage.setItem('current_organization_id', membership.organization_id);
+          }
+
+          // Navigate to home - auth guard will now see org context
           this.router.navigate(['/home']);
         },
         error: (error) => {
