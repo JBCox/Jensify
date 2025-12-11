@@ -330,6 +330,11 @@ export class UserManagementComponent implements OnInit, OnDestroy {
    * Invite a new user
    */
   inviteUser(): void {
+    // Prevent double-submission
+    if (this.isLoading()) {
+      return;
+    }
+
     if (this.inviteForm.invalid) {
       this.inviteForm.markAllAsTouched();
       return;
