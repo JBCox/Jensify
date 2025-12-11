@@ -27,11 +27,11 @@ describe('FeatureGateService', () => {
   };
 
   const mockFreePlanFeatures: PlanFeatures = {
-    receipts_per_month: 20,
-    stripe_payouts_enabled: true, // All plans have full features now
-    api_access_enabled: true,
-    mileage_gps_enabled: true,
-    multi_level_approval: true,
+    receipts_per_month: 10,
+    stripe_payouts_enabled: false,
+    api_access_enabled: false,
+    mileage_gps_enabled: false,
+    multi_level_approval: false,
     support_level: 'community',
   };
 

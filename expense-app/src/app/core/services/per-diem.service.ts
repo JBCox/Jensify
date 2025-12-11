@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { Observable, from, throwError } from 'rxjs';
-import { map, catchError, tap } from 'rxjs/operators';
+import { map, catchError, tap, switchMap } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
 import { OrganizationService } from './organization.service';
 import { LoggerService } from './logger.service';
@@ -297,7 +297,7 @@ export class PerDiemService {
         this.logger.info('Travel trip created', 'PerDiemService', { tripId: data.id });
         return data as TravelTrip;
       }),
-      tap(() => this.getMyTrips().subscribe()),
+      switchMap(trip => this.refreshTripsAndReturn(trip)),
       catchError(this.handleError)
     );
   }
@@ -327,7 +327,7 @@ export class PerDiemService {
         this.logger.info('Travel trip updated', 'PerDiemService', { tripId: id });
         return data as TravelTrip;
       }),
-      tap(() => this.getMyTrips().subscribe()),
+      switchMap(trip => this.refreshTripsAndReturn(trip)),
       catchError(this.handleError)
     );
   }
@@ -346,7 +346,7 @@ export class PerDiemService {
         if (error) throw error;
         this.logger.info('Travel trip deleted', 'PerDiemService', { tripId });
       }),
-      tap(() => this.getMyTrips().subscribe()),
+      switchMap(() => this.refreshTripsAndReturn(undefined as void)),
       catchError(this.handleError)
     );
   }
@@ -525,6 +525,16 @@ export class PerDiemService {
     this.getMyTrips().subscribe({
       error: (err) => this.logger.warn('Failed to load travel trips', 'PerDiemService', err)
     });
+  }
+
+  /**
+   * Helper to refresh trips cache and return the original value.
+   * Properly chains the refresh without nested subscribe().
+   */
+  private refreshTripsAndReturn<T>(value: T): Observable<T> {
+    return this.getMyTrips().pipe(
+      map(() => value)
+    );
   }
 
   private handleError = (error: unknown): Observable<never> => {

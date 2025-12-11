@@ -16,6 +16,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import { LoggerService } from '../../../core/services/logger.service';
 
 type AnnouncementType = 'info' | 'warning' | 'critical' | 'maintenance';
 type TargetAudience = 'all' | 'paid' | 'free' | 'admins';
@@ -65,6 +66,7 @@ export class AnnouncementListComponent implements OnInit {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private destroyRef = inject(DestroyRef);
+  private readonly logger = inject(LoggerService);
 
   isLoading = signal(true);
   error = signal<string | null>(null);
@@ -107,7 +109,7 @@ export class AnnouncementListComponent implements OnInit {
           this.isLoading.set(false);
         },
         error: (err: Error) => {
-          console.error('Failed to load announcements:', err);
+          this.logger.error('Failed to load announcements', err, 'AnnouncementListComponent.loadAnnouncements');
           this.error.set('Failed to load announcements');
           this.isLoading.set(false);
         }
@@ -200,7 +202,7 @@ export class AnnouncementListComponent implements OnInit {
             });
           },
           error: (err) => {
-            console.error('Failed to delete announcement:', err);
+            this.logger.error('Failed to delete announcement', err as Error, 'AnnouncementListComponent.deleteAnnouncement', { announcementId: id });
             this.snackBar.open('Failed to delete announcement', 'Close', {
               duration: 3000,
               horizontalPosition: 'end',

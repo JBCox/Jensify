@@ -13,6 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface ImpersonationLog {
   id: string;
@@ -195,6 +196,7 @@ interface ImpersonationLog {
 export class ImpersonationHistoryComponent implements OnInit {
   private fb = inject(FormBuilder);
   private superAdminService = inject(SuperAdminService);
+  private readonly logger = inject(LoggerService);
 
   filterForm: FormGroup;
   loading = signal(false);
@@ -241,7 +243,7 @@ export class ImpersonationHistoryComponent implements OnInit {
       const active = logs.filter(l => !l.ended_at).length;
       this.stats.set({ total: logs.length, thisMonth, active });
     } catch (error) {
-      console.error('Error loading impersonation history:', error);
+      this.logger.error('Error loading impersonation history', error as Error, 'ImpersonationHistoryComponent.loadHistory');
     } finally {
       this.loading.set(false);
     }

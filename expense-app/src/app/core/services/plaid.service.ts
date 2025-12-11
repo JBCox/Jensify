@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { Observable, from, throwError, firstValueFrom } from 'rxjs';
-import { map, catchError, tap } from 'rxjs/operators';
+import { map, catchError, tap, switchMap } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
 import { OrganizationService } from './organization.service';
 import { LoggerService } from './logger.service';
@@ -112,7 +112,7 @@ export class PlaidService {
         this.logger.info('Plaid account linked', 'PlaidService');
         return data as PlaidItem;
       }),
-      tap(() => this.getPlaidItems().subscribe()),
+      switchMap(result => this.getPlaidItems().pipe(map(() => result))),
       catchError(this.handleError)
     );
   }
@@ -164,7 +164,7 @@ export class PlaidService {
         if (error) throw error;
         this.logger.info('Plaid item removed', 'PlaidService', { itemId });
       }),
-      tap(() => this.getPlaidItems().subscribe()),
+      switchMap(result => this.getPlaidItems().pipe(map(() => result))),
       catchError(this.handleError)
     );
   }
@@ -218,7 +218,7 @@ export class PlaidService {
         if (error) throw error;
         return data as LinkedAccount;
       }),
-      tap(() => this.getLinkedAccounts().subscribe()),
+      switchMap(result => this.getLinkedAccounts().pipe(map(() => result))),
       catchError(this.handleError)
     );
   }
@@ -258,7 +258,7 @@ export class PlaidService {
         this.logger.info('Transactions synced', 'PlaidService', data);
         return data as { added: number; modified: number; removed: number };
       }),
-      tap(() => this.getTransactions().subscribe()),
+      switchMap(result => this.getTransactions().pipe(map(() => result))),
       catchError(this.handleError)
     );
   }
@@ -323,7 +323,7 @@ export class PlaidService {
         if (error) throw error;
         return data as string | null;
       }),
-      tap(() => this.getTransactions().subscribe()),
+      switchMap(result => this.getTransactions().pipe(map(() => result))),
       catchError(this.handleError)
     );
   }
@@ -344,7 +344,7 @@ export class PlaidService {
         this.logger.info('Transaction converted to expense', 'PlaidService', { transactionId: dto.transaction_id });
         return data as string;
       }),
-      tap(() => this.getTransactions().subscribe()),
+      switchMap(result => this.getTransactions().pipe(map(() => result))),
       catchError(this.handleError)
     );
   }
@@ -362,7 +362,7 @@ export class PlaidService {
       map(({ error }) => {
         if (error) throw error;
       }),
-      tap(() => this.getTransactions().subscribe()),
+      switchMap(result => this.getTransactions().pipe(map(() => result))),
       catchError(this.handleError)
     );
   }
@@ -438,7 +438,7 @@ export class PlaidService {
         this.logger.info('Transaction rule created', 'PlaidService', { name: rule.name });
         return data as TransactionRule;
       }),
-      tap(() => this.getTransactionRules().subscribe()),
+      switchMap(result => this.getTransactionRules().pipe(map(() => result))),
       catchError(this.handleError)
     );
   }
@@ -464,7 +464,7 @@ export class PlaidService {
         if (error) throw error;
         return data as TransactionRule;
       }),
-      tap(() => this.getTransactionRules().subscribe()),
+      switchMap(result => this.getTransactionRules().pipe(map(() => result))),
       catchError(this.handleError)
     );
   }
@@ -482,7 +482,7 @@ export class PlaidService {
       map(({ error }) => {
         if (error) throw error;
       }),
-      tap(() => this.getTransactionRules().subscribe()),
+      switchMap(result => this.getTransactionRules().pipe(map(() => result))),
       catchError(this.handleError)
     );
   }

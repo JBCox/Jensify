@@ -6,6 +6,24 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { PWA, SNACKBAR_DURATION } from '../../shared/constants/ui.constants';
 
 /**
+ * BeforeInstallPromptEvent interface
+ * Represents the browser's install prompt event for PWA installation
+ * Not officially part of TypeScript's DOM types, so we define it here
+ */
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+  prompt(): Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+/**
+ * Extended Navigator interface to include iOS standalone property
+ */
+interface NavigatorStandalone extends Navigator {
+  standalone?: boolean;
+}
+
+/**
  * PWA Service
  * Handles service worker updates, app installation, and offline detection
  */
@@ -17,7 +35,7 @@ export class PwaService {
   private appRef = inject(ApplicationRef);
   private snackBar = inject(MatSnackBar);
 
-  private promptEvent: any;
+  private promptEvent: BeforeInstallPromptEvent | null = null;
 
   constructor() {
     this.initUpdateCheck();
@@ -78,9 +96,9 @@ export class PwaService {
    * Listen for beforeinstallprompt event
    */
   private listenForInstallPrompt(): void {
-    window.addEventListener('beforeinstallprompt', (e) => {
+    window.addEventListener('beforeinstallprompt', (e: Event) => {
       e.preventDefault();
-      this.promptEvent = e;
+      this.promptEvent = e as BeforeInstallPromptEvent;
     });
   }
 
@@ -111,6 +129,6 @@ export class PwaService {
    */
   isInstalled(): boolean {
     return window.matchMedia('(display-mode: standalone)').matches ||
-           (window.navigator as any).standalone === true;
+           (window.navigator as NavigatorStandalone).standalone === true;
   }
 }

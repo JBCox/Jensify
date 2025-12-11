@@ -16,6 +16,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 type AnnouncementType = 'info' | 'warning' | 'critical' | 'maintenance';
 type TargetAudience = 'all' | 'paid' | 'free' | 'admins';
@@ -54,6 +55,7 @@ export class AnnouncementFormComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private readonly logger = inject(LoggerService);
 
   isLoading = signal(true);
   isSaving = signal(false);
@@ -145,7 +147,7 @@ export class AnnouncementFormComponent implements OnInit {
           this.isLoading.set(false);
         },
         error: (err: Error) => {
-          console.error('Failed to load announcement:', err);
+          this.logger.error('Failed to load announcement', err, 'AnnouncementFormComponent.loadAnnouncement', { announcementId: id });
           this.snackBar.open('Failed to load announcement', 'Close', { duration: 3000 });
           this.isLoading.set(false);
         }
@@ -192,7 +194,7 @@ export class AnnouncementFormComponent implements OnInit {
     };
 
     const onError = (err: Error): void => {
-      console.error('Failed to save announcement:', err);
+      this.logger.error('Failed to save announcement', err, 'AnnouncementFormComponent.save', { isUpdate, announcementId: id });
       this.snackBar.open('Failed to save announcement', 'Close', {
         duration: 3000,
         horizontalPosition: 'end',

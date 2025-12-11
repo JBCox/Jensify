@@ -11,6 +11,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface ScheduledTask {
   id: string;
@@ -137,6 +138,7 @@ export class TaskListComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private superAdminService = inject(SuperAdminService);
+  private readonly logger = inject(LoggerService);
 
   loading = signal(false);
   tasks = signal<ScheduledTask[]>([]);
@@ -164,7 +166,7 @@ export class TaskListComponent implements OnInit {
       }));
       this.tasks.set(tasks);
     } catch (error) {
-      console.error('Error loading scheduled tasks:', error);
+      this.logger.error('Error loading scheduled tasks', error as Error, 'TaskListComponent.loadTasks');
     } finally {
       this.loading.set(false);
     }
@@ -185,7 +187,7 @@ export class TaskListComponent implements OnInit {
       this.snackBar.open(`Task ${task.enabled ? 'disabled' : 'enabled'}`, 'Close', { duration: 2000 });
       await this.loadTasks();
     } catch (error) {
-      console.error('Error toggling task:', error);
+      this.logger.error('Error toggling task', error as Error, 'TaskListComponent.toggleTask', { taskName: task.name });
       this.snackBar.open('Failed to toggle task', 'Close', { duration: 3000 });
     }
   }
@@ -214,7 +216,7 @@ export class TaskListComponent implements OnInit {
         this.snackBar.open('Task started', 'Close', { duration: 2000 });
         await this.loadTasks();
       } catch (error) {
-        console.error('Error running task:', error);
+        this.logger.error('Error running task', error as Error, 'TaskListComponent.runTask', { taskName: task.name });
         this.snackBar.open('Failed to run task', 'Close', { duration: 3000 });
       }
     });

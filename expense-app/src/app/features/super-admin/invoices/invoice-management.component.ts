@@ -14,6 +14,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface Invoice {
   id: string;
@@ -220,6 +221,7 @@ export class InvoiceManagementComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private superAdminService = inject(SuperAdminService);
+  private readonly logger = inject(LoggerService);
 
   filterForm: FormGroup;
   loading = signal(false);
@@ -285,7 +287,7 @@ export class InvoiceManagementComponent implements OnInit {
 
       this.stats.set(stats);
     } catch (error) {
-      console.error('Error loading invoices:', error);
+      this.logger.error('Error loading invoices', error as Error, 'InvoiceManagementComponent.loadInvoices');
       this.snackBar.open('Failed to load invoices', 'Close', { duration: 3000 });
     } finally {
       this.loading.set(false);
@@ -316,7 +318,7 @@ export class InvoiceManagementComponent implements OnInit {
       await firstValueFrom(this.superAdminService.resendInvoice(invoice.id));
       this.snackBar.open('Invoice resent successfully', 'Close', { duration: 3000 });
     } catch (error) {
-      console.error('Error resending invoice:', error);
+      this.logger.error('Error resending invoice', error as Error, 'InvoiceManagementComponent.resendInvoice', { invoiceId: invoice.id });
       this.snackBar.open('Failed to resend invoice', 'Close', { duration: 3000 });
     }
   }
@@ -349,7 +351,7 @@ export class InvoiceManagementComponent implements OnInit {
         this.snackBar.open('Invoice marked as paid', 'Close', { duration: 3000 });
         await this.loadInvoices();
       } catch (error) {
-        console.error('Error marking invoice as paid:', error);
+        this.logger.error('Error marking invoice as paid', error as Error, 'InvoiceManagementComponent.markAsPaid', { invoiceId: invoice.id });
         this.snackBar.open('Failed to mark invoice as paid', 'Close', { duration: 3000 });
       }
     });
@@ -382,7 +384,7 @@ export class InvoiceManagementComponent implements OnInit {
         this.snackBar.open('Invoice voided successfully', 'Close', { duration: 3000 });
         await this.loadInvoices();
       } catch (error) {
-        console.error('Error voiding invoice:', error);
+        this.logger.error('Error voiding invoice', error as Error, 'InvoiceManagementComponent.voidInvoice', { invoiceId: invoice.id });
         this.snackBar.open('Failed to void invoice', 'Close', { duration: 3000 });
       }
     });

@@ -3,6 +3,7 @@ import { Observable, from, throwError, firstValueFrom } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
 import { OrganizationService } from './organization.service';
+import { LoggerService } from './logger.service';
 import {
   ExpenseReport,
   CreateReportDto,
@@ -56,6 +57,7 @@ import { Expense } from '../models/expense.model';
 export class ReportService {
   private readonly supabase = inject(SupabaseService);
   private readonly orgService = inject(OrganizationService);
+  private readonly logger = inject(LoggerService);
 
   /**
    * Get all reports for the current organization
@@ -139,7 +141,7 @@ export class ReportService {
       })()
     ).pipe(
       catchError(err => {
-        console.error('Error fetching reports:', err);
+        this.logger.error('Error fetching reports', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to fetch reports'));
       })
     );
@@ -187,7 +189,7 @@ export class ReportService {
         };
       }),
       catchError(err => {
-        console.error('Error fetching report:', err);
+        this.logger.error('Error fetching report', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to fetch report'));
       })
     );
@@ -251,7 +253,7 @@ export class ReportService {
       })()
     ).pipe(
       catchError(err => {
-        console.error('Error creating report:', err);
+        this.logger.error('Error creating report', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to create report'));
       })
     );
@@ -289,7 +291,7 @@ export class ReportService {
         return data as ExpenseReport;
       }),
       catchError(err => {
-        console.error('Error updating report:', err);
+        this.logger.error('Error updating report', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to update report'));
       })
     );
@@ -315,7 +317,7 @@ export class ReportService {
         }
       }),
       catchError(err => {
-        console.error('Error deleting report:', err);
+        this.logger.error('Error deleting report', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to delete report'));
       })
     );
@@ -331,7 +333,7 @@ export class ReportService {
   addExpenseToReport(reportId: string, expenseId: string): Observable<void> {
     return from(this.addExpenseToReportInternal(reportId, expenseId)).pipe(
       catchError(err => {
-        console.error('Error adding expense to report:', err);
+        this.logger.error('Error adding expense to report', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to add expense to report'));
       })
     );
@@ -358,7 +360,7 @@ export class ReportService {
         }
       }),
       catchError(err => {
-        console.error('Error removing expense from report:', err);
+        this.logger.error('Error removing expense from report', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to remove expense'));
       })
     );
@@ -433,7 +435,7 @@ export class ReportService {
       })()
     ).pipe(
       catchError(err => {
-        console.error('Error reordering expenses:', err);
+        this.logger.error('Error reordering expenses', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to reorder expenses'));
       })
     );
@@ -452,7 +454,7 @@ export class ReportService {
       const report = await this.ensureMonthlyAutoReport(expense.expense_date);
       await this.addExpenseToReportInternal(report.id, expense.id);
     } catch (error) {
-      console.warn('Auto-attach expense to monthly report skipped', error);
+      this.logger.warn('Auto-attach expense to monthly report skipped', 'ReportService', error);
     }
   }
 
@@ -592,7 +594,7 @@ export class ReportService {
       })()
     ).pipe(
       catchError(err => {
-        console.error('Error submitting report:', err);
+        this.logger.error('Error submitting report', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to submit report'));
       })
     );
@@ -721,7 +723,7 @@ export class ReportService {
       })()
     ).pipe(
       catchError(err => {
-        console.error('Error approving report:', err);
+        this.logger.error('Error approving report', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to approve report'));
       })
     );
@@ -761,7 +763,7 @@ export class ReportService {
       })()
     ).pipe(
       catchError(err => {
-        console.error('Error rejecting report:', err);
+        this.logger.error('Error rejecting report', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to reject report'));
       })
     );
@@ -799,7 +801,7 @@ export class ReportService {
       })()
     ).pipe(
       catchError(err => {
-        console.error('Error marking report as paid:', err);
+        this.logger.error('Error marking report as paid', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to mark as paid'));
       })
     );
@@ -823,7 +825,7 @@ export class ReportService {
         return data as unknown as ReportStats;
       }),
       catchError(err => {
-        console.error('Error fetching report stats:', err);
+        this.logger.error('Error fetching report stats', err, 'ReportService');
         return throwError(() => new Error(err?.message || 'Failed to fetch report stats'));
       })
     );

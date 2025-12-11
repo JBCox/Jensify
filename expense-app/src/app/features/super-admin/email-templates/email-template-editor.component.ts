@@ -16,6 +16,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTabsModule } from '@angular/material/tabs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface EmailTemplate {
   id: string;
@@ -630,6 +631,7 @@ export class EmailTemplateEditorComponent implements OnInit {
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(DomSanitizer);
+  private readonly logger = inject(LoggerService);
 
   isLoading = signal(true);
   isSaving = signal(false);
@@ -722,7 +724,7 @@ export class EmailTemplateEditorComponent implements OnInit {
           this.isLoading.set(false);
         },
         error: (err) => {
-          console.error('Failed to load email template:', err);
+          this.logger.error('Failed to load email template', err as Error, 'EmailTemplateEditorComponent.loadTemplate', { templateName: name });
           this.snackBar.open('Failed to load email template', 'Close', { duration: 3000 });
           this.isLoading.set(false);
         }
@@ -859,7 +861,7 @@ export class EmailTemplateEditorComponent implements OnInit {
           });
         },
         error: (err) => {
-          console.error('Failed to save email template:', err);
+          this.logger.error('Failed to save email template', err as Error, 'EmailTemplateEditorComponent.save', { templateName: currentTemplate.name });
           this.snackBar.open('Failed to save template', 'Close', {
             duration: 3000,
             horizontalPosition: 'end',
@@ -901,7 +903,7 @@ export class EmailTemplateEditorComponent implements OnInit {
           });
         },
         error: (err) => {
-          console.error('Failed to send test email:', err);
+          this.logger.error('Failed to send test email', err as Error, 'EmailTemplateEditorComponent.sendTestEmail', { templateName: currentTemplate.name });
           this.snackBar.open('Failed to send test email', 'Close', {
             duration: 3000,
             horizontalPosition: 'end',

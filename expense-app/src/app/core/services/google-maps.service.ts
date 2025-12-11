@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
-import { environment } from '../../../environments/environment';
-import { BehaviorSubject, Observable, from, of, throwError, firstValueFrom } from 'rxjs';
-import { map, switchMap, filter, take, timeout, catchError } from 'rxjs/operators';
+import { Injectable, OnDestroy, inject } from '@angular/core';
+import { BehaviorSubject, Observable, from, of, throwError, Subject } from 'rxjs';
+import { map, switchMap, timeout, catchError } from 'rxjs/operators';
+import { SupabaseService } from './supabase.service';
 
 export interface LatLng {
   lat: number;
@@ -16,156 +16,89 @@ export interface RouteResult {
   polyline: string;
 }
 
-// Google Maps API type definitions (minimal subset we use)
-interface GoogleMapsNamespace {
-  Geocoder: new () => GoogleGeocoder;
-  DistanceMatrixService: new () => GoogleDistanceMatrixService;
-  LatLng: new (lat: number, lng: number) => GoogleLatLng;
-  TravelMode: { DRIVING: string };
-  UnitSystem: { IMPERIAL: number };
-  geometry: {
-    spherical: {
-      computeDistanceBetween: (from: GoogleLatLng, to: GoogleLatLng) => number;
-    };
-  };
+interface ProxyGeocodeResponse {
+  lat: number;
+  lng: number;
+  formatted_address: string;
 }
 
-interface GoogleGeocoder {
-  geocode: (request: { address?: string; location?: { lat: number; lng: number } }) => Promise<GoogleGeocoderResponse>;
+interface ProxyReverseGeocodeResponse {
+  formatted_address: string;
+  lat?: number;
+  lng?: number;
+  status?: string;
 }
 
-interface GoogleGeocoderResponse {
-  results: {
-    formatted_address: string;
-    geometry: {
-      location: {
-        lat: () => number;
-        lng: () => number;
-      };
-    };
-  }[];
-}
-
-interface GoogleDistanceMatrixService {
-  getDistanceMatrix: (request: GoogleDistanceMatrixRequest) => Promise<GoogleDistanceMatrixResponse>;
-}
-
-interface GoogleDistanceMatrixRequest {
-  origins: (string | GoogleLatLng)[];
-  destinations: (string | GoogleLatLng)[];
-  travelMode: string;
-  unitSystem: number;
-}
-
-interface GoogleDistanceMatrixResponse {
-  rows: {
-    elements: {
-      status: string;
-      distance?: { value: number; text: string };
-      duration?: { value: number; text: string };
-    }[];
-  }[];
-}
-
-interface GoogleLatLng {
-  lat: () => number;
-  lng: () => number;
-}
-
-interface WindowWithGoogle extends Window {
-  google?: {
-    maps?: GoogleMapsNamespace;
-  };
+interface ProxyDistanceMatrixResponse {
+  distanceMiles: number;
+  durationMinutes: number;
+  apiSuccess: boolean;
+  status?: string;
 }
 
 /**
  * Google Maps Service
- * Handles all Google Maps API interactions
+ *
+ * SECURITY: All Google Maps API calls are proxied through Supabase Edge Function
+ * to avoid exposing the API key in client-side code.
+ *
+ * The API key is stored as a Supabase secret (GOOGLE_MAPS_API_KEY) and never
+ * exposed to the browser.
  */
 @Injectable({
   providedIn: 'root'
 })
-export class GoogleMapsService {
-  private loaderSubject = new BehaviorSubject<boolean>(false);
-  private googleMaps?: GoogleMapsNamespace;
+export class GoogleMapsService implements OnDestroy {
+  private readySubject = new BehaviorSubject<boolean>(true); // Always ready since we use Edge Function
+  private destroy$ = new Subject<void>();
+  private readonly supabase = inject(SupabaseService);
 
-  constructor() {
-    this.initLoader();
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   /**
-   * Initialize Google Maps loader
+   * Make authenticated request to Google Maps proxy Edge Function
    */
-  private async initLoader(): Promise<void> {
-    try {
-      // Check if already loaded
-      const windowWithGoogle = window as unknown as WindowWithGoogle;
-      if (windowWithGoogle.google?.maps) {
-        this.googleMaps = windowWithGoogle.google.maps;
-        this.loaderSubject.next(true);
-        return;
-      }
-
-      // Load Google Maps script
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${environment.googleMaps.apiKey}&libraries=places,geometry`;
-      script.async = true;
-      script.defer = true;
-
-      script.onload = () => {
-        const win = window as unknown as WindowWithGoogle;
-        this.googleMaps = win.google?.maps;
-        this.loaderSubject.next(true);
-      };
-
-      script.onerror = () => {
-        this.loaderSubject.next(false);
-      };
-
-      document.head.appendChild(script);
-    } catch {
-      this.loaderSubject.next(false);
+  private async callProxy<T>(action: string, params: Record<string, unknown>): Promise<T> {
+    const session = await this.supabase.getSession();
+    if (!session?.access_token) {
+      throw new Error('Not authenticated');
     }
-  }
 
-  /**
-   * Wait for Google Maps to be loaded (with timeout)
-   */
-  private waitForMaps(): Observable<GoogleMapsNamespace> {
-    return this.loaderSubject.pipe(
-      filter(loaded => loaded === true),
-      take(1),
-      timeout(10000), // 10 second timeout
-      map(() => {
-        if (!this.googleMaps) {
-          throw new Error('Google Maps not loaded');
-        }
-        return this.googleMaps;
-      }),
-      catchError(() => {
-        return throwError(() => new Error('Google Maps failed to load'));
-      })
+    const response = await fetch(
+      `${this.supabase.supabaseUrl}/functions/v1/google-maps-proxy`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': this.supabase.supabaseAnonKey
+        },
+        body: JSON.stringify({ action, ...params })
+      }
     );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    return response.json();
   }
 
   /**
    * Geocode an address to coordinates
    */
   geocodeAddress(address: string): Observable<LatLng> {
-    return this.waitForMaps().pipe(
-      switchMap(maps => {
-        const geocoder = new maps.Geocoder();
-        return from(geocoder.geocode({ address }));
-      }),
-      map((result: GoogleGeocoderResponse) => {
-        if (!result.results || result.results.length === 0) {
-          throw new Error(`No results found for address: ${address}`);
-        }
-        const location = result.results[0].geometry.location;
-        return {
-          lat: location.lat(),
-          lng: location.lng()
-        };
+    return from(this.callProxy<ProxyGeocodeResponse>('geocode', { address })).pipe(
+      map((result) => ({
+        lat: result.lat,
+        lng: result.lng
+      })),
+      catchError((error) => {
+        return throwError(() => new Error(`Geocoding failed: ${error.message}`));
       })
     );
   }
@@ -174,18 +107,9 @@ export class GoogleMapsService {
    * Reverse geocode coordinates to address
    */
   reverseGeocode(lat: number, lng: number): Observable<string> {
-    return this.waitForMaps().pipe(
-      switchMap(maps => {
-        const geocoder = new maps.Geocoder();
-        return from(geocoder.geocode({ location: { lat, lng } }));
-      }),
-      timeout(10000), // 10 second timeout for geocoding
-      map((result: GoogleGeocoderResponse) => {
-        if (!result.results || result.results.length === 0) {
-          throw new Error('No address found for coordinates');
-        }
-        return result.results[0].formatted_address;
-      }),
+    return from(this.callProxy<ProxyReverseGeocodeResponse>('reverse-geocode', { lat, lng })).pipe(
+      timeout(15000),
+      map((result) => result.formatted_address),
       catchError(() => {
         // Return coordinates as fallback
         return of(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
@@ -197,47 +121,27 @@ export class GoogleMapsService {
    * Calculate distance and route between two addresses
    */
   calculateRoute(origin: string, destination: string): Observable<RouteResult> {
-    return this.waitForMaps().pipe(
-      switchMap(maps => {
-        const service = new maps.DistanceMatrixService();
-        return from(
-          service.getDistanceMatrix({
-            origins: [origin],
-            destinations: [destination],
-            travelMode: maps.TravelMode.DRIVING,
-            unitSystem: maps.UnitSystem.IMPERIAL // Miles
-          })
+    // First geocode both addresses, then calculate distance
+    return from(Promise.all([
+      this.callProxy<ProxyGeocodeResponse>('geocode', { address: origin }),
+      this.callProxy<ProxyGeocodeResponse>('geocode', { address: destination })
+    ])).pipe(
+      switchMap(([originResult, destResult]) => {
+        return from(this.callProxy<ProxyDistanceMatrixResponse>('distance-matrix', {
+          origin: { lat: originResult.lat, lng: originResult.lng },
+          destination: { lat: destResult.lat, lng: destResult.lng }
+        })).pipe(
+          map((distanceResult) => ({
+            distance: distanceResult.distanceMiles,
+            duration: distanceResult.durationMinutes,
+            origin: { lat: originResult.lat, lng: originResult.lng },
+            destination: { lat: destResult.lat, lng: destResult.lng },
+            polyline: '' // Not available from Distance Matrix API
+          }))
         );
       }),
-      switchMap((result: GoogleDistanceMatrixResponse) => {
-        if (!result.rows || !result.rows[0] || !result.rows[0].elements[0]) {
-          throw new Error('Unable to calculate route');
-        }
-
-        const element = result.rows[0].elements[0];
-        if (element.status !== 'OK') {
-          throw new Error(`Route calculation failed: ${element.status}`);
-        }
-
-        // Get coordinates for both addresses
-        return from(Promise.all([
-          firstValueFrom(this.geocodeAddress(origin)),
-          firstValueFrom(this.geocodeAddress(destination))
-        ])).pipe(
-          map(([originCoords, destCoords]) => {
-            if (!originCoords || !destCoords) {
-              throw new Error('Failed to geocode addresses');
-            }
-
-            return {
-              distance: (element.distance?.value ?? 0) / 1609.34, // meters to miles
-              duration: (element.duration?.value ?? 0) / 60, // seconds to minutes
-              origin: originCoords,
-              destination: destCoords,
-              polyline: '' // Polyline not available from Distance Matrix API - use Directions API if needed
-            };
-          })
-        );
+      catchError((error) => {
+        return throwError(() => new Error(`Route calculation failed: ${error.message}`));
       })
     );
   }
@@ -246,13 +150,8 @@ export class GoogleMapsService {
    * Calculate driving distance between two coordinate points
    * Used by Start/Stop tracking mode
    *
-   * Returns actual driving distance from Google Distance Matrix API.
+   * Returns actual driving distance from Google Distance Matrix API via Edge Function.
    * If API fails, returns 0 distance - user must fill in manually.
-   *
-   * If Distance Matrix API fails, check Google Cloud Console:
-   * 1. Distance Matrix API must be ENABLED (separate from Maps JavaScript API)
-   * 2. Billing must be enabled on the project
-   * 3. API key must not have restrictions excluding Distance Matrix API
    */
   getRouteByCoords(origin: LatLng, destination: LatLng): Observable<{ distanceMiles: number; durationMinutes: number; apiSuccess: boolean }> {
     // Check if start and end are essentially the same location (within ~100 meters)
@@ -262,47 +161,15 @@ export class GoogleMapsService {
       return of({ distanceMiles: 0, durationMinutes: 0, apiSuccess: true });
     }
 
-    return this.waitForMaps().pipe(
-      switchMap(maps => {
-        const service = new maps.DistanceMatrixService();
-        return from(
-          service.getDistanceMatrix({
-            origins: [new maps.LatLng(origin.lat, origin.lng)],
-            destinations: [new maps.LatLng(destination.lat, destination.lng)],
-            travelMode: maps.TravelMode.DRIVING,
-            unitSystem: maps.UnitSystem.IMPERIAL
-          })
-        );
-      }),
+    return from(this.callProxy<ProxyDistanceMatrixResponse>('distance-matrix', { origin, destination })).pipe(
       timeout(15000),
-      map((result: GoogleDistanceMatrixResponse) => {
-        if (!result.rows || !result.rows[0] || !result.rows[0].elements[0]) {
-          return { distanceMiles: 0, durationMinutes: 0, apiSuccess: false };
-        }
-
-        const element = result.rows[0].elements[0];
-
-        // Handle various API error statuses - return 0 so user fills in manually
-        if (element.status === 'ZERO_RESULTS' || element.status === 'NOT_FOUND') {
-          return { distanceMiles: 0, durationMinutes: 0, apiSuccess: false };
-        }
-        if (element.status === 'REQUEST_DENIED') {
-          return { distanceMiles: 0, durationMinutes: 0, apiSuccess: false };
-        }
-        if (element.status === 'OVER_QUERY_LIMIT') {
-          return { distanceMiles: 0, durationMinutes: 0, apiSuccess: false };
-        }
-        if (element.status !== 'OK') {
-          return { distanceMiles: 0, durationMinutes: 0, apiSuccess: false };
-        }
-
-        const distanceMiles = Math.round(((element.distance?.value ?? 0) / 1609.34) * 100) / 100;
-        const durationMinutes = Math.round((element.duration?.value ?? 0) / 60);
-
-        return { distanceMiles, durationMinutes, apiSuccess: true };
-      }),
+      map((result) => ({
+        distanceMiles: result.distanceMiles,
+        durationMinutes: result.durationMinutes,
+        apiSuccess: result.apiSuccess
+      })),
       catchError(() => {
-        // This catches network errors, timeouts, and API load failures
+        // Network errors, timeouts, etc.
         return of({ distanceMiles: 0, durationMinutes: 0, apiSuccess: false });
       })
     );
@@ -310,28 +177,28 @@ export class GoogleMapsService {
 
   /**
    * Calculate distance between two coordinates (straight line)
+   * Uses Haversine formula - no API call required
    */
   calculateDistance(from: LatLng, to: LatLng): number {
-    if (!this.googleMaps) {
-      throw new Error('Google Maps not loaded');
-    }
+    const R = 3958.8; // Earth's radius in miles
+    const dLat = this.toRad(to.lat - from.lat);
+    const dLng = this.toRad(to.lng - from.lng);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRad(from.lat)) * Math.cos(this.toRad(to.lat)) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
 
-    const fromLatLng = new this.googleMaps.LatLng(from.lat, from.lng);
-    const toLatLng = new this.googleMaps.LatLng(to.lat, to.lng);
-
-    // Returns distance in meters, convert to miles
-    const distanceMeters = this.googleMaps.geometry.spherical.computeDistanceBetween(
-      fromLatLng,
-      toLatLng
-    );
-
-    return distanceMeters / 1609.34; // meters to miles
+  private toRad(degrees: number): number {
+    return degrees * (Math.PI / 180);
   }
 
   /**
-   * Check if Google Maps is loaded
+   * Check if service is ready
    */
   get isLoaded(): boolean {
-    return this.loaderSubject.value;
+    return this.readySubject.value;
   }
 }

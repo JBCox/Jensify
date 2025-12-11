@@ -14,6 +14,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatChipsModule } from '@angular/material/chips';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface Organization {
   id: string;
@@ -250,6 +251,7 @@ export class BulkOperationsComponent {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private superAdminService = inject(SuperAdminService);
+  private readonly logger = inject(LoggerService);
 
   bulkForm: FormGroup;
   orgSearchCtrl = this.fb.control('');
@@ -286,7 +288,7 @@ export class BulkOperationsComponent {
       this.organizations.set(orgs);
       this.filteredOrganizations.set(orgs);
     } catch (error) {
-      console.error('Error loading organizations:', error);
+      this.logger.error('Error loading organizations', error as Error, 'BulkOperationsComponent.loadOrganizations');
       this.snackBar.open('Failed to load organizations', 'Close', { duration: 3000 });
     }
   }
@@ -419,7 +421,7 @@ export class BulkOperationsComponent {
         );
       }
     } catch (error) {
-      console.error('Error executing bulk operation:', error);
+      this.logger.error('Error executing bulk operation', error as Error, 'BulkOperationsComponent.execute', { action: this.bulkForm.value.action });
       this.snackBar.open('Failed to execute bulk operation', 'Close', { duration: 3000 });
     } finally {
       this.executing.set(false);

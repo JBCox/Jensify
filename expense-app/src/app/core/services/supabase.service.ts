@@ -163,6 +163,42 @@ export class SupabaseService {
   }
 
   /**
+   * Get Supabase URL
+   *
+   * Used by services that need to call Edge Functions directly
+   *
+   * @returns Supabase project URL
+   */
+  get supabaseUrl(): string {
+    return environment.supabase.url;
+  }
+
+  /**
+   * Get Supabase anon key
+   *
+   * SECURITY NOTE: This key is safe to expose in frontend code.
+   * It only grants public (anon) role permissions and all data
+   * access is protected by Row Level Security (RLS) policies.
+   *
+   * @returns Supabase anon key for API authentication
+   */
+  get supabaseAnonKey(): string {
+    return environment.supabase.anonKey;
+  }
+
+  /**
+   * Get current session asynchronously
+   *
+   * Used by services that need to get the access token for Edge Function calls
+   *
+   * @returns Current session or null if not authenticated
+   */
+  async getSession(): Promise<Session | null> {
+    const { data: { session } } = await this.supabase.auth.getSession();
+    return session;
+  }
+
+  /**
    * Sign up with email and password
    */
   async signUp(email: string, password: string, fullName: string) {
@@ -350,6 +386,10 @@ export class SupabaseService {
    * Check if new user signups are enabled
    * Calls the public database function that checks platform_settings
    *
+   * NOTE: This method uses console.error directly because LoggerService
+   * cannot be injected into SupabaseService (it would cause a circular dependency)
+   * since LoggerService is a simple utility that doesn't depend on anything.
+   *
    * @returns true if signups are enabled, false if disabled
    */
   async areSignupsEnabled(): Promise<boolean> {
@@ -357,14 +397,20 @@ export class SupabaseService {
       const { data, error } = await this.supabase.rpc('are_signups_enabled');
 
       if (error) {
-        console.error('Error checking signup status:', error);
+        // Use console.error as LoggerService would cause circular dep
+        if (!environment.production) {
+          console.error('[SupabaseService] Error checking signup status:', error);
+        }
         // Default to enabled if we can't check (fail open for better UX)
         return true;
       }
 
       return data === true;
     } catch (error) {
-      console.error('Error checking signup status:', error);
+      // Use console.error as LoggerService would cause circular dep
+      if (!environment.production) {
+        console.error('[SupabaseService] Error checking signup status:', error);
+      }
       return true; // Default to enabled on error
     }
   }

@@ -16,6 +16,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { SubscriptionPlan, PlanFeatures } from '../../../core/models/subscription.model';
+import { LoggerService } from '../../../core/services/logger.service';
 
 /**
  * Plan Editor Component
@@ -317,6 +318,7 @@ export class PlanEditorComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private readonly logger = inject(LoggerService);
 
   isLoading = signal(true);
   isSaving = signal(false);
@@ -395,7 +397,7 @@ export class PlanEditorComponent implements OnInit {
           this.isLoading.set(false);
         },
         error: (err) => {
-          console.error('Failed to load plan:', err);
+          this.logger.error('Failed to load plan', err as Error, 'PlanEditorComponent.loadPlan', { planId: id });
           this.snackBar.open('Failed to load plan', 'Close', {
             duration: 3000,
             horizontalPosition: 'end',
@@ -490,7 +492,7 @@ export class PlanEditorComponent implements OnInit {
           this.router.navigate(['/super-admin/plans']);
         },
         error: (err) => {
-          console.error('Failed to save plan:', err);
+          this.logger.error('Failed to save plan', err as Error, 'PlanEditorComponent.save', { planId });
           this.isSaving.set(false);
           this.snackBar.open('Failed to save plan', 'Close', {
             duration: 3000,

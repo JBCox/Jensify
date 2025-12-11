@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface Integration {
   name: string;
@@ -136,6 +137,7 @@ interface Incident {
 export class IntegrationHealthComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private superAdminService = inject(SuperAdminService);
+  private readonly logger = inject(LoggerService);
 
   integrations = signal<Integration[]>([]);
   incidents = signal<Incident[]>([]);
@@ -160,7 +162,7 @@ export class IntegrationHealthComponent implements OnInit {
       this.integrations.set(integrations);
       this.incidents.set([]);
     } catch (error) {
-      console.error('Error loading integration health:', error);
+      this.logger.error('Error loading integration health', error as Error, 'IntegrationHealthComponent.loadHealth');
     }
   }
 
@@ -185,7 +187,7 @@ export class IntegrationHealthComponent implements OnInit {
       this.snackBar.open('Health checks completed', 'Close', { duration: 3000 });
       await this.loadIntegrationHealth();
     } catch (error) {
-      console.error('Error checking integrations:', error);
+      this.logger.error('Error checking integrations', error as Error, 'IntegrationHealthComponent.checkAllIntegrations');
       this.snackBar.open('Failed to check integrations', 'Close', { duration: 3000 });
     } finally {
       this.checking.set(false);
@@ -198,7 +200,7 @@ export class IntegrationHealthComponent implements OnInit {
       this.snackBar.open(`${name} check completed`, 'Close', { duration: 2000 });
       await this.loadIntegrationHealth();
     } catch (error) {
-      console.error(`Error checking ${name}:`, error);
+      this.logger.error(`Error checking ${name}`, error as Error, 'IntegrationHealthComponent.checkIntegration', { integrationName: name });
       this.snackBar.open(`Failed to check ${name}`, 'Close', { duration: 3000 });
     }
   }

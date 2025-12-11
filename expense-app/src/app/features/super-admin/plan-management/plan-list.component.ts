@@ -11,6 +11,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { SubscriptionPlan, PlanFeatures } from '../../../core/models/subscription.model';
+import { LoggerService } from '../../../core/services/logger.service';
 
 /**
  * Plan List Component
@@ -222,6 +223,7 @@ import { SubscriptionPlan, PlanFeatures } from '../../../core/models/subscriptio
 export class PlanListComponent implements OnInit {
   private superAdminService = inject(SuperAdminService);
   private destroyRef = inject(DestroyRef);
+  private readonly logger = inject(LoggerService);
 
   isLoading = signal(true);
   error = signal<string | null>(null);
@@ -253,7 +255,7 @@ export class PlanListComponent implements OnInit {
           this.isLoading.set(false);
         },
         error: (err) => {
-          console.error('Failed to load plans:', err);
+          this.logger.error('Failed to load plans', err as Error, 'PlanListComponent.loadPlans');
           this.error.set('Failed to load subscription plans');
           this.isLoading.set(false);
         }

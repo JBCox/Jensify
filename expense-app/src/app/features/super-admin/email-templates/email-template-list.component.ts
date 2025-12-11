@@ -9,6 +9,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface EmailTemplate {
   id: string;
@@ -413,6 +414,7 @@ interface EmailTemplate {
 export class EmailTemplateListComponent implements OnInit {
   private superAdminService = inject(SuperAdminService);
   private destroyRef = inject(DestroyRef);
+  private readonly logger = inject(LoggerService);
 
   isLoading = signal(true);
   error = signal<string | null>(null);
@@ -448,7 +450,7 @@ export class EmailTemplateListComponent implements OnInit {
           this.isLoading.set(false);
         },
         error: (err: Error) => {
-          console.error('Failed to load email templates:', err);
+          this.logger.error('Failed to load email templates', err, 'EmailTemplateListComponent.loadTemplates');
           this.error.set('Failed to load email templates');
           this.isLoading.set(false);
         }

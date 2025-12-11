@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, from, of } from 'rxjs';
 import { map, catchError, tap, switchMap } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
+import { LoggerService } from './logger.service';
 import { environment } from '../../../environments/environment';
 import {
   PayoutSettings,
@@ -46,6 +47,7 @@ import {
 })
 export class PayoutService {
   private readonly supabase = inject(SupabaseService);
+  private readonly logger = inject(LoggerService);
   private readonly edgeFunctionUrl = `${environment.supabase.url}/functions/v1/stripe-connect`;
 
   /** Current payout settings for the organization */
@@ -79,7 +81,7 @@ export class PayoutService {
         }
       }),
       catchError(error => {
-        console.error('[PayoutService] Failed to get payout settings:', error);
+        this.logger.error('Failed to get payout settings', error, 'PayoutService');
         return of({ connected: false, has_key: false, payout_method: 'manual' as PayoutMethod });
       })
     );
@@ -234,7 +236,7 @@ export class PayoutService {
         return data || [];
       }),
       catchError(error => {
-        console.error('[PayoutService] Failed to get bank accounts:', error);
+        this.logger.error('Failed to get bank accounts', error, 'PayoutService');
         return of([]);
       })
     );
@@ -343,13 +345,13 @@ export class PayoutService {
     ).pipe(
       map(({ data, error }) => {
         if (error) {
-          console.error('[PayoutService] Failed to get pending payouts summary:', error);
+          this.logger.error('Failed to get pending payouts summary', error, 'PayoutService');
           return [];
         }
         return data || [];
       }),
       catchError(error => {
-        console.error('[PayoutService] Failed to get pending payouts summary:', error);
+        this.logger.error('Failed to get pending payouts summary', error, 'PayoutService');
         return of([]);
       })
     );
@@ -402,7 +404,7 @@ export class PayoutService {
         return Array.from(userMap.values());
       }),
       catchError(error => {
-        console.error('[PayoutService] Failed to get approved expenses for payout:', error);
+        this.logger.error('Failed to get approved expenses for payout', error, 'PayoutService');
         return of([]);
       })
     );
@@ -487,7 +489,7 @@ export class PayoutService {
     return from(this.callEdgeFunction<Payout>('get_payout_status', { payout_id: payoutId })).pipe(
       map(data => data as Payout | null),
       catchError(error => {
-        console.error('[PayoutService] Failed to get payout status:', error);
+        this.logger.error('Failed to get payout status', error, 'PayoutService');
         return of(null);
       })
     );
@@ -510,7 +512,7 @@ export class PayoutService {
         return data || [];
       }),
       catchError(error => {
-        console.error('[PayoutService] Failed to get payout history:', error);
+        this.logger.error('Failed to get payout history', error, 'PayoutService');
         return of([]);
       })
     );
@@ -536,7 +538,7 @@ export class PayoutService {
         return data || [];
       }),
       catchError(error => {
-        console.error('[PayoutService] Failed to get my payout history:', error);
+        this.logger.error('Failed to get my payout history', error, 'PayoutService');
         return of([]);
       })
     );

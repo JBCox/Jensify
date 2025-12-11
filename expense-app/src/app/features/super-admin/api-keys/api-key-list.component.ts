@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { environment } from '../../../../environments/environment';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface ApiKey {
   id: string;
@@ -807,6 +808,7 @@ export class ApiKeyListComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private superAdminService = inject(SuperAdminService);
+  private readonly logger = inject(LoggerService);
 
   loading = signal(false);
   apiKeys = signal<ApiKey[]>([]);
@@ -943,7 +945,7 @@ export class ApiKeyListComponent implements OnInit {
       }));
       this.apiKeys.set(mappedKeys);
     } catch (error) {
-      console.error('Error loading API keys:', error);
+      this.logger.error('Error loading API keys', error as Error, 'ApiKeyListComponent.loadApiKeys');
     } finally {
       this.loading.set(false);
     }
@@ -973,7 +975,7 @@ export class ApiKeyListComponent implements OnInit {
         this.snackBar.open('API key revoked successfully', 'Close', { duration: 3000 });
         await this.loadApiKeys();
       } catch (error) {
-        console.error('Error revoking API key:', error);
+        this.logger.error('Error revoking API key', error as Error, 'ApiKeyListComponent.revokeKey', { keyId: key.id });
         this.snackBar.open('Failed to revoke API key', 'Close', { duration: 3000 });
       }
     });

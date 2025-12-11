@@ -13,6 +13,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatListModule } from '@angular/material/list';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface ExportHistory {
   id: string;
@@ -181,6 +182,7 @@ export class DataExportComponent {
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
   private superAdminService = inject(SuperAdminService);
+  private readonly logger = inject(LoggerService);
 
   billingForm: FormGroup;
   auditForm: FormGroup;
@@ -221,7 +223,7 @@ export class DataExportComponent {
 
       this.exportHistory.set(history);
     } catch (error) {
-      console.error('Error loading export history:', error);
+      this.logger.error('Error loading export history', error as Error, 'DataExportComponent.loadExportHistory');
     }
   }
 
@@ -233,9 +235,9 @@ export class DataExportComponent {
       this.snackBar.open('Organizations exported successfully', 'Close', { duration: 3000 });
       await this.loadExportHistory();
     } catch (error) {
-      console.error('Error exporting organizations:', error);
+      this.logger.error('Error exporting organizations', error as Error, 'DataExportComponent.exportOrganizations');
       this.snackBar.open('Failed to export organizations', 'Close', { duration: 3000 });
-    } finally {
+    } finally{
       this.exporting.set(false);
     }
   }
@@ -253,7 +255,7 @@ export class DataExportComponent {
       this.snackBar.open('Billing data exported successfully', 'Close', { duration: 3000 });
       await this.loadExportHistory();
     } catch (error) {
-      console.error('Error exporting billing:', error);
+      this.logger.error('Error exporting billing', error as Error, 'DataExportComponent.exportBilling');
       this.snackBar.open('Failed to export billing data', 'Close', { duration: 3000 });
     } finally {
       this.exporting.set(false);
@@ -277,7 +279,7 @@ export class DataExportComponent {
       this.snackBar.open('Audit logs exported successfully', 'Close', { duration: 3000 });
       await this.loadExportHistory();
     } catch (error) {
-      console.error('Error exporting audit logs:', error);
+      this.logger.error('Error exporting audit logs', error as Error, 'DataExportComponent.exportAuditLogs');
       this.snackBar.open('Failed to export audit logs', 'Close', { duration: 3000 });
     } finally {
       this.exporting.set(false);

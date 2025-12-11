@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { PlatformSetting } from '../../../core/models/subscription.model';
+import { LoggerService } from '../../../core/services/logger.service';
 
 /** Map from form field name to platform_settings key */
 const SETTING_KEY_MAP: Record<string, string> = {
@@ -430,6 +431,7 @@ export class SystemSettingsComponent implements OnInit {
   private superAdminService = inject(SuperAdminService);
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
+  private readonly logger = inject(LoggerService);
 
   isLoading = signal(true);
   isSaving = signal(false);
@@ -514,7 +516,7 @@ export class SystemSettingsComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error('Failed to load settings:', err);
+        this.logger.error('Failed to load settings', err as Error, 'SystemSettingsComponent.loadSettings');
         this.snackBar.open('Failed to load settings', 'Close', { duration: 3000 });
         this.isLoading.set(false);
       },
@@ -571,7 +573,7 @@ export class SystemSettingsComponent implements OnInit {
         // No need for additional snackbar - SuperAdminService shows one
       },
       error: (err) => {
-        console.error('Failed to save setting:', err);
+        this.logger.error('Failed to save setting', err as Error, 'SystemSettingsComponent.saveSetting', { field });
         this.isSaving.set(false);
       },
     });
@@ -621,7 +623,7 @@ export class SystemSettingsComponent implements OnInit {
           }
         },
         error: (err) => {
-          console.error(`Failed to save ${key}:`, err);
+          this.logger.error(`Failed to save ${key}`, err as Error, 'SystemSettingsComponent.saveAll', { key });
           hasError = true;
           completedCount++;
           if (completedCount === settingsToSave.length) {

@@ -427,6 +427,12 @@ async function handleSubscriptionCreated(
 
   if (!organizationId) {
     console.error("No organization found for subscription:", subscription.id);
+    await logSecurityAlert("webhook_missing_organization", {
+      event_type: "customer.subscription.created",
+      stripe_subscription_id: subscription.id,
+      stripe_customer_id: subscription.customer,
+      reason: "No organization found for Stripe customer"
+    }, serviceClient);
     return;
   }
 
@@ -444,6 +450,14 @@ async function handleSubscriptionCreated(
 
   if (!planId) {
     console.error("No plan found for subscription:", subscription.id);
+    await logSecurityAlert("webhook_missing_plan", {
+      event_type: "customer.subscription.created",
+      stripe_subscription_id: subscription.id,
+      stripe_customer_id: subscription.customer,
+      organization_id: organizationId,
+      stripe_price_id: subscription.items.data[0]?.price.id,
+      reason: "No matching plan found for Stripe price"
+    }, serviceClient);
     return;
   }
 

@@ -12,6 +12,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface ErrorLog {
   id: string;
@@ -188,6 +189,7 @@ export class ErrorLogListComponent implements OnInit {
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
   private superAdminService = inject(SuperAdminService);
+  private readonly logger = inject(LoggerService);
 
   filterForm: FormGroup;
   loading = signal(false);
@@ -233,7 +235,7 @@ export class ErrorLogListComponent implements OnInit {
       const total24h = errors.filter(e => new Date(e.created_at) >= yesterday).length;
       this.stats.set({ critical, unresolved, total24h });
     } catch (error) {
-      console.error('Error loading error logs:', error);
+      this.logger.error('Error loading error logs', error as Error, 'ErrorLogListComponent.loadErrors');
     } finally {
       this.loading.set(false);
     }
@@ -263,7 +265,7 @@ export class ErrorLogListComponent implements OnInit {
       this.snackBar.open('Error marked as resolved', 'Close', { duration: 3000 });
       await this.loadErrors();
     } catch (err) {
-      console.error('Error resolving error log:', err);
+      this.logger.error('Error resolving error log', err as Error, 'ErrorLogListComponent.resolveError');
       this.snackBar.open('Failed to resolve error', 'Close', { duration: 3000 });
     }
   }

@@ -13,6 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface UserSearchResult {
   id: string;
@@ -144,6 +145,7 @@ export class UserSearchComponent {
   private router = inject(Router);
   private superAdminService = inject(SuperAdminService);
   private destroyRef = inject(DestroyRef);
+  private readonly logger = inject(LoggerService);
 
   searchForm: FormGroup;
   searching = signal(false);
@@ -180,7 +182,7 @@ export class UserSearchComponent {
           this.searching.set(false);
         },
         error: (err: Error) => {
-          console.error('Error searching users:', err);
+          this.logger.error('Error searching users', err, 'UserSearchComponent.searchUsers');
           this.snackBar.open('Failed to search users', 'Close', { duration: 3000 });
           this.searching.set(false);
         }
@@ -212,7 +214,7 @@ export class UserSearchComponent {
           this.router.navigate(['/']);
         },
         error: (err) => {
-          console.error('Error starting impersonation:', err);
+          this.logger.error('Error starting impersonation', err as Error, 'UserSearchComponent.startImpersonation');
           this.snackBar.open('Failed to start impersonation', 'Close', { duration: 3000 });
         }
       });

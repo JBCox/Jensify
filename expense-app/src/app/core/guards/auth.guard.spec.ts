@@ -17,6 +17,7 @@ describe('Auth Guards', () => {
   let sessionInitializedSubject: BehaviorSubject<boolean>;
   let organizationInitializedSubject: BehaviorSubject<boolean>;
   let currentMembershipSubject: BehaviorSubject<OrganizationMember | null>;
+  let currentOrgId: string | null;
 
   const mockMembership: OrganizationMember = {
     id: 'member-1',
@@ -33,6 +34,7 @@ describe('Auth Guards', () => {
     userProfileSubject = new BehaviorSubject<User | null>(null);
     sessionInitializedSubject = new BehaviorSubject<boolean>(true);
     organizationInitializedSubject = new BehaviorSubject<boolean>(true);
+    currentOrgId = 'org-123';
     currentMembershipSubject = new BehaviorSubject<OrganizationMember | null>(mockMembership);
 
     mockRouter = jasmine.createSpyObj('Router', ['navigate', 'parseUrl']);
@@ -46,7 +48,7 @@ describe('Auth Guards', () => {
     };
 
     mockOrganizationService = {
-      get currentOrganizationId() { return 'org-123'; },
+      get currentOrganizationId() { return currentOrgId; },
       organizationInitialized$: organizationInitializedSubject.asObservable(),
       currentMembership$: currentMembershipSubject.asObservable(),
       isCurrentUserFinanceOrAdmin: jasmine.createSpy('isCurrentUserFinanceOrAdmin').and.returnValue(false),
@@ -114,6 +116,51 @@ describe('Auth Guards', () => {
         );
       });
     });
+
+    it('should allow super admin routes without organization', async () => {
+      const mockUser: User = {
+        id: 'user-1',
+        email: 'admin@example.com',
+        full_name: 'Super Admin',
+        role: UserRole.ADMIN,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      userProfileSubject.next(mockUser);
+      currentOrgId = null;
+      localStorage.removeItem('current_organization_id');
+
+      const result = await TestBed.runInInjectionContext(async () => {
+        const guardResult = authGuard({} as any, { url: '/super-admin/dashboard' } as any);
+        return await firstValueFrom(guardResult as any);
+      });
+
+      expect(result).toBe(true);
+    });
+
+    it('should use localStorage fallback when organizationService not yet loaded', async () => {
+      const mockUser: User = {
+        id: 'user-1',
+        email: 'test@example.com',
+        full_name: 'Test User',
+        role: UserRole.EMPLOYEE,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      userProfileSubject.next(mockUser);
+      currentOrgId = null;
+      localStorage.setItem('current_organization_id', 'org-123');
+
+      const result = await TestBed.runInInjectionContext(async () => {
+        const guardResult = authGuard({} as any, { url: '/expenses' } as any);
+        return await firstValueFrom(guardResult as any);
+      });
+
+      expect(result).toBe(true);
+      localStorage.removeItem('current_organization_id');
+    });
   });
 
   describe('financeGuard', () => {
@@ -138,6 +185,23 @@ describe('Auth Guards', () => {
 
       expect(result).toBe(false);
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/home']);
+    });
+
+    it('should redirect to login if membership is inactive', async () => {
+      const inactiveMembership: OrganizationMember = {
+        ...mockMembership,
+        is_active: false
+      };
+      currentMembershipSubject.next(inactiveMembership);
+      (mockOrganizationService.isCurrentUserFinanceOrAdmin as jasmine.Spy).and.returnValue(true);
+
+      const result = await TestBed.runInInjectionContext(async () => {
+        const guardResult = financeGuard({} as any, {} as any);
+        return await firstValueFrom(guardResult as any);
+      });
+
+      expect(result).toBe(false);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/auth/login']);
     });
   });
 
@@ -164,6 +228,23 @@ describe('Auth Guards', () => {
       expect(result).toBe(false);
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/home']);
     });
+
+    it('should redirect to login if membership is inactive', async () => {
+      const inactiveMembership: OrganizationMember = {
+        ...mockMembership,
+        is_active: false
+      };
+      currentMembershipSubject.next(inactiveMembership);
+      (mockOrganizationService.isCurrentUserAdmin as jasmine.Spy).and.returnValue(true);
+
+      const result = await TestBed.runInInjectionContext(async () => {
+        const guardResult = adminGuard({} as any, {} as any);
+        return await firstValueFrom(guardResult as any);
+      });
+
+      expect(result).toBe(false);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/auth/login']);
+    });
   });
 
   describe('managerGuard', () => {
@@ -188,6 +269,23 @@ describe('Auth Guards', () => {
 
       expect(result).toBe(false);
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/home']);
+    });
+
+    it('should redirect to login if membership is inactive', async () => {
+      const inactiveMembership: OrganizationMember = {
+        ...mockMembership,
+        is_active: false
+      };
+      currentMembershipSubject.next(inactiveMembership);
+      (mockOrganizationService.isCurrentUserManagerOrAbove as jasmine.Spy).and.returnValue(true);
+
+      const result = await TestBed.runInInjectionContext(async () => {
+        const guardResult = managerGuard({} as any, {} as any);
+        return await firstValueFrom(guardResult as any);
+      });
+
+      expect(result).toBe(false);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/auth/login']);
     });
   });
 });

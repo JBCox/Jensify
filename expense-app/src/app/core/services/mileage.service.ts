@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, from, map, catchError, throwError, switchMap } from 'rxjs';
+import { PostgrestFilterBuilder } from '@supabase/postgrest-js';
 import { SupabaseService } from './supabase.service';
 import { OrganizationService } from './organization.service';
 import {
@@ -14,6 +15,18 @@ import {
   MileageStatus,
   TripCoordinate
 } from '../models/mileage.model';
+
+/**
+ * Type alias for Supabase query builder used in filter methods.
+ * Uses generic parameters to allow flexibility with Supabase's complex type system.
+ */
+type SupabaseQueryBuilder = PostgrestFilterBuilder<
+  Record<string, unknown>,
+  Record<string, unknown>,
+  unknown[],
+  string,
+  unknown
+>;
 
 /**
  * MileageService
@@ -149,7 +162,7 @@ export class MileageService {
   updateTrip(id: string, updates: UpdateMileageTripDto): Observable<MileageTrip> {
     return from(
       (async () => {
-        const updateData: any = { ...updates };
+        const updateData: UpdateMileageTripDto & { irs_rate?: number } = { ...updates };
 
         if (updates.trip_date || updates.category) {
           const { data: currentTrip } = await this.supabase.client
@@ -503,38 +516,43 @@ export class MileageService {
     return data.rate;
   }
 
-  private applyFilters(query: any, filters?: MileageFilterOptions): any {
+  private applyFilters(
+    query: SupabaseQueryBuilder,
+    filters?: MileageFilterOptions
+  ): SupabaseQueryBuilder {
     if (!filters) return query;
 
-    if (filters.startDate) query = query.gte('trip_date', filters.startDate);
-    if (filters.endDate) query = query.lte('trip_date', filters.endDate);
+    let filteredQuery = query;
+
+    if (filters.startDate) filteredQuery = filteredQuery.gte('trip_date', filters.startDate);
+    if (filters.endDate) filteredQuery = filteredQuery.lte('trip_date', filters.endDate);
     if (filters.status) {
-      query = Array.isArray(filters.status)
-        ? query.in('status', filters.status)
-        : query.eq('status', filters.status);
+      filteredQuery = Array.isArray(filters.status)
+        ? filteredQuery.in('status', filters.status)
+        : filteredQuery.eq('status', filters.status);
     }
     if (filters.category) {
-      query = Array.isArray(filters.category)
-        ? query.in('category', filters.category)
-        : query.eq('category', filters.category);
+      filteredQuery = Array.isArray(filters.category)
+        ? filteredQuery.in('category', filters.category)
+        : filteredQuery.eq('category', filters.category);
     }
-    if (filters.department) query = query.eq('department', filters.department);
-    if (filters.userId) query = query.eq('user_id', filters.userId);
+    if (filters.department) filteredQuery = filteredQuery.eq('department', filters.department);
+    if (filters.userId) filteredQuery = filteredQuery.eq('user_id', filters.userId);
     if (filters.hasExpense !== undefined) {
-      query = filters.hasExpense
-        ? query.not('expense_id', 'is', null)
-        : query.is('expense_id', null);
+      filteredQuery = filters.hasExpense
+        ? filteredQuery.not('expense_id', 'is', null)
+        : filteredQuery.is('expense_id', null);
     }
     if (filters.searchQuery) {
-      query = query.or(
+      filteredQuery = filteredQuery.or(
         `origin_address.ilike.%${filters.searchQuery}%,destination_address.ilike.%${filters.searchQuery}%,purpose.ilike.%${filters.searchQuery}%`
       );
     }
 
-    return query;
+    return filteredQuery;
   }
 
-  private handleError(error: any): Observable<never> {
+  private handleError(error: unknown): Observable<never> {
     return throwError(() => error);
   }
 }
