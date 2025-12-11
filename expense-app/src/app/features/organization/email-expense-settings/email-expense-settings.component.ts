@@ -358,9 +358,8 @@ import {
                         <mat-label>Default Expense Category</mat-label>
                         <input matInput
                                [value]="inboxConfig()!.default_category || ''"
-                               (blur)="updateConfig({ default_category: $any($event.target).value || null })"
-                               placeholder="e.g., Meals & Entertainment">
-                        <mat-hint>Category assigned to email-created expenses</mat-hint>
+                               (blur)="updateConfig({ default_category: $any($event.target).value || null })">
+                        <mat-hint>e.g., Meals & Entertainment - Assigned to email-created expenses</mat-hint>
                       </mat-form-field>
                     </mat-card-content>
                   </mat-card>

@@ -12,6 +12,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { BrandLogoComponent } from '../../../shared/components/brand-logo/brand-logo';
 
 /**
  * Register Component
@@ -30,7 +31,8 @@ import { SupabaseService } from '../../../core/services/supabase.service';
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
-    MatIconModule
+    MatIconModule,
+    BrandLogoComponent
   ],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss']

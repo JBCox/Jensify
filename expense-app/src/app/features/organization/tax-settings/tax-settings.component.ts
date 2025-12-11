@@ -345,8 +345,8 @@ type DialogMode = 'closed' | 'add-rate' | 'edit-rate' | 'add-category' | 'edit-c
             <form [formGroup]="rateForm" (ngSubmit)="saveRate()" class="dialog-form">
               <mat-form-field appearance="outline">
                 <mat-label>Name</mat-label>
-                <input matInput formControlName="name" placeholder="e.g., Texas Sales Tax">
-                <mat-hint>Descriptive name for this tax rate</mat-hint>
+                <input matInput formControlName="name">
+                <mat-hint>e.g., Texas Sales Tax</mat-hint>
               </mat-form-field>
 
               <div class="form-row">
@@ -361,8 +361,8 @@ type DialogMode = 'closed' | 'add-rate' | 'edit-rate' | 'add-category' | 'edit-c
 
                 <mat-form-field appearance="outline">
                   <mat-label>State/Province</mat-label>
-                  <input matInput formControlName="state_province" placeholder="e.g., TX">
-                  <mat-hint>Optional - leave blank for national rates</mat-hint>
+                  <input matInput formControlName="state_province">
+                  <mat-hint>e.g., TX - Leave blank for national rates</mat-hint>
                 </mat-form-field>
               </div>
 
@@ -439,19 +439,21 @@ type DialogMode = 'closed' | 'add-rate' | 'edit-rate' | 'add-category' | 'edit-c
             <form [formGroup]="categoryForm" (ngSubmit)="saveCategory()" class="dialog-form">
               <mat-form-field appearance="outline">
                 <mat-label>Category Name</mat-label>
-                <input matInput formControlName="name" placeholder="e.g., Standard Rate">
+                <input matInput formControlName="name">
+                <mat-hint>e.g., Standard Rate</mat-hint>
               </mat-form-field>
 
               <div class="form-row">
                 <mat-form-field appearance="outline">
                   <mat-label>Code</mat-label>
-                  <input matInput formControlName="code" placeholder="e.g., STD">
-                  <mat-hint>Short code for reports</mat-hint>
+                  <input matInput formControlName="code">
+                  <mat-hint>e.g., STD - Short code for reports</mat-hint>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>VAT Code (Optional)</mat-label>
-                  <input matInput formControlName="vat_code" placeholder="e.g., S1">
+                  <input matInput formControlName="vat_code">
+                  <mat-hint>e.g., S1</mat-hint>
                 </mat-form-field>
               </div>
 

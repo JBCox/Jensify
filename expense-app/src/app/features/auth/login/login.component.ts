@@ -24,6 +24,7 @@ import { Subject } from "rxjs";
 import { takeUntil } from "rxjs/operators";
 import { AuthService } from "../../../core/services/auth.service";
 import { SuperAdminService } from "../../../core/services/super-admin.service";
+import { BrandLogoComponent } from "../../../shared/components/brand-logo/brand-logo";
 
 /**
  * Login Component
@@ -43,6 +44,7 @@ import { SuperAdminService } from "../../../core/services/super-admin.service";
     MatButtonModule,
     MatProgressSpinnerModule,
     MatIconModule,
+    BrandLogoComponent,
   ],
   templateUrl: "./login.component.html",
   styleUrls: ["./login.component.scss"],

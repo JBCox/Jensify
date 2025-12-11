@@ -11,9 +11,9 @@
       <input
         matInput
         formControlName="name"
-        placeholder="e.g., Dallas Business Trip - Nov 2025"
         required>
       <mat-icon matPrefix>title</mat-icon>
+      <mat-hint>e.g., Dallas Business Trip - Nov 2025</mat-hint>
       @if (form.get('name')?.invalid && form.get('name')?.touched) {
         <mat-error>{{ getErrorMessage('name') }}</mat-error>
       }

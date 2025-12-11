@@ -29,8 +29,9 @@
           <div class="form-row">
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Workflow Name</mat-label>
-              <input matInput formControlName="name" placeholder="e.g., Manager Approval" required>
+              <input matInput formControlName="name" required>
               <mat-icon matPrefix>label</mat-icon>
+              <mat-hint>e.g., Manager Approval</mat-hint>
               @if (workflowForm.get('name')?.hasError('required') && workflowForm.get('name')?.touched) {
                 <mat-error>Workflow name is required</mat-error>
               }

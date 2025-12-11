@@ -72,8 +72,9 @@ import { ThemeService } from '../../../core/services/theme.service';
 
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Department</mat-label>
-                  <input matInput formControlName="department" placeholder="e.g., Engineering, Sales">
+                  <input matInput formControlName="department">
                   <mat-icon matPrefix>business</mat-icon>
+                  <mat-hint>e.g., Engineering, Sales</mat-hint>
                 </mat-form-field>
 
                 <div class="form-actions">

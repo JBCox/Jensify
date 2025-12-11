@@ -16,42 +16,24 @@ import { toSignal } from '@angular/core/rxjs-interop';
   imports: [CommonModule],
   template: `
     <div class="brand-logo-container" [class.show-org-logo]="showOrgLogo() && orgLogoUrl()">
-      <!-- Expensed Logo (dynamically colored via CSS variable) -->
+      <!-- Expensed Logo -->
       <div class="expensed-logo" [style.height.px]="size">
+        <!-- Logo Icon (PNG image) -->
+        <img
+          src="assets/images/logo-64.png"
+          alt="Expensed"
+          class="logo-icon"
+          [style.height.px]="size"
+        />
+        <!-- "Expen$ed" Text (SVG for styling control) -->
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          [attr.viewBox]="'0 0 260 64'"
+          [attr.viewBox]="'0 0 160 64'"
           [attr.height]="size"
-          class="logo-svg"
+          class="logo-text-svg"
         >
-          <!-- Receipt/Document Icon -->
-          <g transform="translate(0, 4)" fill="var(--jensify-primary, #F7580C)">
-            <!-- Main receipt body -->
-            <path d="M8 0h32c2.2 0 4 1.8 4 4v44c0 1.1-.45 2.1-1.17 2.83l-6 6c-.73.72-1.73 1.17-2.83 1.17H8c-2.2 0-4-1.8-4-4V4c0-2.2 1.8-4 4-4z"/>
-            <!-- Folded corner -->
-            <path d="M44 44v8l-8-8h8z" fill-opacity="0.7"/>
-            <!-- Receipt lines (white) -->
-            <rect x="12" y="12" width="24" height="3" rx="1.5" fill="#fff"/>
-            <rect x="12" y="20" width="20" height="3" rx="1.5" fill="#fff"/>
-            <rect x="12" y="28" width="16" height="3" rx="1.5" fill="#fff"/>
-            <rect x="12" y="36" width="22" height="3" rx="1.5" fill="#fff"/>
-            <!-- Dollar sign circle on receipt -->
-            <circle cx="36" cy="20" r="8" fill="#fff"/>
-          </g>
-          <!-- Dollar sign in circle (uses primary color) -->
           <text
-            x="36"
-            y="28"
-            font-family="Arial, sans-serif"
-            font-size="12"
-            font-weight="bold"
-            text-anchor="middle"
-            fill="var(--jensify-primary, #F7580C)"
-          >$</text>
-
-          <!-- "Expen$ed" Text -->
-          <text
-            x="60"
+            x="4"
             y="44"
             font-family="'Segoe UI', Arial, sans-serif"
             [attr.font-size]="fontSize"
@@ -88,9 +70,15 @@ import { toSignal } from '@angular/core/rxjs-interop';
     .expensed-logo {
       display: flex;
       align-items: center;
+      gap: 8px;
     }
 
-    .logo-svg {
+    .logo-icon {
+      width: auto;
+      object-fit: contain;
+    }
+
+    .logo-text-svg {
       width: auto;
       display: block;
     }

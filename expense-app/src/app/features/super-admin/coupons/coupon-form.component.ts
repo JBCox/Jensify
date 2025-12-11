@@ -72,10 +72,9 @@ import { SuperAdminService } from '../../../core/services/super-admin.service';
                 <input
                   matInput
                   formControlName="code"
-                  placeholder="e.g., SAVE20"
                   [style.text-transform]="'uppercase'"
                 />
-                <mat-hint>Letters and numbers only, 4-20 characters</mat-hint>
+                <mat-hint>e.g., SAVE20 - Letters and numbers only, 4-20 characters</mat-hint>
                 @if (form.get('code')?.hasError('pattern')) {
                   <mat-error>Only letters and numbers allowed</mat-error>
                 }
@@ -187,9 +186,8 @@ import { SuperAdminService } from '../../../core/services/super-admin.service';
                 matInput
                 formControlName="description"
                 rows="3"
-                placeholder="e.g., Summer 2025 promotion for new customers"
               ></textarea>
-              <mat-hint>This is only visible to admins</mat-hint>
+              <mat-hint>e.g., Summer 2025 promotion - Only visible to admins</mat-hint>
             </mat-form-field>
           </section>
 

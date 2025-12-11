@@ -85,7 +85,8 @@ function getCategoryColors(): string[] {
         <div class="form-row">
           <mat-form-field appearance="outline" class="flex-grow">
             <mat-label>Category Name</mat-label>
-            <input matInput formControlName="name" placeholder="e.g., Business Meals">
+            <input matInput formControlName="name">
+            <mat-hint>e.g., Business Meals</mat-hint>
             @if (form.get('name')?.hasError('required')) {
               <mat-error>Name is required</mat-error>
             }

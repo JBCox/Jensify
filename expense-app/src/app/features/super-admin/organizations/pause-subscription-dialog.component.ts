@@ -104,8 +104,8 @@ export interface PauseSubscriptionDialogResult {
             matInput
             formControlName="reason"
             rows="3"
-            placeholder="e.g., Customer requested pause during off-season, Financial hardship, etc."
           ></textarea>
+          <mat-hint>e.g., Customer requested pause, Off-season, Financial hardship</mat-hint>
           @if (form.get('reason')?.hasError('required')) {
             <mat-error>Reason is required for audit purposes</mat-error>
           }

@@ -48,8 +48,8 @@ import { ColorPickerComponent } from '../../../shared/components/color-picker/co
           <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()" class="settings-form">
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Company Name</mat-label>
-              <input matInput formControlName="name" placeholder="Enter company name">
-              <mat-icon matSuffix>business</mat-icon>
+              <mat-icon matPrefix>business</mat-icon>
+              <input matInput formControlName="name">
               @if (settingsForm.get('name')?.hasError('required')) {
                 <mat-error>Company name is required</mat-error>
               }

@@ -290,7 +290,6 @@ export const routes: Routes = [
                 (m) => m.BillingOverviewComponent
               ),
             title: "Billing - Expensed",
-            data: { breadcrumb: "Overview" },
           },
           {
             path: "plans",
@@ -337,7 +336,6 @@ export const routes: Routes = [
             m.ExpenseList
           ),
         title: "My Expenses - Expensed",
-        data: { breadcrumb: "My Expenses" },
       },
       {
         path: "upload",
@@ -387,7 +385,6 @@ export const routes: Routes = [
             m.ApprovalQueue
           ),
         title: "Approval Queue - Expensed",
-        data: { breadcrumb: "Queue" },
       },
       {
         path: "settings",
@@ -415,7 +412,6 @@ export const routes: Routes = [
             m.ReportListComponent
           ),
         title: "Expense Reports - Expensed",
-        data: { breadcrumb: "All Reports" },
       },
       {
         path: ":id",
@@ -451,7 +447,6 @@ export const routes: Routes = [
             m.TripList
           ),
         title: "Mileage Trips - Expensed",
-        data: { breadcrumb: "Trips" },
       },
       {
         path: "new",
@@ -496,7 +491,6 @@ export const routes: Routes = [
             (m) => m.ProfileSettingsComponent
           ),
         title: "Profile Settings - Expensed",
-        data: { breadcrumb: "Settings" },
       },
       {
         path: "notifications",
@@ -537,7 +531,6 @@ export const routes: Routes = [
             m.FinanceDashboardComponent
           ),
         title: "Finance Dashboard - Expensed",
-        data: { breadcrumb: "Dashboard", breadcrumbIcon: "dashboard" },
       },
       {
         path: "analytics",
@@ -562,7 +555,6 @@ export const routes: Routes = [
             (m) => m.SuperAdminDashboardComponent
           ),
         title: "Super Admin - Expensed",
-        data: { breadcrumb: "Dashboard" },
       },
       {
         path: "organizations",
@@ -576,7 +568,6 @@ export const routes: Routes = [
                 (m) => m.OrganizationListComponent
               ),
             title: "All Organizations - Expensed",
-            data: { breadcrumb: "All" },
           },
           {
             path: ":id",
@@ -601,7 +592,6 @@ export const routes: Routes = [
                 (m) => m.CouponListComponent
               ),
             title: "Coupon Codes - Expensed",
-            data: { breadcrumb: "All" },
           },
           {
             path: "new",
@@ -655,7 +645,6 @@ export const routes: Routes = [
                 (m) => m.AnnouncementListComponent
               ),
             title: "Announcements - Expensed",
-            data: { breadcrumb: "All" },
           },
           {
             path: "new",
@@ -688,7 +677,6 @@ export const routes: Routes = [
                 (m) => m.EmailTemplateListComponent
               ),
             title: "Email Templates - Expensed",
-            data: { breadcrumb: "All" },
           },
           {
             path: ":name",
@@ -712,7 +700,6 @@ export const routes: Routes = [
                 (m) => m.PlanListComponent
               ),
             title: "Manage Plans - Expensed",
-            data: { breadcrumb: "All" },
           },
           {
             path: ":id",
@@ -737,7 +724,6 @@ export const routes: Routes = [
                 (m) => m.ImpersonationHistoryComponent
               ),
             title: "Impersonation History - Expensed",
-            data: { breadcrumb: "History" },
           },
           {
             path: "start",

@@ -56,9 +56,9 @@ interface UserData {
             matInput
             formControlName="reason"
             rows="3"
-            placeholder="e.g., Customer support request #12345"
             required
           ></textarea>
+          <mat-hint>e.g., Customer support request #12345</mat-hint>
           <mat-error *ngIf="reasonForm.get('reason')?.hasError('required')">
             Reason is required for audit purposes
           </mat-error>

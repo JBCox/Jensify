@@ -467,16 +467,19 @@ type DialogMode = 'closed' | 'add' | 'edit' | 'view';
                   <div class="form-row">
                     <mat-form-field appearance="outline">
                       <mat-label>Vendor Name</mat-label>
-                      <input matInput formControlName="name" placeholder="Company or individual name">
+                      <input matInput formControlName="name">
+                      <mat-hint>Company or individual name</mat-hint>
                     </mat-form-field>
                     <mat-form-field appearance="outline">
                       <mat-label>Display Name (Optional)</mat-label>
-                      <input matInput formControlName="display_name" placeholder="Friendly display name">
+                      <input matInput formControlName="display_name">
+                      <mat-hint>Friendly display name</mat-hint>
                     </mat-form-field>
                   </div>
                   <mat-form-field appearance="outline">
                     <mat-label>Description</mat-label>
-                    <textarea matInput formControlName="description" rows="2" placeholder="What does this vendor provide?"></textarea>
+                    <textarea matInput formControlName="description" rows="2"></textarea>
+                    <mat-hint>What does this vendor provide?</mat-hint>
                   </mat-form-field>
                 </div>
 
@@ -494,7 +497,8 @@ type DialogMode = 'closed' | 'add' | 'edit' | 'view';
                   </div>
                   <mat-form-field appearance="outline">
                     <mat-label>Website</mat-label>
-                    <input matInput formControlName="website" placeholder="https://">
+                    <input matInput formControlName="website">
+                    <mat-hint>e.g., https://example.com</mat-hint>
                   </mat-form-field>
                 </div>
 
@@ -538,18 +542,20 @@ type DialogMode = 'closed' | 'add' | 'edit' | 'view';
                     </mat-form-field>
                     <mat-form-field appearance="outline">
                       <mat-label>Tax ID (EIN/SSN)</mat-label>
-                      <input matInput formControlName="tax_id" placeholder="XX-XXXXXXX">
-                      <mat-hint>For 1099 reporting</mat-hint>
+                      <input matInput formControlName="tax_id">
+                      <mat-hint>e.g., XX-XXXXXXX - For 1099 reporting</mat-hint>
                     </mat-form-field>
                   </div>
                   <div class="form-row">
                     <mat-form-field appearance="outline">
                       <mat-label>Default Category</mat-label>
-                      <input matInput formControlName="default_category" placeholder="e.g., Office Supplies">
+                      <input matInput formControlName="default_category">
+                      <mat-hint>e.g., Office Supplies</mat-hint>
                     </mat-form-field>
                     <mat-form-field appearance="outline">
                       <mat-label>Payment Terms</mat-label>
-                      <input matInput formControlName="payment_terms" placeholder="e.g., Net 30">
+                      <input matInput formControlName="payment_terms">
+                      <mat-hint>e.g., Net 30</mat-hint>
                     </mat-form-field>
                   </div>
                   <mat-form-field appearance="outline">

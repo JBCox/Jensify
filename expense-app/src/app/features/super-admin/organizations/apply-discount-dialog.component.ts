@@ -70,9 +70,9 @@ export interface ApplyDiscountDialogResult {
             formControlName="discount_percent"
             min="1"
             max="100"
-            placeholder="e.g., 20"
           />
           <span matTextSuffix>%</span>
+          <mat-hint>e.g., 20 for 20% off</mat-hint>
           @if (form.get('discount_percent')?.hasError('required')) {
             <mat-error>Discount percentage is required</mat-error>
           }
@@ -101,9 +101,8 @@ export interface ApplyDiscountDialogResult {
               formControlName="duration_months"
               min="1"
               max="36"
-              placeholder="e.g., 3"
             />
-            <mat-hint>Discount expires after this many billing cycles</mat-hint>
+            <mat-hint>e.g., 3 - Expires after this many billing cycles</mat-hint>
           </mat-form-field>
         }
 
@@ -113,8 +112,8 @@ export interface ApplyDiscountDialogResult {
             matInput
             formControlName="reason"
             rows="2"
-            placeholder="e.g., Early adopter discount, Enterprise negotiation, etc."
           ></textarea>
+          <mat-hint>e.g., Early adopter discount, Enterprise negotiation</mat-hint>
           @if (form.get('reason')?.hasError('required')) {
             <mat-error>Reason is required for audit purposes</mat-error>
           }

@@ -85,8 +85,8 @@ export interface IssueRefundDialogResult {
             matInput
             formControlName="reason"
             rows="2"
-            placeholder="e.g., Service issue, billing dispute, etc."
           ></textarea>
+          <mat-hint>e.g., Service issue, billing dispute</mat-hint>
           @if (form.get('reason')?.hasError('required')) {
             <mat-error>Reason is required for audit purposes</mat-error>
           }

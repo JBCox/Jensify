@@ -84,8 +84,9 @@ import { PerDiemRate } from '../../../core/models/per-diem.model';
                 <div class="form-row">
                   <mat-form-field appearance="outline" class="form-field">
                     <mat-label>Location</mat-label>
-                    <input matInput formControlName="location" placeholder="e.g., New York, NY">
+                    <input matInput formControlName="location">
                     <mat-icon matPrefix>location_on</mat-icon>
+                    <mat-hint>e.g., New York, NY</mat-hint>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="form-field">

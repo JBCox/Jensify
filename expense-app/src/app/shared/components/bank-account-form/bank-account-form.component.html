@@ -29,8 +29,9 @@
         <!-- Account Holder Name -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Account Holder Name</mat-label>
-          <input matInput formControlName="accountHolderName" placeholder="Name as it appears on your bank account">
-          <mat-icon matSuffix>person</mat-icon>
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput formControlName="accountHolderName">
+          <mat-hint>Name as it appears on your bank account</mat-hint>
           @if (getFieldError('accountHolderName')) {
             <mat-error>{{ getFieldError('accountHolderName') }}</mat-error>
           }
@@ -39,37 +40,36 @@
         <!-- Account Holder Type -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Account Holder Type</mat-label>
+          <mat-icon matPrefix>badge</mat-icon>
           <mat-select formControlName="accountHolderType">
             @for (type of holderTypes; track type.value) {
               <mat-option [value]="type.value">{{ type.label }}</mat-option>
             }
           </mat-select>
-          <mat-icon matSuffix>badge</mat-icon>
         </mat-form-field>
 
         <!-- Account Type -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Account Type</mat-label>
+          <mat-icon matPrefix>account_balance</mat-icon>
           <mat-select formControlName="accountType">
             @for (type of accountTypes; track type.value) {
               <mat-option [value]="type.value">{{ type.label }}</mat-option>
             }
           </mat-select>
-          <mat-icon matSuffix>account_balance</mat-icon>
         </mat-form-field>
 
         <!-- Routing Number -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Routing Number</mat-label>
+          <mat-icon matPrefix>numbers</mat-icon>
           <input matInput
                  formControlName="routingNumber"
                  type="text"
                  inputmode="numeric"
                  maxlength="9"
-                 placeholder="9-digit routing number"
                  autocomplete="off">
-          <mat-icon matSuffix>numbers</mat-icon>
-          <mat-hint>Find this on the bottom left of your checks</mat-hint>
+          <mat-hint>9 digits - Find on the bottom left of your checks</mat-hint>
           @if (getFieldError('routingNumber')) {
             <mat-error>{{ getFieldError('routingNumber') }}</mat-error>
           }
@@ -78,14 +78,13 @@
         <!-- Account Number -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Account Number</mat-label>
+          <mat-icon matPrefix>password</mat-icon>
           <input matInput
                  formControlName="accountNumber"
                  type="password"
                  inputmode="numeric"
                  maxlength="17"
-                 placeholder="Bank account number"
                  autocomplete="new-password">
-          <mat-icon matSuffix>password</mat-icon>
           @if (getFieldError('accountNumber')) {
             <mat-error>{{ getFieldError('accountNumber') }}</mat-error>
           }
@@ -94,14 +93,13 @@
         <!-- Confirm Account Number -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Confirm Account Number</mat-label>
+          <mat-icon matPrefix>check_circle</mat-icon>
           <input matInput
                  formControlName="accountNumberConfirm"
                  type="password"
                  inputmode="numeric"
                  maxlength="17"
-                 placeholder="Re-enter account number"
                  autocomplete="new-password">
-          <mat-icon matSuffix>check_circle</mat-icon>
           @if (accountNumberMismatch) {
             <mat-error>Account numbers do not match</mat-error>
           }

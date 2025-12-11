@@ -49,7 +49,8 @@ export interface BudgetDialogResult {
         <!-- Name -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Budget Name</mat-label>
-          <input matInput formControlName="name" placeholder="e.g., Q4 Travel Budget">
+          <input matInput formControlName="name">
+          <mat-hint>e.g., Q4 Travel Budget</mat-hint>
           @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
             <mat-error>Name is required</mat-error>
           }
