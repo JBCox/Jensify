@@ -1,0 +1,222 @@
+<div class="settings-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button mat-icon-button routerLink="/super-admin">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div>
+          <h1>System Settings</h1>
+          <p class="subtitle">Configure platform-level settings and feature flags</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="saveAll()"
+          [disabled]="isSaving() || settingsForm.invalid"
+        >
+          <mat-icon>save</mat-icon>
+          Save All
+        </button>
+      </div>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Loading settings...</p>
+    </div>
+  } @else {
+    <form [formGroup]="settingsForm" class="settings-form">
+      <!-- Maintenance Mode Section -->
+      <mat-card class="settings-card">
+        <div class="card-header">
+          <div class="header-icon maintenance">
+            <mat-icon>engineering</mat-icon>
+          </div>
+          <div>
+            <h2>Maintenance Mode</h2>
+            <p>Temporarily disable the platform for maintenance</p>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+
+        <div class="card-content">
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Enable Maintenance Mode</span>
+              <span class="setting-description">
+                When enabled, all users except super admins will see a maintenance message
+              </span>
+            </div>
+            <mat-slide-toggle
+              formControlName="maintenance_mode"
+              color="primary"
+              (change)="onToggleChange('maintenance_mode')"
+            ></mat-slide-toggle>
+          </div>
+
+          @if (settingsForm.get('maintenance_mode')?.value) {
+            <mat-form-field class="full-width">
+              <mat-label>Maintenance Message</mat-label>
+              <textarea
+                matInput
+                formControlName="maintenance_message"
+                rows="3"
+                maxlength="500"
+                placeholder="We're performing scheduled maintenance. We'll be back soon!"
+                (blur)="onValueChange('maintenance_message')"
+              ></textarea>
+              <mat-hint align="end">
+                {{ settingsForm.get('maintenance_message')?.value?.length || 0 }}/500
+              </mat-hint>
+            </mat-form-field>
+          }
+        </div>
+      </mat-card>
+
+      <!-- Signup Settings Section -->
+      <mat-card class="settings-card">
+        <div class="card-header">
+          <div class="header-icon signup">
+            <mat-icon>person_add</mat-icon>
+          </div>
+          <div>
+            <h2>Signup Settings</h2>
+            <p>Configure new user registration</p>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+
+        <div class="card-content">
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Enable Signups</span>
+              <span class="setting-description">
+                Allow new users to create accounts
+              </span>
+            </div>
+            <mat-slide-toggle
+              formControlName="signup_enabled"
+              color="primary"
+              (change)="onToggleChange('signup_enabled')"
+            ></mat-slide-toggle>
+          </div>
+
+          <mat-divider class="setting-divider"></mat-divider>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Default Trial Period</span>
+              <span class="setting-description">
+                Number of days for free trial on paid plans
+              </span>
+            </div>
+            <mat-form-field class="days-input">
+              <mat-label>Days</mat-label>
+              <input
+                matInput
+                type="number"
+                formControlName="default_trial_days"
+                min="0"
+                max="365"
+                (blur)="onValueChange('default_trial_days')"
+              />
+              @if (settingsForm.get('default_trial_days')?.hasError('required')) {
+                <mat-error>Required</mat-error>
+              }
+              @if (settingsForm.get('default_trial_days')?.hasError('min')) {
+                <mat-error>Minimum 0 days</mat-error>
+              }
+              @if (settingsForm.get('default_trial_days')?.hasError('max')) {
+                <mat-error>Maximum 365 days</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- Feature Flags Section -->
+      <mat-card class="settings-card">
+        <div class="card-header">
+          <div class="header-icon features">
+            <mat-icon>flag</mat-icon>
+          </div>
+          <div>
+            <h2>Feature Flags</h2>
+            <p>Enable or disable platform features globally</p>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+
+        <div class="card-content">
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Stripe Payouts</span>
+              <span class="setting-description">
+                Enable direct payouts via Stripe Connect
+              </span>
+            </div>
+            <mat-slide-toggle
+              formControlName="stripe_payouts_enabled"
+              color="primary"
+              (change)="onToggleChange('stripe_payouts_enabled')"
+            ></mat-slide-toggle>
+          </div>
+
+          <mat-divider class="setting-divider"></mat-divider>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">API Access</span>
+              <span class="setting-description">
+                Enable REST API access for integrations
+              </span>
+            </div>
+            <mat-slide-toggle
+              formControlName="api_access_enabled"
+              color="primary"
+              (change)="onToggleChange('api_access_enabled')"
+            ></mat-slide-toggle>
+          </div>
+
+          <mat-divider class="setting-divider"></mat-divider>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Mileage GPS Tracking</span>
+              <span class="setting-description">
+                Enable real-time GPS tracking for mileage expenses
+              </span>
+            </div>
+            <mat-slide-toggle
+              formControlName="mileage_gps_enabled"
+              color="primary"
+              (change)="onToggleChange('mileage_gps_enabled')"
+            ></mat-slide-toggle>
+          </div>
+
+          <mat-divider class="setting-divider"></mat-divider>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Multi-Level Approval</span>
+              <span class="setting-description">
+                Enable sequential approval workflows
+              </span>
+            </div>
+            <mat-slide-toggle
+              formControlName="multi_level_approval"
+              color="primary"
+              (change)="onToggleChange('multi_level_approval')"
+            ></mat-slide-toggle>
+          </div>
+        </div>
+      </mat-card>
+    </form>
+  }
+</div>

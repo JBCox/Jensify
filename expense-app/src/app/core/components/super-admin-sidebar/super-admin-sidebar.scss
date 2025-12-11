@@ -1,0 +1,310 @@
+// Super Admin Sidebar Styles
+// Visually distinct from regular user sidebar - darker, more "admin" feel
+
+.sidebar-backdrop {
+  position: fixed;
+  top: var(--jensify-topbar-height, 64px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  cursor: pointer;
+
+  &.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  @media (min-width: 768px) {
+    display: none !important;
+  }
+}
+
+.sidebar.super-admin-sidebar {
+  position: fixed;
+  top: var(--jensify-topbar-height);
+  left: 0;
+  bottom: 0;
+  width: 64px;
+  // Dark slate background for admin feel
+  background: linear-gradient(
+    180deg,
+    #1e293b 0%,   // Slate 800
+    #0f172a 100%  // Slate 900
+  );
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  transition: width 0.3s ease, transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0;
+  overflow-x: hidden;
+
+
+  &.expanded {
+    width: 220px;
+  }
+
+  &.collapsed {
+    width: 64px;
+  }
+
+  @media (max-width: 767px) {
+    transform: translateX(-100%);
+
+    &.open {
+      transform: translateX(0);
+      width: 220px;
+    }
+  }
+}
+
+.sidebar-top {
+  padding: var(--jensify-spacing-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 0.5rem;
+}
+
+.admin-branding {
+  display: flex;
+  align-items: center;
+  gap: var(--jensify-spacing-sm);
+  color: #f8fafc; // Slate 50
+
+  .admin-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    color: var(--jensify-primary);
+    filter: drop-shadow(0 0 8px var(--jensify-primary));
+  }
+
+  .admin-title {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  &.collapsed {
+    justify-content: center;
+
+    .admin-icon {
+      margin: 0;
+    }
+  }
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: var(--jensify-spacing-md) 0;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  // Custom scrollbar - slim and subtle for dark theme
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.35);
+    }
+  }
+}
+
+.nav-section-header {
+  color: #94a3b8; // Slate 400 - brighter for better visibility
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: var(--jensify-spacing-sm) var(--jensify-spacing-md);
+  margin-top: var(--jensify-spacing-sm);
+  margin-bottom: 4px;
+}
+
+.nav-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: var(--jensify-spacing-sm) var(--jensify-spacing-md);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--jensify-spacing-sm);
+  padding: var(--jensify-spacing-sm) var(--jensify-spacing-md);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  color: #94a3b8; // Slate 400
+  margin: 0 8px;
+  border-radius: 8px;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #f1f5f9; // Slate 100
+  }
+
+  &.active {
+    background-color: color-mix(in srgb, var(--jensify-primary) 20%, transparent);
+    color: var(--jensify-primary);
+    font-weight: 600;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -8px;
+      top: 4px;
+      bottom: 4px;
+      width: 3px;
+      background-color: var(--jensify-primary);
+      border-radius: 0 2px 2px 0;
+      box-shadow: 0 0 12px var(--jensify-primary);
+    }
+
+    .nav-icon {
+      filter: drop-shadow(0 0 6px var(--jensify-primary));
+    }
+  }
+}
+
+.sidebar.super-admin-sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: var(--jensify-spacing-sm);
+  margin: 0 8px;
+}
+
+.nav-icon {
+  flex-shrink: 0;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  text-align: center;
+}
+
+.nav-label {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.sidebar-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--jensify-spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collapse-toggle {
+  color: #64748b; // Slate 500
+
+  &:hover {
+    color: var(--jensify-primary);
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  @media (max-width: 767px) {
+    display: none !important;
+  }
+}
+
+// ========================================
+// LIGHT MODE OVERRIDES
+// ========================================
+
+// Light mode sidebar - white/light background
+:host-context(html:not(.dark)) {
+  .sidebar.super-admin-sidebar {
+    background: linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #f8fafc 100%
+    );
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .sidebar-top {
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .admin-branding {
+    color: #1e293b;
+
+    .admin-icon {
+      filter: drop-shadow(0 0 6px rgba(255, 89, 0, 0.4));
+    }
+  }
+
+  .nav-section-header {
+    color: #64748b;
+  }
+
+  .nav-divider {
+    background-color: #e2e8f0;
+  }
+
+  .nav-item {
+    color: #475569;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+      color: #0f172a;
+    }
+
+    &.active {
+      background-color: color-mix(in srgb, var(--jensify-primary) 12%, transparent);
+      color: var(--jensify-primary);
+    }
+  }
+
+  .sidebar-footer {
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .collapse-toggle {
+    color: #94a3b8;
+
+    &:hover {
+      color: var(--jensify-primary);
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  // Light mode scrollbar
+  .sidebar-nav {
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.15);
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.25);
+      }
+    }
+  }
+}

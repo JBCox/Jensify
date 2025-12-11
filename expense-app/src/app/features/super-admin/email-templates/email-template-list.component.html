@@ -1,0 +1,84 @@
+<div class="email-template-list-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button mat-icon-button routerLink="/super-admin">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div>
+          <h1>Email Templates</h1>
+          <p class="subtitle">Manage automated email communications</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Loading templates...</p>
+    </div>
+  } @else {
+    <div class="templates-grid">
+      @for (template of templates(); track template.id) {
+        <mat-card class="template-card">
+          <div class="card-header-row">
+            <div class="template-icon" [class]="'category-' + template.category">
+              <mat-icon>{{ getCategoryIcon(template.category) }}</mat-icon>
+            </div>
+            <mat-chip [class]="'category-chip-' + template.category">
+              {{ template.category }}
+            </mat-chip>
+          </div>
+
+          <div class="template-content">
+            <h3>{{ template.name }}</h3>
+            <p class="description">{{ template.description }}</p>
+
+            <div class="subject-preview">
+              <mat-icon>subject</mat-icon>
+              <span>{{ template.subject }}</span>
+            </div>
+
+            <div class="variables">
+              <span class="variables-label">Available Variables:</span>
+              <div class="variable-chips">
+                @for (variable of template.variables; track variable) {
+                  <mat-chip class="variable-chip">
+                    {{ '{{' + variable + '}}' }}
+                  </mat-chip>
+                }
+              </div>
+            </div>
+
+            <div class="template-meta">
+              <span class="meta-item">
+                <mat-icon>update</mat-icon>
+                Last updated: {{ template.last_updated | date: 'short' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button
+              mat-flat-button
+              color="primary"
+              [routerLink]="['/super-admin/email-templates', template.id]"
+            >
+              <mat-icon>edit</mat-icon>
+              Edit Template
+            </button>
+          </div>
+        </mat-card>
+      }
+    </div>
+
+    @if (templates().length === 0) {
+      <div class="empty-state">
+        <mat-icon>email</mat-icon>
+        <p>No email templates configured</p>
+      </div>
+    }
+  }
+</div>

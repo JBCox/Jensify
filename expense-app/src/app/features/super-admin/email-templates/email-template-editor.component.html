@@ -1,0 +1,234 @@
+<div class="email-editor-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button mat-icon-button routerLink="/super-admin/email-templates">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div>
+          <h1>Edit Email Template</h1>
+          @if (template()) {
+            <p class="subtitle">{{ template()?.name }} - {{ template()?.description }}</p>
+          }
+        </div>
+      </div>
+      <div class="header-actions">
+        <button
+          mat-stroked-button
+          (click)="sendTestEmail()"
+          [disabled]="isSendingTest() || templateForm.invalid"
+        >
+          <mat-icon>send</mat-icon>
+          Send Test
+        </button>
+        <button mat-stroked-button (click)="cancel()">
+          Cancel
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="save()"
+          [disabled]="isSaving() || templateForm.invalid"
+        >
+          <mat-icon>save</mat-icon>
+          Save Template
+        </button>
+      </div>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Loading template...</p>
+    </div>
+  } @else {
+    <div class="editor-layout">
+      <!-- Editor Section -->
+      <div class="editor-section">
+        <form [formGroup]="templateForm">
+          <!-- Variables Toolbar -->
+          <mat-card class="variables-card">
+            <div class="card-header-compact">
+              <mat-icon>code</mat-icon>
+              <h3>Available Variables</h3>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="variables-toolbar">
+              @for (variable of template()?.variables || []; track variable) {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  class="variable-btn"
+                  (click)="insertVariable(variable)"
+                  matTooltip="Click to insert into subject"
+                >
+                  {{ '{{' + variable + '}}' }}
+                </button>
+              }
+            </div>
+          </mat-card>
+
+          <!-- Subject -->
+          <mat-card class="form-card">
+            <div class="card-header">
+              <div class="header-icon">
+                <mat-icon>subject</mat-icon>
+              </div>
+              <div>
+                <h2>Subject Line</h2>
+                <p>Email subject with variable support</p>
+              </div>
+            </div>
+            <mat-divider></mat-divider>
+
+            <div class="card-content">
+              <mat-form-field class="full-width">
+                <mat-label>Subject</mat-label>
+                <input
+                  matInput
+                  formControlName="subject"
+                  placeholder="Welcome to Expensed, {{'{{user_name}}'}}!"
+                />
+                @if (templateForm.get('subject')?.hasError('required')) {
+                  <mat-error>Subject is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+          </mat-card>
+
+          <!-- Email Bodies -->
+          <mat-card class="form-card">
+            <mat-tab-group>
+              <!-- HTML Tab -->
+              <mat-tab label="HTML Body">
+                <div class="tab-content">
+                  <div class="toolbar">
+                    <span class="toolbar-label">Insert Variable:</span>
+                    @for (variable of template()?.variables || []; track variable) {
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        class="variable-btn-small"
+                        (click)="insertVariableToHtml(variable)"
+                      >
+                        {{ '{{' + variable + '}}' }}
+                      </button>
+                    }
+                  </div>
+
+                  <mat-form-field class="full-width code-field">
+                    <mat-label>HTML Content</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="html_body"
+                      rows="20"
+                      class="code-textarea"
+                      spellcheck="false"
+                    ></textarea>
+                    @if (templateForm.get('html_body')?.hasError('required')) {
+                      <mat-error>HTML body is required</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+              </mat-tab>
+
+              <!-- Plain Text Tab -->
+              <mat-tab label="Plain Text Body">
+                <div class="tab-content">
+                  <div class="toolbar">
+                    <span class="toolbar-label">Insert Variable:</span>
+                    @for (variable of template()?.variables || []; track variable) {
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        class="variable-btn-small"
+                        (click)="insertVariableToText(variable)"
+                      >
+                        {{ '{{' + variable + '}}' }}
+                      </button>
+                    }
+                  </div>
+
+                  <mat-form-field class="full-width code-field">
+                    <mat-label>Plain Text Content</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="text_body"
+                      rows="20"
+                      class="code-textarea"
+                      spellcheck="false"
+                    ></textarea>
+                    @if (templateForm.get('text_body')?.hasError('required')) {
+                      <mat-error>Text body is required</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+              </mat-tab>
+            </mat-tab-group>
+          </mat-card>
+        </form>
+      </div>
+
+      <!-- Preview Section -->
+      <div class="preview-section">
+        <mat-card class="preview-card sticky">
+          <div class="card-header">
+            <div class="header-icon preview">
+              <mat-icon>visibility</mat-icon>
+            </div>
+            <div>
+              <h2>Live Preview</h2>
+              <p>With sample data</p>
+            </div>
+          </div>
+          <mat-divider></mat-divider>
+
+          <div class="preview-content">
+            <div class="email-preview">
+              <!-- Email Header -->
+              <div class="email-header">
+                <div class="header-row">
+                  <span class="header-label">From:</span>
+                  <span>Expensed &lt;noreply@expensed.app&gt;</span>
+                </div>
+                <div class="header-row">
+                  <span class="header-label">To:</span>
+                  <span>{{ sampleData['user_name'] }} &lt;user@example.com&gt;</span>
+                </div>
+                <div class="header-row">
+                  <span class="header-label">Subject:</span>
+                  <span class="subject">{{ previewSubject() }}</span>
+                </div>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <!-- Email Body Tabs -->
+              <mat-tab-group class="preview-tabs">
+                <mat-tab label="HTML Preview">
+                  <div class="html-preview" [innerHTML]="previewHtml()"></div>
+                </mat-tab>
+
+                <mat-tab label="Plain Text Preview">
+                  <div class="text-preview">
+                    <pre>{{ previewText() }}</pre>
+                  </div>
+                </mat-tab>
+              </mat-tab-group>
+            </div>
+
+            <!-- Sample Data Info -->
+            <div class="sample-data-info">
+              <mat-icon>info</mat-icon>
+              <p>
+                Preview uses sample data. Variables are replaced with test values.
+              </p>
+            </div>
+          </div>
+        </mat-card>
+      </div>
+    </div>
+  }
+</div>

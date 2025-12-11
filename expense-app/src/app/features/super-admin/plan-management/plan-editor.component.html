@@ -1,0 +1,383 @@
+<div class="plan-editor-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button mat-icon-button routerLink="/super-admin/plans">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div>
+          <h1>{{ planId() ? 'Edit Plan' : 'Create Plan' }}</h1>
+          <p class="subtitle">Configure pricing, limits, and features</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-stroked-button (click)="cancel()">
+          Cancel
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="save()"
+          [disabled]="isSaving() || planForm.invalid"
+        >
+          <mat-icon>save</mat-icon>
+          Save Plan
+        </button>
+      </div>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Loading plan...</p>
+    </div>
+  } @else {
+    <form [formGroup]="planForm" class="plan-form">
+      <!-- Basic Information -->
+      <mat-card class="form-card">
+        <div class="card-header">
+          <div class="header-icon">
+            <mat-icon>info</mat-icon>
+          </div>
+          <div>
+            <h2>Basic Information</h2>
+            <p>Plan name and description</p>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+
+        <div class="card-content">
+          <div class="form-row">
+            <mat-form-field class="form-field">
+              <mat-label>Display Name</mat-label>
+              <input matInput formControlName="display_name" placeholder="Starter" />
+              @if (planForm.get('display_name')?.hasError('required')) {
+                <mat-error>Display name is required</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field class="form-field">
+              <mat-label>Description</mat-label>
+              <input
+                matInput
+                formControlName="description"
+                placeholder="For growing teams"
+              />
+              @if (planForm.get('description')?.hasError('required')) {
+                <mat-error>Description is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- Pricing -->
+      <mat-card class="form-card">
+        <div class="card-header">
+          <div class="header-icon pricing">
+            <mat-icon>attach_money</mat-icon>
+          </div>
+          <div>
+            <h2>Pricing</h2>
+            <p>Set monthly and annual prices</p>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+
+        <div class="card-content">
+          <div class="form-row">
+            <mat-form-field class="form-field">
+              <mat-label>Monthly Price</mat-label>
+              <span matTextPrefix>$&nbsp;</span>
+              <input
+                matInput
+                type="number"
+                formControlName="monthly_price_dollars"
+                min="0"
+                step="0.01"
+              />
+              <span matTextSuffix>/mo</span>
+              @if (planForm.get('monthly_price_dollars')?.hasError('required')) {
+                <mat-error>Required</mat-error>
+              }
+              @if (planForm.get('monthly_price_dollars')?.hasError('min')) {
+                <mat-error>Must be positive</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field class="form-field">
+              <mat-label>Annual Price</mat-label>
+              <span matTextPrefix>$&nbsp;</span>
+              <input
+                matInput
+                type="number"
+                formControlName="annual_price_dollars"
+                min="0"
+                step="0.01"
+              />
+              <span matTextSuffix>/yr</span>
+              @if (planForm.get('annual_price_dollars')?.hasError('required')) {
+                <mat-error>Required</mat-error>
+              }
+              @if (planForm.get('annual_price_dollars')?.hasError('min')) {
+                <mat-error>Must be positive</mat-error>
+              }
+              <mat-hint>
+                Save
+                {{
+                  ((planForm.get('monthly_price_dollars')?.value || 0) * 12 -
+                    (planForm.get('annual_price_dollars')?.value || 0)) | number: '1.2-2'
+                }}
+                with annual billing
+              </mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field class="form-field">
+              <mat-label>Stripe Product ID</mat-label>
+              <input
+                matInput
+                formControlName="stripe_product_id"
+                placeholder="prod_xxx"
+              />
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field class="form-field">
+              <mat-label>Stripe Monthly Price ID</mat-label>
+              <input
+                matInput
+                formControlName="stripe_monthly_price_id"
+                placeholder="price_monthly_xxx"
+              />
+            </mat-form-field>
+
+            <mat-form-field class="form-field">
+              <mat-label>Stripe Annual Price ID</mat-label>
+              <input
+                matInput
+                formControlName="stripe_annual_price_id"
+                placeholder="price_annual_xxx"
+              />
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- User Limits -->
+      <mat-card class="form-card">
+        <div class="card-header">
+          <div class="header-icon users">
+            <mat-icon>people</mat-icon>
+          </div>
+          <div>
+            <h2>User Limits</h2>
+            <p>Set minimum and maximum users</p>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+
+        <div class="card-content">
+          <div class="form-row">
+            <mat-form-field class="form-field">
+              <mat-label>Minimum Users</mat-label>
+              <input
+                matInput
+                type="number"
+                formControlName="min_users"
+                min="1"
+              />
+              @if (planForm.get('min_users')?.hasError('required')) {
+                <mat-error>Required</mat-error>
+              }
+              @if (planForm.get('min_users')?.hasError('min')) {
+                <mat-error>Minimum 1 user</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field class="form-field">
+              <mat-label>Maximum Users</mat-label>
+              <input
+                matInput
+                type="number"
+                formControlName="max_users"
+                min="1"
+                placeholder="Leave empty for unlimited"
+              />
+              <mat-hint>Leave empty for unlimited users</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- Features -->
+      <mat-card class="form-card">
+        <div class="card-header">
+          <div class="header-icon features">
+            <mat-icon>flag</mat-icon>
+          </div>
+          <div>
+            <h2>Features</h2>
+            <p>Configure available features for this plan</p>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+
+        <div class="card-content">
+          <div class="feature-toggles">
+            <div class="feature-row">
+              <div class="feature-info">
+                <mat-icon class="feature-icon">payments</mat-icon>
+                <div>
+                  <strong>Stripe Payouts</strong>
+                  <p>Enable direct payouts via Stripe Connect</p>
+                </div>
+              </div>
+              <mat-slide-toggle
+                formControlName="stripe_payouts_enabled"
+                color="primary"
+              ></mat-slide-toggle>
+            </div>
+
+            <mat-divider class="feature-divider"></mat-divider>
+
+            <div class="feature-row">
+              <div class="feature-info">
+                <mat-icon class="feature-icon">api</mat-icon>
+                <div>
+                  <strong>API Access</strong>
+                  <p>Enable REST API for integrations</p>
+                </div>
+              </div>
+              <mat-slide-toggle
+                formControlName="api_access_enabled"
+                color="primary"
+              ></mat-slide-toggle>
+            </div>
+
+            <mat-divider class="feature-divider"></mat-divider>
+
+            <div class="feature-row">
+              <div class="feature-info">
+                <mat-icon class="feature-icon">location_on</mat-icon>
+                <div>
+                  <strong>GPS Mileage Tracking</strong>
+                  <p>Real-time GPS tracking for mileage expenses</p>
+                </div>
+              </div>
+              <mat-slide-toggle
+                formControlName="mileage_gps_enabled"
+                color="primary"
+              ></mat-slide-toggle>
+            </div>
+
+            <mat-divider class="feature-divider"></mat-divider>
+
+            <div class="feature-row">
+              <div class="feature-info">
+                <mat-icon class="feature-icon">approval</mat-icon>
+                <div>
+                  <strong>Multi-Level Approval</strong>
+                  <p>Sequential approval workflows</p>
+                </div>
+              </div>
+              <mat-slide-toggle
+                formControlName="multi_level_approval"
+                color="primary"
+              ></mat-slide-toggle>
+            </div>
+
+            <mat-divider class="feature-divider"></mat-divider>
+
+            <div class="feature-row">
+              <div class="feature-info">
+                <mat-icon class="feature-icon">receipt</mat-icon>
+                <div>
+                  <strong>Receipt Limit</strong>
+                  <p>Monthly receipt processing limit</p>
+                </div>
+              </div>
+              <mat-checkbox
+                formControlName="unlimited_receipts"
+                color="primary"
+              >
+                Unlimited
+              </mat-checkbox>
+            </div>
+
+            @if (!planForm.get('unlimited_receipts')?.value) {
+              <mat-form-field class="receipt-input">
+                <mat-label>Receipts per Month</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="receipts_per_month"
+                  min="1"
+                  placeholder="200"
+                />
+              </mat-form-field>
+            }
+
+            <mat-divider class="feature-divider"></mat-divider>
+
+            <div class="feature-row">
+              <div class="feature-info">
+                <mat-icon class="feature-icon">support</mat-icon>
+                <div>
+                  <strong>Support Level</strong>
+                  <p>Customer support tier</p>
+                </div>
+              </div>
+              <mat-form-field class="support-select">
+                <mat-label>Support Level</mat-label>
+                <mat-select formControlName="support_level">
+                  @for (level of supportLevels; track level.value) {
+                    <mat-option [value]="level.value">{{ level.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- Visibility Settings -->
+      <mat-card class="form-card">
+        <div class="card-header">
+          <div class="header-icon visibility">
+            <mat-icon>visibility</mat-icon>
+          </div>
+          <div>
+            <h2>Visibility & Status</h2>
+            <p>Control plan availability</p>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+
+        <div class="card-content">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <strong>Plan Active</strong>
+              <p>Allow new subscriptions to this plan</p>
+            </div>
+            <mat-slide-toggle formControlName="is_active" color="primary"></mat-slide-toggle>
+          </div>
+
+          <mat-divider class="toggle-divider"></mat-divider>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <strong>Publicly Visible</strong>
+              <p>Show this plan on the pricing page</p>
+            </div>
+            <mat-slide-toggle formControlName="is_public" color="primary"></mat-slide-toggle>
+          </div>
+        </div>
+      </mat-card>
+    </form>
+  }
+</div>

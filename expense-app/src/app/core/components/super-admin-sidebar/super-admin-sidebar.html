@@ -1,0 +1,67 @@
+<!-- Backdrop for mobile -->
+<div
+  class="sidebar-backdrop"
+  [class.active]="isOpen"
+  (click)="onBackdropClick()"
+  (keydown.enter)="onBackdropClick()"
+  tabindex="-1"
+  role="button"
+  aria-label="Close sidebar"
+></div>
+
+<!-- Super Admin Sidebar -->
+<aside
+  class="sidebar super-admin-sidebar"
+  [class.expanded]="!collapsed()"
+  [class.collapsed]="collapsed()"
+  [class.open]="isOpen"
+>
+  <!-- Platform Admin Header -->
+  <div class="sidebar-top">
+    <div class="admin-branding" [class.collapsed]="collapsed()">
+      <mat-icon class="admin-icon">admin_panel_settings</mat-icon>
+      <span class="admin-title" *ngIf="!collapsed()">Platform Admin</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <ng-container *ngFor="let item of navItems; trackBy: trackByNavItemRoute">
+      <!-- Section Header -->
+      <div *ngIf="item.section && !collapsed()" class="nav-section-header">
+        {{ item.section }}
+      </div>
+
+      <!-- Navigation Item -->
+      <div
+        class="nav-item"
+        [class.active]="isActive(item.route)"
+        (click)="navigate(item.route)"
+        (keydown.enter)="navigate(item.route)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="item.label"
+        [matTooltip]="collapsed() ? item.label : ''"
+        matTooltipPosition="right"
+      >
+        <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+        <span class="nav-label" *ngIf="!collapsed()">{{ item.label }}</span>
+      </div>
+
+      <!-- Divider -->
+      <div *ngIf="item.divider" class="nav-divider"></div>
+    </ng-container>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button
+      mat-icon-button
+      class="collapse-toggle"
+      (click)="toggleCollapse()"
+      [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+      [matTooltip]="collapsed() ? 'Expand' : 'Collapse'"
+      matTooltipPosition="right"
+    >
+      <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+    </button>
+  </div>
+</aside>

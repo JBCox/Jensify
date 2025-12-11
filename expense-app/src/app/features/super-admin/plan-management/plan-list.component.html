@@ -1,0 +1,161 @@
+<div class="plan-list-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button mat-icon-button routerLink="/super-admin">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div>
+          <h1>Subscription Plans</h1>
+          <p class="subtitle">Manage pricing tiers and features</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-icon-button (click)="refreshPlans()" [disabled]="isLoading()" matTooltip="Refresh">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Loading plans...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-container">
+      <mat-icon class="error-icon">error_outline</mat-icon>
+      <p>{{ error() }}</p>
+      <button mat-stroked-button (click)="refreshPlans()">
+        <mat-icon>refresh</mat-icon>
+        Try Again
+      </button>
+    </div>
+  } @else {
+    <mat-card class="table-card">
+      <table mat-table [dataSource]="plans()" class="plans-table">
+        <!-- Name Column -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Plan</th>
+          <td mat-cell *matCellDef="let plan">
+            <div class="plan-name">
+              <strong>{{ plan.display_name }}</strong>
+              <span class="plan-description">{{ plan.description }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Monthly Price Column -->
+        <ng-container matColumnDef="monthly_price">
+          <th mat-header-cell *matHeaderCellDef>Monthly</th>
+          <td mat-cell *matCellDef="let plan">
+            <span class="price">{{ formatPrice(plan.monthly_price_cents) }}</span>
+            @if (plan.monthly_price_cents > 0) {
+              <span class="price-detail">/mo</span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Annual Price Column -->
+        <ng-container matColumnDef="annual_price">
+          <th mat-header-cell *matHeaderCellDef>Annual</th>
+          <td mat-cell *matCellDef="let plan">
+            <span class="price">{{ formatPrice(plan.annual_price_cents) }}</span>
+            @if (plan.annual_price_cents > 0) {
+              <span class="price-detail">/yr</span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- User Limit Column -->
+        <ng-container matColumnDef="user_limit">
+          <th mat-header-cell *matHeaderCellDef>Users</th>
+          <td mat-cell *matCellDef="let plan">
+            <span class="user-limit">{{ formatUserLimit(plan) }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Features Column -->
+        <ng-container matColumnDef="features">
+          <th mat-header-cell *matHeaderCellDef>Features</th>
+          <td mat-cell *matCellDef="let plan">
+            <div class="features-list" [matTooltip]="getFeaturesTooltip(plan.features)">
+              <mat-icon
+                class="feature-icon"
+                [class.enabled]="plan.features.stripe_payouts_enabled"
+              >
+                payments
+              </mat-icon>
+              <mat-icon
+                class="feature-icon"
+                [class.enabled]="plan.features.api_access_enabled"
+              >
+                api
+              </mat-icon>
+              <mat-icon
+                class="feature-icon"
+                [class.enabled]="plan.features.mileage_gps_enabled"
+              >
+                location_on
+              </mat-icon>
+              <mat-icon
+                class="feature-icon"
+                [class.enabled]="plan.features.multi_level_approval"
+              >
+                approval
+              </mat-icon>
+              <span class="feature-count">
+                {{ getFeatureCount(plan.features) }}/4 enabled
+              </span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let plan">
+            <div class="status-chips">
+              @if (plan.is_active) {
+                <mat-chip class="status-chip active">Active</mat-chip>
+              } @else {
+                <mat-chip class="status-chip inactive">Inactive</mat-chip>
+              }
+              @if (plan.is_public) {
+                <mat-chip class="status-chip public">Public</mat-chip>
+              } @else {
+                <mat-chip class="status-chip private">Private</mat-chip>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let plan">
+            <button
+              mat-icon-button
+              [routerLink]="['/super-admin/plans', plan.id]"
+              matTooltip="Edit Plan"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns" class="plan-row"></tr>
+      </table>
+
+      @if (plans().length === 0) {
+        <div class="empty-state">
+          <mat-icon>inventory_2</mat-icon>
+          <p>No plans configured</p>
+        </div>
+      }
+    </mat-card>
+  }
+</div>

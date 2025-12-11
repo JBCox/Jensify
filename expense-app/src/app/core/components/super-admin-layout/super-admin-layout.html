@@ -1,0 +1,69 @@
+<!-- Super Admin Layout Shell -->
+<div class="super-admin-shell">
+  <!-- Toolbar -->
+  <mat-toolbar class="super-admin-toolbar">
+    <!-- Mobile menu button -->
+    <button
+      mat-icon-button
+      class="menu-button"
+      (click)="toggleSidebar()"
+      aria-label="Toggle menu"
+    >
+      <mat-icon>menu</mat-icon>
+    </button>
+
+    <!-- Logo / Branding -->
+    <div class="toolbar-brand">
+      <img
+        src="assets/images/logo-horizontal-h64.png"
+        alt="Expensed"
+        class="logo"
+      />
+      <span class="admin-badge">ADMIN</span>
+    </div>
+
+    <span class="toolbar-spacer"></span>
+
+    <!-- Theme Toggle -->
+    <button
+      mat-icon-button
+      (click)="toggleTheme()"
+      [matTooltip]="themeService.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+    >
+      <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+    </button>
+
+    <!-- User Menu -->
+    <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="User menu">
+      <mat-icon>account_circle</mat-icon>
+    </button>
+
+    <mat-menu #userMenu="matMenu">
+      <button mat-menu-item disabled>
+        <mat-icon>admin_panel_settings</mat-icon>
+        <span>Platform Owner</span>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="signOut()">
+        <mat-icon>logout</mat-icon>
+        <span>Sign Out</span>
+      </button>
+    </mat-menu>
+  </mat-toolbar>
+
+  <!-- Sidebar -->
+  <app-super-admin-sidebar
+    [isOpen]="isSidebarOpen"
+    (closeSidebar)="closeSidebar()"
+    (collapsedChange)="onSidebarCollapsedChange($event)"
+  ></app-super-admin-sidebar>
+
+  <!-- Main Content -->
+  <main
+    class="super-admin-content"
+    [class.sidebar-collapsed]="isSidebarCollapsed"
+    [class.sidebar-expanded]="!isSidebarCollapsed"
+  >
+    <router-outlet></router-outlet>
+  </main>
+</div>

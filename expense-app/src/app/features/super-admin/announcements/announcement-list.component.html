@@ -1,0 +1,173 @@
+<div class="announcement-list-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button mat-icon-button routerLink="/super-admin">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div>
+          <h1>Announcements</h1>
+          <p class="subtitle">Manage platform-wide announcements</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-flat-button color="primary" routerLink="/super-admin/announcements/new">
+          <mat-icon>add</mat-icon>
+          Create Announcement
+        </button>
+      </div>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Loading announcements...</p>
+    </div>
+  } @else {
+    <!-- Filters -->
+    <mat-card class="filter-card">
+      <div class="filters">
+        <mat-form-field class="filter-field">
+          <mat-label>Filter by Type</mat-label>
+          <mat-select
+            [(value)]="selectedType"
+            (selectionChange)="filterAnnouncements()"
+          >
+            <mat-option value="all">All Types</mat-option>
+            <mat-option value="info">Info</mat-option>
+            <mat-option value="warning">Warning</mat-option>
+            <mat-option value="critical">Critical</mat-option>
+            <mat-option value="maintenance">Maintenance</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="filter-field">
+          <mat-label>Filter by Status</mat-label>
+          <mat-select
+            [(value)]="selectedStatus"
+            (selectionChange)="filterAnnouncements()"
+          >
+            <mat-option value="all">All Status</mat-option>
+            <mat-option value="active">Active</mat-option>
+            <mat-option value="scheduled">Scheduled</mat-option>
+            <mat-option value="expired">Expired</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </mat-card>
+
+    <!-- Table -->
+    <mat-card class="table-card">
+      <table mat-table [dataSource]="filteredAnnouncements()" class="announcements-table">
+        <!-- Title Column -->
+        <ng-container matColumnDef="title">
+          <th mat-header-cell *matHeaderCellDef>Title</th>
+          <td mat-cell *matCellDef="let announcement">
+            <div class="title-cell">
+              <strong>{{ announcement.title }}</strong>
+              <span class="message-preview">{{ announcement.message }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Type Column -->
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef>Type</th>
+          <td mat-cell *matCellDef="let announcement">
+            <mat-chip [class]="'type-' + announcement.type">
+              {{ announcement.type }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Audience Column -->
+        <ng-container matColumnDef="audience">
+          <th mat-header-cell *matHeaderCellDef>Audience</th>
+          <td mat-cell *matCellDef="let announcement">
+            <div class="audience-cell">
+              <mat-icon>{{ getAudienceIcon(announcement.target_audience) }}</mat-icon>
+              <span>{{ getAudienceLabel(announcement.target_audience) }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Location Column -->
+        <ng-container matColumnDef="location">
+          <th mat-header-cell *matHeaderCellDef>Display</th>
+          <td mat-cell *matCellDef="let announcement">
+            <mat-chip class="location-chip">
+              {{ announcement.display_location }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let announcement">
+            <mat-chip [class]="'status-' + getStatus(announcement)">
+              {{ getStatus(announcement) }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Dates Column -->
+        <ng-container matColumnDef="dates">
+          <th mat-header-cell *matHeaderCellDef>Dates</th>
+          <td mat-cell *matCellDef="let announcement">
+            <div class="dates-cell">
+              <span class="date-label">Starts:</span>
+              <span>{{ announcement.starts_at | date: 'short' }}</span>
+              @if (announcement.ends_at) {
+                <span class="date-label">Ends:</span>
+                <span>{{ announcement.ends_at | date: 'short' }}</span>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let announcement">
+            <button mat-icon-button [matMenuTriggerFor]="menu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button
+                mat-menu-item
+                [routerLink]="['/super-admin/announcements', announcement.id]"
+              >
+                <mat-icon>edit</mat-icon>
+                <span>Edit</span>
+              </button>
+              <button
+                mat-menu-item
+                (click)="deleteAnnouncement(announcement.id)"
+              >
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns" class="announcement-row"></tr>
+      </table>
+
+      @if (filteredAnnouncements().length === 0) {
+        <div class="empty-state">
+          <mat-icon>campaign</mat-icon>
+          <p>No announcements found</p>
+          <button mat-stroked-button routerLink="/super-admin/announcements/new">
+            <mat-icon>add</mat-icon>
+            Create First Announcement
+          </button>
+        </div>
+      }
+    </mat-card>
+  }
+</div>
