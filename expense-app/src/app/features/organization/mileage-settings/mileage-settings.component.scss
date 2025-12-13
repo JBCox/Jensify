@@ -146,9 +146,52 @@ mat-form-field {
 }
 
 // Dark mode adjustments
-:host-context(.dark-theme) {
+:host-context(.dark-theme),
+:host-context(.dark) {
   .info-card {
     background: color-mix(in srgb, var(--jensify-primary) 8%, transparent);
+  }
+
+  // Fix mat-form-field fill appearance in dark mode
+  mat-form-field {
+    &.mat-mdc-form-field {
+      --mdc-filled-text-field-container-color: rgba(255, 255, 255, 0.05);
+      --mdc-filled-text-field-disabled-container-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .mat-mdc-form-field-focus-overlay {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  // Fix mat-select dropdown
+  .mat-mdc-select-value,
+  .mat-mdc-select-arrow {
+    color: var(--jensify-text-primary);
+  }
+
+  // Fix input text color
+  input.mat-mdc-input-element {
+    color: var(--jensify-text-primary);
+  }
+
+  // Fix mat-card backgrounds
+  mat-card.jensify-card {
+    background: var(--jensify-surface);
+    border: 1px solid var(--jensify-border);
+  }
+
+  .jensify-card-header {
+    border-bottom-color: var(--jensify-border);
+  }
+
+  // Fix slide toggle label
+  .mat-mdc-slide-toggle .mdc-form-field label {
+    color: var(--jensify-text-primary);
   }
 }
 
