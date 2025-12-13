@@ -237,21 +237,24 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
   /**
    * Redirect after successful authentication
    * Checks for pending invitation token and redirects accordingly
-   * Supports cross-device flow by checking URL query params first, then localStorage
+   * Priority: user metadata (most reliable) > URL params > localStorage
    */
   private redirectAfterAuth(): void {
-    // Check for invitation token in URL query params (cross-device support)
-    // The URL will be like: /auth/callback?invitation_token=xxx#access_token=yyy
+    // Check for invitation token in user metadata (stored during registration - most reliable)
+    const metadataToken = this.supabase.currentUser?.user_metadata?.['pending_invitation_token'] as string | undefined;
+
+    // Check for invitation token in URL query params (legacy cross-device support)
     const urlParams = new URLSearchParams(window.location.search);
     const urlInvitationToken = urlParams.get('invitation_token');
 
     // Fall back to localStorage for same-device flow
     const localStorageToken = localStorage.getItem('pending_invitation_token');
 
-    // Prefer URL token (cross-device) over localStorage (same-device)
-    const pendingInvitationToken = urlInvitationToken || localStorageToken;
+    // Priority: metadata (server-side, survives email confirmation) > URL > localStorage
+    const pendingInvitationToken = metadataToken || urlInvitationToken || localStorageToken;
 
     console.log('%c[AUTH CALLBACK] Checking for pending token:', 'background: #2196F3; color: white;', {
+      metadataToken: metadataToken,
       urlToken: urlInvitationToken,
       localStorageToken: localStorageToken,
       using: pendingInvitationToken
@@ -259,7 +262,7 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
 
     if (pendingInvitationToken) {
       // Redirect to accept the invitation
-      // Token will be cleared by accept-invitation component after successful load
+      // Token will be cleared by accept-invitation component after successful acceptance
       this.router.navigate(['/auth/accept-invitation'], {
         queryParams: { token: pendingInvitationToken }
       });

@@ -9,6 +9,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { InvitationService } from '../../../core/services/invitation.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SupabaseService } from '../../../core/services/supabase.service';
 import { Invitation } from '../../../core/models';
 
 /**
@@ -34,6 +35,7 @@ export class AcceptInvitationComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private invitationService = inject(InvitationService);
+  private supabaseService = inject(SupabaseService);
   protected authService = inject(AuthService);
 
   // Cleanup
@@ -127,6 +129,9 @@ export class AcceptInvitationComponent implements OnInit, OnDestroy {
           if (membership?.organization_id) {
             localStorage.setItem('current_organization_id', membership.organization_id);
           }
+
+          // Clear pending invitation token from user metadata (used for cross-device flow)
+          await this.supabaseService.clearPendingInvitationToken();
 
           // Refresh user profile to load the new organization context
           // This updates the OrganizationService's BehaviorSubjects with the full org data

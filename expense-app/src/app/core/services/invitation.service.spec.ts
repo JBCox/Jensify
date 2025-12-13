@@ -203,36 +203,47 @@ describe('InvitationService', () => {
   });
 
   describe('getInvitationByToken', () => {
-    it('should return invitation by token', (done) => {
-      const mockResponse = { data: mockInvitation, error: null };
+    it('should return invitation by token using RPC', (done) => {
+      // Mock RPC response - flat structure from get_invitation_by_token function
+      const mockRpcResponse = {
+        id: mockInvitation.id,
+        organization_id: mockInvitation.organization_id,
+        email: mockInvitation.email,
+        role: mockInvitation.role,
+        manager_id: null,
+        department: null,
+        token: mockInvitation.token,
+        expires_at: mockInvitation.expires_at,
+        status: mockInvitation.status,
+        invited_by: mockInvitation.invited_by,
+        accepted_by: null,
+        accepted_at: null,
+        created_at: mockInvitation.created_at,
+        organization_name: 'Test Org',
+        inviter_name: 'Test Admin'
+      };
+      const mockResponse = { data: [mockRpcResponse], error: null };
 
-      const singleSpy = jasmine.createSpy('single').and.resolveTo(mockResponse);
-      const statusEqSpy = jasmine.createSpy('statusEq').and.returnValue({ single: singleSpy });
-      const tokenEqSpy = jasmine.createSpy('tokenEq').and.returnValue({ eq: statusEqSpy });
-      const selectSpy = jasmine.createSpy('select').and.returnValue({ eq: tokenEqSpy });
-      supabaseServiceSpy.client.from = jasmine.createSpy('from').and.returnValue({
-        select: selectSpy
-      }) as unknown as typeof supabaseServiceSpy.client.from;
+      supabaseServiceSpy.client.rpc = jasmine.createSpy('rpc').and.resolveTo(mockResponse);
 
       service.getInvitationByToken(mockToken).subscribe({
         next: (invitation) => {
-          expect(invitation).toEqual(mockInvitation);
+          expect(invitation).toBeTruthy();
+          expect(invitation?.id).toEqual(mockInvitation.id);
+          expect(invitation?.organization?.name).toEqual('Test Org');
+          expect(invitation?.inviter?.full_name).toEqual('Test Admin');
+          expect(supabaseServiceSpy.client.rpc).toHaveBeenCalledWith('get_invitation_by_token', { p_token: mockToken });
           done();
         },
         error: done.fail
       });
     });
 
-    it('should return null for not found', (done) => {
-      const mockResponse = { data: null, error: { code: 'PGRST116' } };
+    it('should return null for not found (empty array)', (done) => {
+      // RPC returns empty array when not found
+      const mockResponse = { data: [], error: null };
 
-      const singleSpy = jasmine.createSpy('single').and.resolveTo(mockResponse);
-      const statusEqSpy = jasmine.createSpy('statusEq').and.returnValue({ single: singleSpy });
-      const tokenEqSpy = jasmine.createSpy('tokenEq').and.returnValue({ eq: statusEqSpy });
-      const selectSpy = jasmine.createSpy('select').and.returnValue({ eq: tokenEqSpy });
-      supabaseServiceSpy.client.from = jasmine.createSpy('from').and.returnValue({
-        select: selectSpy
-      }) as unknown as typeof supabaseServiceSpy.client.from;
+      supabaseServiceSpy.client.rpc = jasmine.createSpy('rpc').and.resolveTo(mockResponse);
 
       service.getInvitationByToken('invalid-token').subscribe({
         next: (invitation) => {
@@ -243,22 +254,12 @@ describe('InvitationService', () => {
       });
     });
 
-    it('should return null for expired invitation', (done) => {
-      const expiredInvitation = {
-        ...mockInvitation,
-        expires_at: new Date(Date.now() - 1000).toISOString() // Expired
-      };
-      const mockResponse = { data: expiredInvitation, error: null };
+    it('should return null for PGRST116 error', (done) => {
+      const mockResponse = { data: null, error: { code: 'PGRST116' } };
 
-      const singleSpy = jasmine.createSpy('single').and.resolveTo(mockResponse);
-      const statusEqSpy = jasmine.createSpy('statusEq').and.returnValue({ single: singleSpy });
-      const tokenEqSpy = jasmine.createSpy('tokenEq').and.returnValue({ eq: statusEqSpy });
-      const selectSpy = jasmine.createSpy('select').and.returnValue({ eq: tokenEqSpy });
-      supabaseServiceSpy.client.from = jasmine.createSpy('from').and.returnValue({
-        select: selectSpy
-      }) as unknown as typeof supabaseServiceSpy.client.from;
+      supabaseServiceSpy.client.rpc = jasmine.createSpy('rpc').and.resolveTo(mockResponse);
 
-      service.getInvitationByToken(mockToken).subscribe({
+      service.getInvitationByToken('invalid-token').subscribe({
         next: (invitation) => {
           expect(invitation).toBeNull();
           done();

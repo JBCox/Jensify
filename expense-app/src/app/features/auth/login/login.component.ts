@@ -23,6 +23,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { Subject } from "rxjs";
 import { takeUntil } from "rxjs/operators";
 import { AuthService } from "../../../core/services/auth.service";
+import { SupabaseService } from "../../../core/services/supabase.service";
 import { SuperAdminService } from "../../../core/services/super-admin.service";
 import { BrandLogoComponent } from "../../../shared/components/brand-logo/brand-logo";
 
@@ -53,6 +54,7 @@ import { BrandLogoComponent } from "../../../shared/components/brand-logo/brand-
 export class LoginComponent implements OnInit, OnDestroy {
   private formBuilder = inject(FormBuilder);
   private authService = inject(AuthService);
+  private supabaseService = inject(SupabaseService);
   private superAdminService = inject(SuperAdminService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -140,9 +142,17 @@ export class LoginComponent implements OnInit, OnDestroy {
             // Wait for super admin check to complete before determining route
             await this.superAdminService.waitForAdminCheck();
 
-            // Check for pending invitation token (stored when coming from accept-invitation page)
-            const pendingInvitationToken = localStorage.getItem('pending_invitation_token');
-            console.log('%c[LOGIN] Checking for pending token after login:', 'background: #9C27B0; color: white;', pendingInvitationToken);
+            // Check for pending invitation token from multiple sources:
+            // 1. User metadata (stored during registration - survives email confirmation)
+            // 2. localStorage (stored when coming from accept-invitation page)
+            const metadataToken = this.supabaseService.currentUser?.user_metadata?.['pending_invitation_token'] as string | undefined;
+            const localStorageToken = localStorage.getItem('pending_invitation_token');
+            const pendingInvitationToken = metadataToken || localStorageToken;
+            console.log('%c[LOGIN] Checking for pending token after login:', 'background: #9C27B0; color: white;', {
+              metadataToken,
+              localStorageToken,
+              using: pendingInvitationToken
+            });
             let destination: string;
 
             if (pendingInvitationToken) {

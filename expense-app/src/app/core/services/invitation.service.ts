@@ -125,28 +125,47 @@ export class InvitationService {
 
   /**
    * Get invitation by token
+   * Uses SECURITY DEFINER RPC to bypass RLS and fetch org name for unauthenticated users
    */
   getInvitationByToken(token: string): Observable<Invitation | null> {
     return from(
-      this.supabase.client
-        .from('invitations')
-        .select('*, organization:organizations(*)')
-        .eq('token', token)
-        .eq('status', 'pending')
-        .single()
+      this.supabase.client.rpc('get_invitation_by_token', { p_token: token })
     ).pipe(
       map(({ data, error }) => {
-        if (error?.code === 'PGRST116') {
-          // Not found
-          return null;
+        if (error) {
+          // RPC returns empty array if not found (not an error)
+          if (error.code === 'PGRST116') return null;
+          throw error;
         }
-        if (error) throw error;
 
-        // Check if expired
-        const invitation = data as Invitation;
-        if (new Date(invitation.expires_at) < new Date()) {
-          return null;
-        }
+        // RPC returns an array, get first result
+        const result = Array.isArray(data) ? data[0] : data;
+        if (!result) return null;
+
+        // Transform flat RPC response to Invitation interface
+        const invitation: Invitation = {
+          id: result.id,
+          organization_id: result.organization_id,
+          email: result.email,
+          role: result.role,
+          manager_id: result.manager_id,
+          department: result.department,
+          token: result.token,
+          expires_at: result.expires_at,
+          status: result.status,
+          invited_by: result.invited_by,
+          accepted_by: result.accepted_by,
+          accepted_at: result.accepted_at,
+          created_at: result.created_at,
+          // Map flat fields to nested objects for UI compatibility
+          organization: result.organization_name ? {
+            id: result.organization_id,
+            name: result.organization_name
+          } as Invitation['organization'] : undefined,
+          inviter: result.inviter_name ? {
+            full_name: result.inviter_name
+          } as Invitation['inviter'] : undefined
+        };
 
         return invitation;
       }),

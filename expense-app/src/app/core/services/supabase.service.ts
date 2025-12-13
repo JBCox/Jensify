@@ -203,23 +203,27 @@ export class SupabaseService {
    * @param email - User email
    * @param password - User password
    * @param fullName - User's full name
-   * @param invitationToken - Optional invitation token to include in redirect URL (for cross-device support)
+   * @param invitationToken - Optional invitation token to store in user metadata (for cross-device support)
    */
   async signUp(email: string, password: string, fullName: string, invitationToken?: string) {
     try {
-      // Build redirect URL - include invitation token if present for cross-device support
-      let redirectUrl = `${window.location.origin}/auth/callback`;
+      // Simple redirect URL - invitation token is stored in user metadata instead of URL params
+      // This is more reliable because URL params can get lost in email confirmation redirects
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+
+      // Store invitation token in user metadata - this persists server-side and works across devices
+      const userData: Record<string, string> = {
+        full_name: fullName
+      };
       if (invitationToken) {
-        redirectUrl += `?invitation_token=${encodeURIComponent(invitationToken)}`;
+        userData['pending_invitation_token'] = invitationToken;
       }
 
       const { data, error } = await this.supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            full_name: fullName
-          },
+          data: userData,
           emailRedirectTo: redirectUrl
         }
       });
@@ -301,6 +305,25 @@ export class SupabaseService {
       return { error: null };
     } catch (error: unknown) {
       return { error };
+    }
+  }
+
+  /**
+   * Clear pending invitation token from user metadata
+   * Called after successful invitation acceptance
+   */
+  async clearPendingInvitationToken(): Promise<void> {
+    try {
+      // Get current metadata and remove the pending_invitation_token
+      const currentMetadata = this.currentUser?.user_metadata || {};
+      const { pending_invitation_token: _removed, ...cleanedMetadata } = currentMetadata;
+
+      await this.supabase.auth.updateUser({
+        data: cleanedMetadata
+      });
+    } catch (error) {
+      // Non-critical - just log and continue
+      console.warn('Failed to clear pending invitation token from metadata:', error);
     }
   }
 

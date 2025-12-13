@@ -5,6 +5,7 @@ import { of, throwError, BehaviorSubject, Subject } from 'rxjs';
 import { AcceptInvitationComponent } from './accept-invitation.component';
 import { InvitationService } from '../../../core/services/invitation.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SupabaseService } from '../../../core/services/supabase.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Invitation } from '../../../core/models';
 import { UserRole } from '../../../core/models/enums';
@@ -14,6 +15,7 @@ describe('AcceptInvitationComponent', () => {
   let fixture: ComponentFixture<AcceptInvitationComponent>;
   let mockInvitationService: jasmine.SpyObj<InvitationService>;
   let mockAuthService: jasmine.SpyObj<AuthService>;
+  let mockSupabaseService: jasmine.SpyObj<SupabaseService>;
   let mockNotificationService: jasmine.SpyObj<NotificationService>;
   let mockRouter: jasmine.SpyObj<Router>;
   let queryParamsSubject: BehaviorSubject<any>;
@@ -61,6 +63,9 @@ describe('AcceptInvitationComponent', () => {
     });
     // Mock refreshUserProfile to return a resolved promise
     mockAuthService.refreshUserProfile.and.returnValue(Promise.resolve());
+    mockSupabaseService = jasmine.createSpyObj('SupabaseService', ['clearPendingInvitationToken']);
+    // Mock clearPendingInvitationToken to return a resolved promise
+    mockSupabaseService.clearPendingInvitationToken.and.returnValue(Promise.resolve());
     mockNotificationService = jasmine.createSpyObj('NotificationService', [
       'showSuccess',
       'showError'
@@ -75,6 +80,7 @@ describe('AcceptInvitationComponent', () => {
       providers: [
         { provide: InvitationService, useValue: mockInvitationService },
         { provide: AuthService, useValue: mockAuthService },
+        { provide: SupabaseService, useValue: mockSupabaseService },
         { provide: NotificationService, useValue: mockNotificationService },
         { provide: Router, useValue: mockRouter },
         {
@@ -218,7 +224,9 @@ describe('AcceptInvitationComponent', () => {
 
     component.goToRegister();
     expect(localStorage.setItem).toHaveBeenCalledWith('pending_invitation_token', 'test-token-123');
-    expect(mockRouter.navigate).toHaveBeenCalledWith(['/auth/register']);
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/auth/register'], {
+      queryParams: { invitation_token: 'test-token-123' }
+    });
     done();
   });
 
