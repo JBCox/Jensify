@@ -73,6 +73,8 @@ Jensify supports full multi-tenant organization structure, allowing multiple com
 - Email notification (Supabase Edge Function)
 - 7-day expiration
 - Copy/share invitation links
+- **Token preservation through registration** - Invitation token stored in user metadata during signup, survives email verification flow
+- Cross-device support - Token persists server-side, works when user registers on one device and confirms email on another
 
 ✅ **Services** ([core/services](expense-app/src/app/core/services))
 - `OrganizationService` - CRUD, member management, context switching
@@ -2509,3 +2511,77 @@ switchMap(result => this.getMyTrips().pipe(map(() => result)))
 - ✅ Build successful
 - ✅ 1826 unit tests passing
 - ✅ No behavior change - cache refresh still works correctly
+
+---
+
+## Invitation Token Preservation Fix (December 12, 2024)
+
+**Completed:** December 12, 2024
+**Scope:** Fixed invitation token loss during new account registration flow
+
+### Problem
+
+When users clicked "Create Account" from the invitation acceptance page, the invitation token was lost during the email verification flow. Users would see "Verification Failed. No Verification Token Found" after confirming their email.
+
+**Root Cause:** The `emailRedirectTo` URL with query parameters (`?invitation_token=xxx`) wasn't being preserved through Supabase's email confirmation redirect.
+
+### Solution
+
+Store the invitation token in **user metadata** during registration instead of relying on URL query parameters. User metadata persists server-side and survives the email confirmation flow.
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `supabase.service.ts` | Store `pending_invitation_token` in user metadata during `signUp()` |
+| `supabase.service.ts` | Added `clearPendingInvitationToken()` method |
+| `auth-callback.ts` | Check user metadata for pending token after email verification |
+| `login.component.ts` | Check user metadata for pending token after login |
+| `accept-invitation.component.ts` | Clear token from metadata after successful acceptance |
+
+### Token Priority Order
+
+When checking for pending invitation tokens, the system now checks in this order:
+
+1. **User metadata** (most reliable - stored server-side, survives email confirmation)
+2. **URL query params** (legacy cross-device support)
+3. **localStorage** (same-device backup)
+
+### Code Changes
+
+**Registration (supabase.service.ts):**
+```typescript
+async signUp(email: string, password: string, fullName: string, invitationToken?: string) {
+  const userData: Record<string, string> = { full_name: fullName };
+  if (invitationToken) {
+    userData['pending_invitation_token'] = invitationToken;
+  }
+
+  await this.supabase.auth.signUp({
+    email, password,
+    options: { data: userData, emailRedirectTo: redirectUrl }
+  });
+}
+```
+
+**Auth Callback (auth-callback.ts):**
+```typescript
+private redirectAfterAuth(): void {
+  // Priority: metadata > URL params > localStorage
+  const metadataToken = this.supabase.currentUser?.user_metadata?.['pending_invitation_token'];
+  const urlToken = urlParams.get('invitation_token');
+  const localStorageToken = localStorage.getItem('pending_invitation_token');
+  const pendingToken = metadataToken || urlToken || localStorageToken;
+
+  if (pendingToken) {
+    this.router.navigate(['/auth/accept-invitation'], { queryParams: { token: pendingToken } });
+  }
+}
+```
+
+### Verification
+
+- ✅ Build successful
+- ✅ 19 accept-invitation tests passing
+- ✅ End-to-end flow tested: invitation → registration → email verification → acceptance
+- ✅ Cross-device support maintained
