@@ -3,22 +3,37 @@
  * Includes payout processing UI
  */
 
-// Payout Status Banner
+// Compact page header override for finance dashboard
+.jensify-page-header {
+  margin-bottom: 12px;
+}
+
+// Payout Status Banner - compact inline style
 .payout-status-banner {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  font-size: 0.875rem;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.8125rem;
 
   mat-icon {
     flex-shrink: 0;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
   }
 
   span {
     flex: 1;
+  }
+
+  a {
+    font-size: 0.8125rem;
+    padding: 2px 8px;
+    min-height: auto;
+    line-height: 1.4;
   }
 
   &.stripe-connected {
@@ -44,7 +59,7 @@
 
 // Tab Content
 .tab-content {
-  padding-top: 24px;
+  padding-top: 16px;
 }
 
 // Payment Queue List (Approval-based)
