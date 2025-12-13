@@ -32,6 +32,15 @@
   <!-- Filters (collapsible on mobile) -->
   <div class="jensify-filters-section" [class.collapsed]="!filtersExpanded">
     <form [formGroup]="filterForm" class="jensify-filters">
+      <mat-form-field appearance="outline" class="filter-field status-filter">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          @for (status of statusOptions; track status.value) {
+            <mat-option [value]="status.value">{{status.label}}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
       <mat-form-field appearance="outline" class="filter-field">
         <mat-label>Min Amount ($)</mat-label>
         <input matInput type="number" formControlName="amount_min">
@@ -116,18 +125,33 @@
             </div>
 
             <div class="card-footer">
-              <mat-chip class="type-chip" [class.expense]="approval.expense_id" [class.report]="approval.report_id">
-                <mat-icon>{{approval.expense_id ? 'receipt' : 'description'}}</mat-icon>
-                {{getApprovalType(approval)}}
-              </mat-chip>
+              <div class="footer-badges">
+                <mat-chip class="type-chip" [class.expense]="approval.expense_id" [class.report]="approval.report_id">
+                  <mat-icon>{{approval.expense_id ? 'receipt' : 'description'}}</mat-icon>
+                  {{getApprovalType(approval)}}
+                </mat-chip>
+                @if (isPaymentStep(approval)) {
+                  <mat-chip class="status-chip payment">
+                    <mat-icon>payments</mat-icon>
+                    Awaiting Payment
+                  </mat-chip>
+                }
+              </div>
               <div class="card-actions">
                 <button mat-icon-button (click)="onViewHistory(approval)" class="history-btn" aria-label="View history">
                   <mat-icon>history</mat-icon>
                 </button>
-                <button mat-flat-button color="primary" (click)="onViewDetails(approval)" class="review-btn">
-                  <mat-icon>visibility</mat-icon>
-                  Review
-                </button>
+                @if (canProcessPayment(approval)) {
+                  <button mat-flat-button color="primary" (click)="onProcessPayment(approval)" class="payment-btn">
+                    <mat-icon>payments</mat-icon>
+                    Pay
+                  </button>
+                } @else {
+                  <button mat-flat-button color="primary" (click)="onViewDetails(approval)" class="review-btn">
+                    <mat-icon>visibility</mat-icon>
+                    Review
+                  </button>
+                }
               </div>
             </div>
           </div>
@@ -203,14 +227,25 @@
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let approval">
               <div class="action-buttons">
-                <button mat-raised-button color="primary" (click)="onViewDetails(approval)" class="review-btn">
-                  <mat-icon>visibility</mat-icon>
-                  Review
-                </button>
+                @if (canProcessPayment(approval)) {
+                  <button mat-raised-button class="payment-btn" (click)="onProcessPayment(approval)">
+                    <mat-icon>payments</mat-icon>
+                    Process Payment
+                  </button>
+                } @else {
+                  <button mat-raised-button color="primary" (click)="onViewDetails(approval)" class="review-btn">
+                    <mat-icon>visibility</mat-icon>
+                    Review
+                  </button>
+                }
                 <button mat-icon-button [matMenuTriggerFor]="menu" class="more-btn">
                   <mat-icon>more_vert</mat-icon>
                 </button>
                 <mat-menu #menu="matMenu">
+                  <button mat-menu-item (click)="onViewDetails(approval)">
+                    <mat-icon>visibility</mat-icon>
+                    <span>View Details</span>
+                  </button>
                   <button mat-menu-item (click)="onViewHistory(approval)">
                     <mat-icon>history</mat-icon>
                     <span>View History</span>

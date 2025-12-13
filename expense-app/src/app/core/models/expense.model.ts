@@ -155,6 +155,12 @@ export interface Expense {
   /** When duplicate check was last performed */
   duplicate_checked_at?: string | null;
 
+  // Workflow routing fields
+  /** Project code for cost allocation and workflow routing */
+  project_code?: string;
+  /** Custom tags for categorization and workflow routing */
+  tags?: string[];
+
   // Relations (populated by query)
   /** User object (populated) */
   user?: User;
@@ -205,6 +211,10 @@ export interface CreateExpenseDto {
   original_currency?: string;
   /** Original amount in the specified currency */
   original_amount?: number;
+  /** Project code for cost allocation */
+  project_code?: string;
+  /** Custom tags for categorization */
+  tags?: string[];
 }
 
 /**
@@ -220,6 +230,10 @@ export interface UpdateExpenseDto {
   receipt_id?: string | null;
   status?: ExpenseStatus;
   submitted_at?: string;
+  /** Project code for cost allocation */
+  project_code?: string;
+  /** Custom tags for categorization */
+  tags?: string[];
 }
 
 /**

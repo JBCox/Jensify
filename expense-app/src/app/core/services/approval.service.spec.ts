@@ -39,6 +39,7 @@ describe('ApprovalService', () => {
     conditions: { amount_min: 100, amount_max: 1000 },
     priority: 1,
     is_active: true,
+    is_default: false,
     created_by: mockUserId,
     created_at: '2025-11-23T00:00:00Z',
     updated_at: '2025-11-23T00:00:00Z'
@@ -786,7 +787,9 @@ describe('ApprovalService', () => {
     it('should fetch approval statistics', (done) => {
       const mockStats: ApprovalStats = {
         pending_count: 5,
+        awaiting_payment_count: 3,
         approved_count: 10,
+        paid_count: 7,
         rejected_count: 2,
         avg_approval_time_hours: 24
       };
@@ -860,6 +863,230 @@ describe('ApprovalService', () => {
       expect(service.getStatusColor(ApprovalStatus.APPROVED)).toBe('success');
       expect(service.getStatusColor(ApprovalStatus.REJECTED)).toBe('danger');
       expect(service.getStatusColor(ApprovalStatus.CANCELLED)).toBe('muted');
+    });
+
+    it('should return correct color for new payment statuses', () => {
+      expect(service.getStatusColor(ApprovalStatus.AWAITING_PAYMENT)).toBe('info');
+      expect(service.getStatusColor(ApprovalStatus.PAID)).toBe('primary');
+    });
+  });
+
+  // ============================================================================
+  // STEP TYPE METADATA TESTS
+  // ============================================================================
+
+  describe('getStepTypeMetadata', () => {
+    it('should return metadata for all step types', () => {
+      const metadata = service.getStepTypeMetadata();
+
+      expect(metadata.length).toBe(6);
+
+      const stepTypes = metadata.map(m => m.value);
+      expect(stepTypes).toContain('manager');
+      expect(stepTypes).toContain('role');
+      expect(stepTypes).toContain('specific_user');
+      expect(stepTypes).toContain('specific_manager');
+      expect(stepTypes).toContain('multiple_users');
+      expect(stepTypes).toContain('payment');
+    });
+
+    it('should mark payment step correctly', () => {
+      const metadata = service.getStepTypeMetadata();
+      const paymentStep = metadata.find(m => m.value === 'payment');
+
+      expect(paymentStep).toBeDefined();
+      expect(paymentStep?.isPaymentStep).toBe(true);
+      expect(paymentStep?.allowedRoles).toContain('finance');
+    });
+
+    it('should identify steps requiring user selection', () => {
+      const metadata = service.getStepTypeMetadata();
+
+      const specificUser = metadata.find(m => m.value === 'specific_user');
+      expect(specificUser?.requiresUser).toBe(true);
+
+      const multipleUsers = metadata.find(m => m.value === 'multiple_users');
+      expect(multipleUsers?.requiresMultipleUsers).toBe(true);
+
+      const roleStep = metadata.find(m => m.value === 'role');
+      expect(roleStep?.requiresRole).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // PAYMENT QUEUE TESTS
+  // ============================================================================
+
+  describe('getAwaitingPayment', () => {
+    it('should fetch approvals awaiting payment', (done) => {
+      const awaitingPaymentApproval = {
+        ...mockApproval,
+        status: ApprovalStatus.AWAITING_PAYMENT
+      };
+
+      const orderSpy = jasmine.createSpy('order').and.returnValue(
+        Promise.resolve({ data: [awaitingPaymentApproval], error: null })
+      );
+
+      mockSupabaseClient.from.and.callFake((table: string) => {
+        if (table === 'expense_approvals') {
+          return {
+            select: jasmine.createSpy('select').and.returnValue({
+              eq: jasmine.createSpy('eq').and.returnValue({
+                eq: jasmine.createSpy('eq').and.returnValue({
+                  order: orderSpy
+                })
+              })
+            })
+          };
+        } else if (table === 'approval_workflows') {
+          return {
+            select: jasmine.createSpy('select').and.returnValue({
+              in: jasmine.createSpy('in').and.returnValue(
+                Promise.resolve({ data: [mockWorkflow], error: null })
+              )
+            })
+          };
+        } else if (table === 'expenses') {
+          return {
+            select: jasmine.createSpy('select').and.returnValue({
+              in: jasmine.createSpy('in').and.returnValue(
+                Promise.resolve({ data: [], error: null })
+              )
+            })
+          };
+        } else if (table === 'expense_reports') {
+          return {
+            select: jasmine.createSpy('select').and.returnValue({
+              in: jasmine.createSpy('in').and.returnValue(
+                Promise.resolve({ data: [], error: null })
+              )
+            })
+          };
+        }
+        return {};
+      });
+
+      service.getAwaitingPayment().subscribe({
+        next: (approvals) => {
+          expect(approvals.length).toBe(1);
+          expect(approvals[0].status).toBe(ApprovalStatus.AWAITING_PAYMENT);
+          done();
+        },
+        error: done.fail
+      });
+    });
+
+    it('should return error if no organization selected', (done) => {
+      Object.defineProperty(organizationServiceSpy, 'currentOrganizationId', { get: () => null });
+
+      service.getAwaitingPayment().subscribe({
+        next: () => done.fail('Should have thrown error'),
+        error: (error) => {
+          expect(error.message).toContain('organization');
+          done();
+        }
+      });
+    });
+  });
+
+  describe('processPayment', () => {
+    it('should process payment via RPC', (done) => {
+      const dto: ApproveExpenseDto = {
+        comment: 'Payment processed'
+      };
+
+      mockSupabaseClient.rpc.and.returnValue(
+        Promise.resolve({ data: null, error: null })
+      );
+
+      const maybeSingleSpy = jasmine.createSpy('maybeSingle').and.returnValue(
+        Promise.resolve({ data: { ...mockApproval, status: ApprovalStatus.PAID }, error: null })
+      );
+
+      mockSupabaseClient.from.and.callFake(() => ({
+        select: jasmine.createSpy('select').and.returnValue({
+          eq: jasmine.createSpy('eq').and.returnValue({
+            maybeSingle: maybeSingleSpy
+          })
+        })
+      }));
+
+      service.processPayment('approval-1', dto).subscribe({
+        next: (approval) => {
+          expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('approve_expense', {
+            p_approval_id: 'approval-1',
+            p_approver_id: mockUserId,
+            p_comment: dto.comment
+          });
+          expect(notificationServiceSpy.showSuccess).toHaveBeenCalledWith('Payment processed successfully');
+          done();
+        },
+        error: done.fail
+      });
+    });
+
+    it('should return minimal object when record not visible after payment', (done) => {
+      const dto: ApproveExpenseDto = {
+        comment: 'Payment processed'
+      };
+
+      mockSupabaseClient.rpc.and.returnValue(
+        Promise.resolve({ data: null, error: null })
+      );
+
+      const maybeSingleSpy = jasmine.createSpy('maybeSingle').and.returnValue(
+        Promise.resolve({ data: null, error: null })
+      );
+
+      mockSupabaseClient.from.and.callFake(() => ({
+        select: jasmine.createSpy('select').and.returnValue({
+          eq: jasmine.createSpy('eq').and.returnValue({
+            maybeSingle: maybeSingleSpy
+          })
+        })
+      }));
+
+      service.processPayment('approval-1', dto).subscribe({
+        next: (approval) => {
+          expect(approval.id).toBe('approval-1');
+          expect(approval.status).toBe(ApprovalStatus.PAID);
+          expect(notificationServiceSpy.showSuccess).toHaveBeenCalled();
+          expect(loggerServiceSpy.warn).toHaveBeenCalled();
+          done();
+        },
+        error: done.fail
+      });
+    });
+
+    it('should return error if user not authenticated', (done) => {
+      Object.defineProperty(supabaseServiceSpy, 'userId', { get: () => null });
+
+      service.processPayment('approval-1', {}).subscribe({
+        next: () => done.fail('Should have thrown error'),
+        error: (error) => {
+          expect(error.message).toBe('User not authenticated');
+          done();
+        }
+      });
+    });
+  });
+
+  describe('canApprove with awaiting payment', () => {
+    it('should return true if user is current approver and status is awaiting_payment', () => {
+      const approval = {
+        ...mockApproval,
+        current_approver_id: mockUserId,
+        status: ApprovalStatus.AWAITING_PAYMENT
+      };
+      expect(service.canApprove(approval)).toBe(true);
+    });
+  });
+
+  describe('getStatusDisplay with new statuses', () => {
+    it('should return correct display text for payment statuses', () => {
+      expect(service.getStatusDisplay(ApprovalStatus.AWAITING_PAYMENT)).toBe('Awaiting Payment');
+      expect(service.getStatusDisplay(ApprovalStatus.PAID)).toBe('Paid');
     });
   });
 });

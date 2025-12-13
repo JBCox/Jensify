@@ -17,7 +17,9 @@ import {
   CreateStepDto,
   CreateWorkflowDto,
   ExpenseApproval,
+  PaymentQueueItem,
   RejectExpenseDto,
+  StepTypeMetadata,
   UpdateWorkflowDto,
 } from "../models/approval.model";
 
@@ -748,11 +750,13 @@ export class ApprovalService {
         return response.data as ApprovalStats;
       }),
       catchError((error) => {
-        this.logger.error("Failed to fetch approval stats", error);
+        this.logger.error('Failed to fetch approval stats', error);
         // Return default stats on error
         return of({
           pending_count: 0,
+          awaiting_payment_count: 0,
           approved_count: 0,
+          paid_count: 0,
           rejected_count: 0,
           avg_approval_time_hours: 0,
         } as ApprovalStats);
@@ -771,7 +775,8 @@ export class ApprovalService {
     const userId = this.supabase.userId;
     return (
       userId === approval.current_approver_id &&
-      approval.status === ApprovalStatus.PENDING
+      (approval.status === ApprovalStatus.PENDING ||
+        approval.status === ApprovalStatus.AWAITING_PAYMENT)
     );
   }
 
@@ -780,10 +785,12 @@ export class ApprovalService {
    */
   getStatusDisplay(status: ApprovalStatus): string {
     const statusMap: Record<ApprovalStatus, string> = {
-      [ApprovalStatus.PENDING]: "Pending Approval",
-      [ApprovalStatus.APPROVED]: "Approved",
-      [ApprovalStatus.REJECTED]: "Rejected",
-      [ApprovalStatus.CANCELLED]: "Cancelled",
+      [ApprovalStatus.PENDING]: 'Pending Approval',
+      [ApprovalStatus.APPROVED]: 'Approved',
+      [ApprovalStatus.AWAITING_PAYMENT]: 'Awaiting Payment',
+      [ApprovalStatus.REJECTED]: 'Rejected',
+      [ApprovalStatus.CANCELLED]: 'Cancelled',
+      [ApprovalStatus.PAID]: 'Paid',
     };
     return statusMap[status] || status;
   }
@@ -793,11 +800,310 @@ export class ApprovalService {
    */
   getStatusColor(status: ApprovalStatus): string {
     const colorMap: Record<ApprovalStatus, string> = {
-      [ApprovalStatus.PENDING]: "warning",
-      [ApprovalStatus.APPROVED]: "success",
-      [ApprovalStatus.REJECTED]: "danger",
-      [ApprovalStatus.CANCELLED]: "muted",
+      [ApprovalStatus.PENDING]: 'warning',
+      [ApprovalStatus.APPROVED]: 'success',
+      [ApprovalStatus.AWAITING_PAYMENT]: 'info',
+      [ApprovalStatus.REJECTED]: 'danger',
+      [ApprovalStatus.CANCELLED]: 'muted',
+      [ApprovalStatus.PAID]: 'primary',
     };
-    return colorMap[status] || "muted";
+    return colorMap[status] || 'muted';
+  }
+
+  // ============================================================================
+  // STEP TYPE METADATA
+  // ============================================================================
+
+  /**
+   * Get metadata for all step types
+   * Used by UI to display step type options
+   */
+  getStepTypeMetadata(): StepTypeMetadata[] {
+    return [
+      {
+        value: 'manager',
+        label: "Submitter's Manager",
+        description: "Routes to the expense submitter's direct manager",
+        icon: 'supervisor_account',
+        requiresRole: false,
+        requiresUser: false,
+        requiresMultipleUsers: false,
+        isPaymentStep: false,
+      },
+      {
+        value: 'role',
+        label: 'User Role',
+        description: 'Routes to any user with the specified role',
+        icon: 'badge',
+        requiresRole: true,
+        requiresUser: false,
+        requiresMultipleUsers: false,
+        isPaymentStep: false,
+      },
+      {
+        value: 'specific_user',
+        label: 'Specific User',
+        description: 'Routes to a single named user',
+        icon: 'person',
+        requiresRole: false,
+        requiresUser: true,
+        requiresMultipleUsers: false,
+        isPaymentStep: false,
+      },
+      {
+        value: 'specific_manager',
+        label: 'Specific Manager',
+        description: "Routes to a named manager (not necessarily submitter's)",
+        icon: 'manage_accounts',
+        requiresRole: false,
+        requiresUser: true,
+        requiresMultipleUsers: false,
+        isPaymentStep: false,
+        allowedRoles: ['manager', 'admin'],
+      },
+      {
+        value: 'multiple_users',
+        label: 'Multiple Approvers',
+        description: 'Any of the selected users can approve',
+        icon: 'groups',
+        requiresRole: false,
+        requiresUser: false,
+        requiresMultipleUsers: true,
+        isPaymentStep: false,
+      },
+      {
+        value: 'payment',
+        label: 'Payment Step',
+        description: 'Final payment processing by Finance',
+        icon: 'payments',
+        requiresRole: false,
+        requiresUser: false,
+        requiresMultipleUsers: false,
+        isPaymentStep: true,
+        allowedRoles: ['finance'],
+      },
+    ];
+  }
+
+  // ============================================================================
+  // PAYMENT QUEUE
+  // ============================================================================
+
+  /**
+   * Get items awaiting payment (Finance dashboard)
+   */
+  getPaymentQueue(): Observable<PaymentQueueItem[]> {
+    const organizationId = this.organizationService.currentOrganizationId;
+
+    if (!organizationId) {
+      return throwError(() => new Error('No organization selected'));
+    }
+
+    return from(
+      this.supabase.client.rpc('get_payment_queue', {
+        p_organization_id: organizationId,
+        p_limit: 100,
+        p_offset: 0,
+      }),
+    ).pipe(
+      map((response) => {
+        if (response.error) throw response.error;
+        return (response.data || []) as PaymentQueueItem[];
+      }),
+      catchError((error) => {
+        this.logger.error('Failed to fetch payment queue', error);
+        return of([]);
+      }),
+    );
+  }
+
+  /**
+   * Get approvals awaiting payment
+   * Returns full approval details for payment processing
+   */
+  getAwaitingPayment(
+    filters?: ApprovalFilters,
+  ): Observable<ApprovalWithDetails[]> {
+    const userId = this.supabase.userId;
+    const organizationId = this.organizationService.currentOrganizationId;
+
+    if (!userId || !organizationId) {
+      return throwError(
+        () => new Error('User not authenticated or no organization selected'),
+      );
+    }
+
+    let query = this.supabase.client
+      .from('expense_approvals')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('status', ApprovalStatus.AWAITING_PAYMENT);
+
+    if (filters) {
+      if (filters.date_from) {
+        query = query.gte('submitted_at', filters.date_from);
+      }
+      if (filters.date_to) {
+        query = query.lte('submitted_at', filters.date_to);
+      }
+    }
+
+    return from(query.order('submitted_at', { ascending: true })).pipe(
+      switchMap(async (response) => {
+        if (response.error) throw response.error;
+        const approvals = response.data as ExpenseApproval[];
+
+        if (approvals.length === 0) return [];
+
+        // Collect IDs
+        const workflowIds = [
+          ...new Set(approvals.map((a) => a.workflow_id).filter(Boolean)),
+        ];
+        const expenseIds = [
+          ...new Set(approvals.map((a) => a.expense_id).filter(Boolean)),
+        ];
+        const reportIds = [
+          ...new Set(approvals.map((a) => a.report_id).filter(Boolean)),
+        ];
+
+        // Fetch related data in parallel
+        const promises = [];
+
+        if (workflowIds.length > 0) {
+          promises.push(
+            this.supabase.client
+              .from('approval_workflows')
+              .select('*')
+              .in('id', workflowIds)
+              .then((res) => ({ type: 'workflows', data: res.data })),
+          );
+        }
+
+        if (expenseIds.length > 0) {
+          promises.push(
+            this.supabase.client
+              .from('expenses')
+              .select('*, user:users!expenses_user_id_fkey(*)')
+              .in('id', expenseIds)
+              .then((res) => ({ type: 'expenses', data: res.data })),
+          );
+        }
+
+        if (reportIds.length > 0) {
+          promises.push(
+            this.supabase.client
+              .from('expense_reports')
+              .select('*, user:users!expense_reports_user_id_fkey(*)')
+              .in('id', reportIds)
+              .then((res) => ({ type: 'reports', data: res.data })),
+          );
+        }
+
+        const results = await Promise.all(promises);
+
+        // Map data back to approvals
+        const workflowsMap = new Map();
+        const expensesMap = new Map();
+        const reportsMap = new Map();
+
+        results.forEach((res) => {
+          if (res?.data) {
+            if (res.type === 'workflows') {
+              (res.data as ApprovalWorkflow[]).forEach((i) =>
+                workflowsMap.set(i.id, i),
+              );
+            }
+            if (res.type === 'expenses') {
+              (res.data as DbExpenseWithUser[]).forEach((i) =>
+                expensesMap.set(i.id, i),
+              );
+            }
+            if (res.type === 'reports') {
+              (res.data as DbReportWithUser[]).forEach((i) =>
+                reportsMap.set(i.id, i),
+              );
+            }
+          }
+        });
+
+        return approvals.map((approval) => ({
+          ...approval,
+          workflow: workflowsMap.get(approval.workflow_id),
+          expense: approval.expense_id
+            ? expensesMap.get(approval.expense_id)
+            : undefined,
+          report: approval.report_id
+            ? reportsMap.get(approval.report_id)
+            : undefined,
+        })) as ApprovalWithDetails[];
+      }),
+      catchError((error) => {
+        this.logger.error('Failed to fetch awaiting payment', error);
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  /**
+   * Process a payment step (Finance only)
+   */
+  processPayment(
+    approvalId: string,
+    dto: ApproveExpenseDto,
+  ): Observable<ExpenseApproval> {
+    const userId = this.supabase.userId;
+
+    if (!userId) {
+      return throwError(() => new Error('User not authenticated'));
+    }
+
+    // Uses the same approve_expense RPC - payment step logic is in the database function
+    return from(
+      this.supabase.client.rpc('approve_expense', {
+        p_approval_id: approvalId,
+        p_approver_id: userId,
+        p_comment: dto.comment || null,
+      }),
+    ).pipe(
+      switchMap((rpcResponse) => {
+        if (rpcResponse.error) {
+          throw rpcResponse.error;
+        }
+
+        return from(
+          this.supabase.client
+            .from('expense_approvals')
+            .select('*')
+            .eq('id', approvalId)
+            .maybeSingle(),
+        );
+      }),
+      map((response) => {
+        if (response.error && response.error.code !== 'PGRST116') {
+          throw response.error;
+        }
+
+        this.notificationService.showSuccess('Payment processed successfully');
+
+        if (!response.data) {
+          this.logger.warn(
+            'Approval record not visible after payment - returning minimal object',
+          );
+          return {
+            id: approvalId,
+            status: ApprovalStatus.PAID,
+          } as ExpenseApproval;
+        }
+
+        return response.data as ExpenseApproval;
+      }),
+      catchError((error) => {
+        this.logger.error('Failed to process payment', error);
+        this.notificationService.showError(
+          error.message || 'Failed to process payment',
+        );
+        return throwError(() => error);
+      }),
+    );
   }
 }

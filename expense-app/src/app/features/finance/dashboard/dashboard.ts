@@ -20,6 +20,10 @@ import { ReportService } from '../../../core/services/report.service';
 import { PayoutService } from '../../../core/services/payout.service';
 import { OrganizationService } from '../../../core/services/organization.service';
 import { AnalyticsService } from '../../../core/services/analytics.service';
+import { ApprovalService } from '../../../core/services/approval.service';
+import { ApprovalWithDetails, ApproveDialogResult } from '../../../core/models/approval.model';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ApproveDialog, ApproveDialogData } from '../../approvals/approve-dialog/approve-dialog';
 import { ExpenseReport, ReportStatus } from '../../../core/models/report.model';
 import { PendingPayoutSummary, PayoutMethod } from '../../../core/models/payout.model';
 import { Receipt } from '../../../core/models/receipt.model';
@@ -60,6 +64,7 @@ import { SNACKBAR_DURATION } from '../../../shared/constants/ui.constants';
     MatFormFieldModule,
     MatTableModule,
     MatProgressBarModule,
+    MatDialogModule,
     RouterModule,
     EmptyState,
     LoadingSkeleton,
@@ -78,6 +83,8 @@ export class FinanceDashboardComponent implements OnInit, OnDestroy {
   private payoutService = inject(PayoutService);
   private orgService = inject(OrganizationService);
   private analyticsService = inject(AnalyticsService);
+  private approvalService = inject(ApprovalService);
+  private dialog = inject(MatDialog);
 
   private readonly RECEIPT_BUCKET = 'receipts';
   private destroy$ = new Subject<void>();
@@ -98,6 +105,22 @@ export class FinanceDashboardComponent implements OnInit, OnDestroy {
   loadingPayouts = signal(false);
   processingPayoutFor = signal<string | null>(null);
   activeTab = signal(0);
+
+  // Payment queue signals (approval-based payment workflow)
+  paymentQueueItems = signal<ApprovalWithDetails[]>([]);
+  loadingPaymentQueue = signal(false);
+  selectedPaymentIds = signal<Set<string>>(new Set());
+  processingPaymentId = signal<string | null>(null);
+
+  // Payment queue computed values
+  paymentQueueCount = computed(() => this.paymentQueueItems().length);
+  paymentQueueTotal = computed(() =>
+    this.paymentQueueItems().reduce((sum, item) => {
+      const amount = item.expense?.amount ?? item.report?.total_amount ?? 0;
+      return sum + amount;
+    }, 0)
+  );
+  selectedPaymentCount = computed(() => this.selectedPaymentIds().size);
 
   // Analytics-related signals and properties
   analyticsData = signal<AnalyticsDashboardData | null>(null);
@@ -121,6 +144,7 @@ export class FinanceDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadApprovedReports();
     this.loadPayoutData();
+    this.loadPaymentQueue();
   }
 
   ngOnDestroy(): void {
@@ -411,10 +435,166 @@ export class FinanceDashboardComponent implements OnInit, OnDestroy {
     return this.processingPayoutFor() === userId;
   }
 
+  // ============================================================================
+  // PAYMENT QUEUE (Approval-based)
+  // ============================================================================
+
+  loadPaymentQueue(): void {
+    this.loadingPaymentQueue.set(true);
+
+    this.approvalService.getAwaitingPayment()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (items) => {
+          this.paymentQueueItems.set(items);
+          this.loadingPaymentQueue.set(false);
+        },
+        error: () => {
+          this.loadingPaymentQueue.set(false);
+          this.showError('Failed to load payment queue');
+        },
+      });
+  }
+
+  togglePaymentSelection(approvalId: string): void {
+    const selected = new Set(this.selectedPaymentIds());
+    if (selected.has(approvalId)) {
+      selected.delete(approvalId);
+    } else {
+      selected.add(approvalId);
+    }
+    this.selectedPaymentIds.set(selected);
+  }
+
+  isPaymentSelected(approvalId: string): boolean {
+    return this.selectedPaymentIds().has(approvalId);
+  }
+
+  isProcessingPayment(approvalId: string): boolean {
+    return this.processingPaymentId() === approvalId;
+  }
+
+  processPayment(approval: ApprovalWithDetails): void {
+    const dialogRef = this.dialog.open(ApproveDialog, {
+      width: '600px',
+      maxWidth: '95vw',
+      data: {
+        approval,
+        title: 'Process Payment',
+        confirmButtonText: 'Complete Payment',
+        showPaymentNote: true,
+      } as ApproveDialogData,
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result: ApproveDialogResult | undefined) => {
+        if (result) {
+          this.executePayment(approval.id, result.comment);
+        }
+      });
+  }
+
+  private executePayment(approvalId: string, comment?: string): void {
+    this.processingPaymentId.set(approvalId);
+
+    this.approvalService.processPayment(approvalId, { comment })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.showSuccess('Payment processed successfully');
+          this.loadPaymentQueue();
+          this.processingPaymentId.set(null);
+        },
+        error: (err) => {
+          this.showError(err?.message || 'Failed to process payment');
+          this.processingPaymentId.set(null);
+        },
+      });
+  }
+
+  processAllPayments(): void {
+    const ids = Array.from(this.selectedPaymentIds());
+    if (ids.length === 0) return;
+
+    // Process sequentially to avoid overwhelming the server
+    let processed = 0;
+    const total = ids.length;
+
+    const processNext = () => {
+      if (processed >= total) {
+        this.selectedPaymentIds.set(new Set());
+        this.showSuccess(`${total} payment${total > 1 ? 's' : ''} processed successfully`);
+        this.loadPaymentQueue();
+        return;
+      }
+
+      const approvalId = ids[processed];
+      this.processingPaymentId.set(approvalId);
+
+      this.approvalService.processPayment(approvalId, { comment: 'Batch payment' })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            processed++;
+            processNext();
+          },
+          error: () => {
+            this.showError(`Failed to process payment ${processed + 1} of ${total}`);
+            this.processingPaymentId.set(null);
+          },
+        });
+    };
+
+    processNext();
+  }
+
+  getSubmitterName(approval: ApprovalWithDetails): string {
+    if (approval.expense?.user) {
+      return approval.expense.user.full_name;
+    }
+    if (approval.report?.user) {
+      return approval.report.user.full_name;
+    }
+    return 'Unknown';
+  }
+
+  getPaymentAmount(approval: ApprovalWithDetails): number {
+    if (approval.expense) {
+      return approval.expense.amount;
+    }
+    if (approval.report) {
+      return approval.report.total_amount;
+    }
+    return 0;
+  }
+
+  getPaymentMerchant(approval: ApprovalWithDetails): string {
+    if (approval.expense) {
+      return approval.expense.merchant;
+    }
+    if (approval.report) {
+      return approval.report.name;
+    }
+    return 'N/A';
+  }
+
+  getApprovalType(approval: ApprovalWithDetails): string {
+    return approval.expense_id ? 'Expense' : 'Report';
+  }
+
+  trackByApprovalId(_idx: number, approval: ApprovalWithDetails): string {
+    return approval.id;
+  }
+
   onTabChange(index: number): void {
     this.activeTab.set(index);
-    // Load analytics when switching to the Analytics tab (index 2)
-    if (index === 2 && !this.analyticsData()) {
+    // Load payment queue when switching to that tab (index 1)
+    if (index === 1) {
+      this.loadPaymentQueue();
+    }
+    // Load analytics when switching to the Analytics tab (index 4)
+    if (index === 4 && !this.analyticsData()) {
       this.loadAnalyticsData();
     }
   }

@@ -19,6 +19,7 @@ import { Observable, map, startWith, switchMap, Subject, merge, catchError, of }
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApprovalService } from '../../../core/services/approval.service';
 import { ApprovalWithDetails, ApprovalStatus } from '../../../core/models/approval.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSkeleton } from '../../../shared/components/loading-skeleton/loading-skeleton';
 import { PullToRefresh } from '../../../shared/components/pull-to-refresh/pull-to-refresh';
@@ -54,6 +55,7 @@ import { ApprovalHistoryDialog, ApprovalHistoryDialogData } from '../approval-hi
 })
 export class ApprovalQueue implements OnInit {
   private approvalService = inject(ApprovalService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private dialog = inject(MatDialog);
@@ -70,6 +72,19 @@ export class ApprovalQueue implements OnInit {
   filterForm!: FormGroup;
   displayedColumns = ['submitter', 'type', 'amount', 'category', 'workflow', 'submitted', 'actions'];
 
+  // Status filter options
+  statusOptions = [
+    { value: '', label: 'All Pending' },
+    { value: ApprovalStatus.PENDING, label: 'Awaiting Approval' },
+    { value: ApprovalStatus.AWAITING_PAYMENT, label: 'Awaiting Payment' },
+  ];
+
+  // Check if user has Finance role (can process payments)
+  get isFinanceUser(): boolean {
+    const member = this.authService.currentMember;
+    return member?.role === 'finance' || member?.role === 'admin';
+  }
+
   // Mobile filter toggle
   filtersExpanded = false;
 
@@ -77,6 +92,7 @@ export class ApprovalQueue implements OnInit {
     if (!this.filterForm) return 0;
     const values = this.filterForm.value;
     let count = 0;
+    if (values.status !== null && values.status !== '') count++;
     if (values.amount_min !== null && values.amount_min !== '') count++;
     if (values.amount_max !== null && values.amount_max !== '') count++;
     if (values.date_from !== null) count++;
@@ -124,6 +140,7 @@ export class ApprovalQueue implements OnInit {
 
   private initializeFilterForm(): void {
     this.filterForm = this.fb.group({
+      status: [''],
       amount_min: [null],
       amount_max: [null],
       date_from: [null],
@@ -324,5 +341,54 @@ export class ApprovalQueue implements OnInit {
       day: 'numeric',
       year: 'numeric'
     });
+  }
+
+  /** Check if approval is at payment step (awaiting payment) */
+  isPaymentStep(approval: ApprovalWithDetails): boolean {
+    return approval.status === ApprovalStatus.AWAITING_PAYMENT;
+  }
+
+  /** Check if current user can process payment for this approval */
+  canProcessPayment(approval: ApprovalWithDetails): boolean {
+    return this.isFinanceUser && this.isPaymentStep(approval);
+  }
+
+  /** Process payment for an approval */
+  onProcessPayment(approval: ApprovalWithDetails): void {
+    // Use approve dialog but with payment-specific messaging
+    const dialogRef = this.dialog.open(ApproveDialog,
+      this.getMobileDialogConfig<ApproveDialogData>({
+        approval,
+        title: 'Process Payment',
+        confirmButtonText: 'Complete Payment',
+        showPaymentNote: true,
+      }, '600px')
+    );
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: ApproveDialogResult | undefined) => {
+        if (result !== undefined) {
+          this.approvalService.processPayment(approval.id, { comment: result.comment })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: () => {
+                this.snackBar.open(
+                  `Payment processed successfully`,
+                  'Close',
+                  { duration: 3000 }
+                );
+                this.refreshApprovals();
+              },
+              error: (_error) => {
+                this.snackBar.open(
+                  'Failed to process payment. Please try again.',
+                  'Close',
+                  { duration: 5000 }
+                );
+              }
+            });
+        }
+      });
   }
 }

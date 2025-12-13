@@ -1257,17 +1257,88 @@ onViewHistory(approval: ApprovalWithDetails): void {
 - [x] Amount threshold routing works correctly
 - [ ] Email notifications for approval requests
 - [ ] Email notifications for rejections
-- [ ] Bulk approval actions
+- [x] Bulk approval actions ✅ (December 2024)
 - [ ] Approval delegation
+
+### December 2024 Enhancements
+
+**Enhanced:** December 12, 2024
+**Files:** `supabase/migrations/20251212*_approval_workflow_enhancements.sql`
+
+The approval system was significantly enhanced with the following features:
+
+#### New Step Types
+
+In addition to the original step types (Manager, Role, Specific User), the system now supports:
+
+| Step Type | Description | Use Case |
+|-----------|-------------|----------|
+| `specific_manager` | Named manager (not submitter's) | Route to department head regardless of reporting structure |
+| `multiple_users` | Any of selected users can approve | Finance team pool - first available approves |
+| `payment` | Final payment processing step | Finance-only payment step after all approvals |
+
+#### Expanded Workflow Conditions
+
+Workflows can now be triggered based on:
+- **Amount thresholds** (existing) - Min/max expense amounts
+- **Departments** - Route by employee department
+- **Project Codes** - Route by project assignment
+- **Tags** - Route by expense tags
+- **Default Workflow** - Fallback when no conditions match
+
+#### New Approval Statuses
+
+The approval lifecycle now includes payment tracking:
+
+```
+draft → submitted → pending → approved → awaiting_payment → paid
+                            ↓
+                         rejected
+```
+
+| Status | Description |
+|--------|-------------|
+| `awaiting_payment` | All approval steps complete, pending Finance payment |
+| `paid` | Payment processed, final state |
+
+#### Payment Queue (Finance Dashboard)
+
+New "Payment Queue" tab in Finance Dashboard (`/finance`):
+- Shows all items with `awaiting_payment` status
+- Batch selection for bulk payment processing
+- Individual payment processing with confirmation dialog
+- Metrics: count and total amount awaiting payment
+- Mobile-responsive card and table layouts
+
+#### Drag-and-Drop Step Reordering
+
+Admin workflow configuration now includes:
+- CDK drag-and-drop for intuitive step reordering
+- Visual drag handles on each step
+- Automatic step_order recalculation
+- Validation: payment step must always be last
+
+#### Service Enhancements
+
+**ApprovalService** new methods:
+- `getStepTypeMetadata()` - UI metadata for all step types
+- `getAwaitingPayment(filters?)` - Fetch items awaiting payment
+- `processPayment(approvalId, dto)` - Process a payment step
+
+#### Testing
+
+38 unit tests covering all approval service functionality including:
+- Step type metadata (3 tests)
+- Payment queue fetching (2 tests)
+- Payment processing (3 tests)
+- New status handling (2 tests)
 
 ### Future Enhancements
 
 - Email notifications via Supabase Edge Functions
 - Approval delegation (out-of-office routing)
-- Bulk approve/reject multiple items
 - Approval SLA tracking (time to approve)
 - Escalation rules (auto-approve if no action within X days)
-- Conditional routing (category-based, department-based)
 - Approval templates for common scenarios
 - Mobile push notifications
 - Integration with Slack/Teams for approvals

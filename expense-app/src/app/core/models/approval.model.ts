@@ -4,6 +4,25 @@
  */
 
 /**
+ * Step types for approval workflow configuration
+ * - manager: Routes to submitter's direct manager
+ * - role: Routes to any user with specified role
+ * - specific_user: Routes to a single named user
+ * - specific_manager: Routes to a named manager (not necessarily submitter's)
+ * - multiple_users: Routes to any one of multiple specified users
+ * - payment: Final payment step (Finance role only)
+ * - department_owner: Routes to department head (legacy)
+ */
+export type ApprovalStepType =
+  | 'manager'
+  | 'role'
+  | 'specific_user'
+  | 'specific_manager'
+  | 'multiple_users'
+  | 'payment'
+  | 'department_owner';
+
+/**
  * Approval workflow configuration
  * Defines when and how expenses/reports should be approved
  */
@@ -13,6 +32,8 @@ export interface ApprovalWorkflow {
   name: string;
   description: string | null;
   is_active: boolean;
+  /** If true, this workflow is used when no other workflow conditions match */
+  is_default: boolean;
   conditions: ApprovalConditions;
   priority: number;
   created_at: string;
@@ -25,11 +46,23 @@ export interface ApprovalWorkflow {
  * Stored as JSONB in database
  */
 export interface ApprovalConditions {
+  /** Minimum expense amount to match this workflow */
   amount_min?: number;
+  /** Maximum expense amount to match this workflow */
   amount_max?: number;
+  /** Expense categories that match this workflow */
   categories?: string[];
+  /** Departments that match this workflow */
+  departments?: string[];
+  /** @deprecated Use departments instead */
   department?: string;
+  /** Project codes that match this workflow */
+  project_codes?: string[];
+  /** Custom tags that match this workflow */
+  tags?: string[];
+  /** @deprecated Use submitter_ids instead */
   user_ids?: string[];
+  /** Specific submitter IDs that match this workflow */
   submitter_ids?: string[];
 }
 
@@ -40,9 +73,15 @@ export interface ApprovalStep {
   id: string;
   workflow_id: string;
   step_order: number;
-  step_type: "manager" | "role" | "specific_user" | "department_owner";
-  approver_role?: "manager" | "finance" | "admin";
+  step_type: ApprovalStepType;
+  approver_role?: 'manager' | 'finance' | 'admin';
+  /** User ID for specific_user or specific_manager step types */
   approver_user_id?: string;
+  /** User IDs for multiple_users step type - any one can approve */
+  approver_user_ids?: string[];
+  /** True if this is a payment step (denormalized for queries) */
+  is_payment_step?: boolean;
+  /** For parallel approval (Phase 2) */
   require_all: boolean;
 }
 
@@ -70,11 +109,30 @@ export interface ExpenseApproval {
  * Approval status enum
  */
 export enum ApprovalStatus {
-  PENDING = "pending",
-  APPROVED = "approved",
-  REJECTED = "rejected",
-  CANCELLED = "cancelled",
+  /** Awaiting approval at current step */
+  PENDING = 'pending',
+  /** All approval steps complete */
+  APPROVED = 'approved',
+  /** All approval steps done, waiting for payment step */
+  AWAITING_PAYMENT = 'awaiting_payment',
+  /** Rejected at any step */
+  REJECTED = 'rejected',
+  /** Withdrawn by submitter */
+  CANCELLED = 'cancelled',
+  /** Payment step complete */
+  PAID = 'paid',
 }
+
+/**
+ * Action types for approval audit trail
+ */
+export type ApprovalActionType =
+  | 'approved'
+  | 'rejected'
+  | 'delegated'
+  | 'commented'
+  | 'submitted'
+  | 'paid';
 
 /**
  * Audit trail of approval actions
@@ -83,7 +141,7 @@ export interface ApprovalAction {
   id: string;
   expense_approval_id: string;
   step_number: number;
-  action: "approved" | "rejected" | "delegated" | "commented" | "submitted";
+  action: ApprovalActionType;
   actor_id: string;
   actor_role: string;
   comment?: string;
@@ -127,13 +185,18 @@ export interface UpdateWorkflowDto {
   conditions?: ApprovalConditions;
   priority?: number;
   is_active?: boolean;
+  is_default?: boolean;
 }
 
 export interface CreateStepDto {
   step_order: number;
-  step_type: "manager" | "role" | "specific_user" | "department_owner";
-  approver_role?: "manager" | "finance" | "admin";
+  step_type: ApprovalStepType;
+  approver_role?: 'manager' | 'finance' | 'admin';
   approver_user_id?: string;
+  /** User IDs for multiple_users step type */
+  approver_user_ids?: string[];
+  /** True if this is a payment step */
+  is_payment_step?: boolean;
 }
 
 /**
@@ -199,7 +262,43 @@ export interface ApprovalFilters {
  */
 export interface ApprovalStats {
   pending_count: number;
+  /** Items awaiting payment step */
+  awaiting_payment_count: number;
   approved_count: number;
+  /** Items with completed payment step */
+  paid_count: number;
   rejected_count: number;
   avg_approval_time_hours: number;
+}
+
+/**
+ * Metadata for step types (used by UI)
+ */
+export interface StepTypeMetadata {
+  value: ApprovalStepType;
+  label: string;
+  description: string;
+  icon: string;
+  requiresRole: boolean;
+  requiresUser: boolean;
+  requiresMultipleUsers: boolean;
+  isPaymentStep: boolean;
+  /** Roles that can use this step type */
+  allowedRoles?: string[];
+}
+
+/**
+ * Payment queue item for Finance dashboard
+ */
+export interface PaymentQueueItem {
+  approval_id: string;
+  expense_id?: string;
+  report_id?: string;
+  submitter_id: string;
+  submitter_name: string;
+  amount: number;
+  description: string;
+  current_approver_id: string;
+  submitted_at: string;
+  approved_at: string;
 }

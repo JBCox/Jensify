@@ -10,6 +10,12 @@ import { ApprovalWithDetails } from '../../../core/models/approval.model';
 
 export interface ApproveDialogData {
   approval: ApprovalWithDetails;
+  /** Custom dialog title (defaults to "Approve [Type]") */
+  title?: string;
+  /** Custom confirm button text (defaults to "Approve") */
+  confirmButtonText?: string;
+  /** Show payment processing note */
+  showPaymentNote?: boolean;
 }
 
 export interface ApproveDialogResult {
@@ -44,6 +50,21 @@ export class ApproveDialog {
     this.approveForm = this.fb.group({
       comment: ['']
     });
+  }
+
+  /** Get dialog title */
+  get dialogTitle(): string {
+    return this.data.title || `Approve ${this.getApprovalType()}`;
+  }
+
+  /** Get confirm button text */
+  get confirmButtonText(): string {
+    return this.data.confirmButtonText || 'Approve';
+  }
+
+  /** Check if this is a payment dialog */
+  get showPaymentNote(): boolean {
+    return this.data.showPaymentNote === true;
   }
 
   getSubmitterName(): string {

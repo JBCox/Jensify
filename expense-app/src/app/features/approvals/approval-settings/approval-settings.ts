@@ -15,12 +15,14 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule } from "@angular/material/select";
 import { MatSlideToggleModule } from "@angular/material/slide-toggle";
-import { MatChipsModule } from "@angular/material/chips";
+import { MatChipsModule, MatChipInputEvent } from "@angular/material/chips";
 import { MatSnackBar, MatSnackBarModule } from "@angular/material/snack-bar";
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { MatCardModule } from "@angular/material/card";
 import { MatDividerModule } from "@angular/material/divider";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
+import { CdkDragDrop, DragDropModule, moveItemInArray } from "@angular/cdk/drag-drop";
+import { COMMA, ENTER } from "@angular/cdk/keycodes";
 import { Observable } from "rxjs";
 import { switchMap } from "rxjs/operators";
 import { ApprovalService } from "../../../core/services/approval.service";
@@ -28,6 +30,7 @@ import {
   ApprovalStep,
   ApprovalWorkflow,
   CreateStepDto,
+  StepTypeMetadata,
 } from "../../../core/models/approval.model";
 import { EmptyState } from "../../../shared/components/empty-state/empty-state";
 import { LoadingSkeleton } from "../../../shared/components/loading-skeleton/loading-skeleton";
@@ -60,6 +63,7 @@ import { WorkflowTestPanelComponent, TestResults } from "../workflow-test-panel/
     MatCardModule,
     MatDividerModule,
     MatDialogModule,
+    DragDropModule,
     EmptyState,
     LoadingSkeleton,
     WorkflowStepEditorComponent,
@@ -87,10 +91,21 @@ export class ApprovalSettings implements OnInit {
   members = signal<OrganizationMember[]>([]);
   managersAndAbove = signal<OrganizationMember[]>([]);
 
+  // Chip input configuration
+  readonly separatorKeyCodes = [ENTER, COMMA] as const;
+  projectCodes = signal<string[]>([]);
+  tags = signal<string[]>([]);
+
+  // Step type metadata from service
+  stepTypeMetadata: StepTypeMetadata[] = [];
+
   stepTypes: StepType[] = [
     { value: "manager", label: "Submitter's Manager", description: "Routes to employee's direct manager" },
     { value: "role", label: "User Role", description: "Routes to any user with specific role" },
     { value: "specific_user", label: "Specific User", description: "Routes to a named user" },
+    { value: "specific_manager", label: "Specific Manager", description: "Routes to a named manager" },
+    { value: "multiple_users", label: "Multiple Users", description: "Any one of selected users can approve" },
+    { value: "payment", label: "Payment Step", description: "Final payment processing by Finance" },
   ];
 
   approverRoles: ApproverRole[] = [
@@ -101,6 +116,18 @@ export class ApprovalSettings implements OnInit {
 
   displayedColumns = ["name", "conditions", "steps", "active", "actions"];
 
+  // Department options (can be configured per organization)
+  departments = signal<string[]>([
+    'Engineering',
+    'Sales',
+    'Marketing',
+    'Finance',
+    'Operations',
+    'Human Resources',
+    'Customer Support',
+    'Legal',
+  ]);
+
   // Testing state
   showTestPanel = false;
   testResults: TestResults | null = null;
@@ -109,6 +136,7 @@ export class ApprovalSettings implements OnInit {
     this.loadWorkflows();
     this.loadOrganizationMembers();
     this.initializeWorkflowForm();
+    this.stepTypeMetadata = this.approvalService.getStepTypeMetadata();
   }
 
   private loadWorkflows(): void {
@@ -136,9 +164,11 @@ export class ApprovalSettings implements OnInit {
       description: [""],
       priority: [1, [Validators.required, Validators.min(1)]],
       is_active: [true],
+      is_default: [false],
       amount_min: [null],
       amount_max: [null],
       categories: [[]],
+      departments: [[]],
       submitter_ids: [[]],
       steps: this.fb.array([]),
     });
@@ -154,6 +184,8 @@ export class ApprovalSettings implements OnInit {
       step_type: [step?.step_type || "manager", Validators.required],
       approver_role: [step?.approver_role || null],
       approver_user_id: [step?.approver_user_id || null],
+      approver_user_ids: [step?.approver_user_ids || []],
+      is_payment_step: [step?.is_payment_step || step?.step_type === 'payment' || false],
     });
   }
 
@@ -164,6 +196,59 @@ export class ApprovalSettings implements OnInit {
   removeStep(index: number): void {
     this.stepsFormArray.removeAt(index);
     this.renumberSteps();
+  }
+
+  /** Handle drag-drop reordering of steps */
+  dropStep(event: CdkDragDrop<FormGroup[]>): void {
+    const stepsArray = this.stepsFormArray;
+    const controls = stepsArray.controls as FormGroup[];
+
+    // Validate: payment step must stay at the end
+    const draggedStep = controls[event.previousIndex];
+    const isPaymentStep = draggedStep.get('step_type')?.value === 'payment';
+
+    if (isPaymentStep && event.currentIndex !== controls.length - 1) {
+      this.snackBar.open('Payment step must be the last step', 'Close', { duration: 3000 });
+      return;
+    }
+
+    // Check if moving a step after a payment step
+    const lastStep = controls[controls.length - 1];
+    if (lastStep?.get('step_type')?.value === 'payment' && event.currentIndex === controls.length - 1) {
+      this.snackBar.open('Payment step must be the last step', 'Close', { duration: 3000 });
+      return;
+    }
+
+    moveItemInArray(controls, event.previousIndex, event.currentIndex);
+    this.renumberSteps();
+  }
+
+  /** Add a project code chip */
+  addProjectCode(event: MatChipInputEvent): void {
+    const value = (event.value || '').trim();
+    if (value) {
+      this.projectCodes.update(codes => [...codes, value]);
+    }
+    event.chipInput.clear();
+  }
+
+  /** Remove a project code chip */
+  removeProjectCode(code: string): void {
+    this.projectCodes.update(codes => codes.filter(c => c !== code));
+  }
+
+  /** Add a tag chip */
+  addTag(event: MatChipInputEvent): void {
+    const value = (event.value || '').trim();
+    if (value) {
+      this.tags.update(t => [...t, value]);
+    }
+    event.chipInput.clear();
+  }
+
+  /** Remove a tag chip */
+  removeTag(tag: string): void {
+    this.tags.update(t => t.filter(v => v !== tag));
   }
 
   moveStepUp(index: number): void {
@@ -194,7 +279,16 @@ export class ApprovalSettings implements OnInit {
 
   onCreateWorkflow(): void {
     this.editingWorkflow = null;
-    this.workflowForm.reset({ priority: 1, is_active: true, categories: [], submitter_ids: [] });
+    this.workflowForm.reset({
+      priority: 1,
+      is_active: true,
+      is_default: false,
+      categories: [],
+      departments: [],
+      submitter_ids: [],
+    });
+    this.projectCodes.set([]);
+    this.tags.set([]);
     this.stepsFormArray.clear();
     this.addStep();
     this.showWorkflowForm = true;
@@ -209,11 +303,17 @@ export class ApprovalSettings implements OnInit {
           description: workflow.description,
           priority: workflow.priority,
           is_active: workflow.is_active,
+          is_default: workflow.is_default || false,
           amount_min: workflow.conditions?.amount_min || null,
           amount_max: workflow.conditions?.amount_max || null,
           categories: workflow.conditions?.categories || [],
+          departments: workflow.conditions?.departments || [],
           submitter_ids: workflow.conditions?.submitter_ids || [],
         });
+        // Load chip-based fields
+        this.projectCodes.set(workflow.conditions?.project_codes || []);
+        this.tags.set(workflow.conditions?.tags || []);
+
         this.stepsFormArray.clear();
         steps.forEach((step) => this.stepsFormArray.push(this.createStepFormGroup(step)));
         if (this.stepsFormArray.length === 0) this.addStep();
@@ -228,6 +328,8 @@ export class ApprovalSettings implements OnInit {
     this.editingWorkflow = null;
     this.workflowForm.reset();
     this.stepsFormArray.clear();
+    this.projectCodes.set([]);
+    this.tags.set([]);
     this.resetTest();
   }
 
@@ -257,14 +359,30 @@ export class ApprovalSettings implements OnInit {
   }
 
   private validateSteps(): string | null {
-    for (let i = 0; i < this.stepsFormArray.length; i++) {
+    const stepsLength = this.stepsFormArray.length;
+
+    for (let i = 0; i < stepsLength; i++) {
       const step = this.stepsFormArray.at(i) as FormGroup;
       const stepType = step.get("step_type")?.value;
+
       if (stepType === "role" && !step.get("approver_role")?.value) {
         return `Step ${i + 1}: Please select an approver role`;
       }
       if (stepType === "specific_user" && !step.get("approver_user_id")?.value) {
         return `Step ${i + 1}: Please select a specific user`;
+      }
+      if (stepType === "specific_manager" && !step.get("approver_user_id")?.value) {
+        return `Step ${i + 1}: Please select a specific manager`;
+      }
+      if (stepType === "multiple_users") {
+        const userIds = step.get("approver_user_ids")?.value;
+        if (!userIds || userIds.length === 0) {
+          return `Step ${i + 1}: Please select at least one user`;
+        }
+      }
+      // Payment step must be the last step
+      if (stepType === "payment" && i !== stepsLength - 1) {
+        return `Payment step must be the last step in the workflow`;
       }
     }
     return null;
@@ -300,31 +418,48 @@ export class ApprovalSettings implements OnInit {
     }
   }
 
-  private buildConditions(formValue: { amount_min?: number; amount_max?: number; categories?: string[]; submitter_ids?: string[] }): Record<string, unknown> {
+  private buildConditions(formValue: {
+    amount_min?: number;
+    amount_max?: number;
+    categories?: string[];
+    departments?: string[];
+    submitter_ids?: string[];
+  }): Record<string, unknown> {
     const conditions: Record<string, unknown> = {};
     if (formValue.amount_min !== null && formValue.amount_min !== undefined) conditions['amount_min'] = formValue.amount_min;
     if (formValue.amount_max !== null && formValue.amount_max !== undefined) conditions['amount_max'] = formValue.amount_max;
     if (formValue.categories?.length) conditions['categories'] = formValue.categories;
+    if (formValue.departments?.length) conditions['departments'] = formValue.departments;
     if (formValue.submitter_ids?.length) conditions['submitter_ids'] = formValue.submitter_ids;
+    // Add chip-based fields
+    if (this.projectCodes().length) conditions['project_codes'] = this.projectCodes();
+    if (this.tags().length) conditions['tags'] = this.tags();
     return conditions;
   }
 
   private buildSteps(): CreateStepDto[] {
-    return this.stepsFormArray.controls.map((control, index) => ({
-      step_order: index + 1,
-      step_type: control.value.step_type,
-      approver_role: control.value.approver_role || undefined,
-      approver_user_id: control.value.approver_user_id || undefined,
-    }));
+    return this.stepsFormArray.controls.map((control, index) => {
+      const stepType = control.value.step_type;
+      const step: CreateStepDto = {
+        step_order: index + 1,
+        step_type: stepType,
+        approver_role: control.value.approver_role || undefined,
+        approver_user_id: control.value.approver_user_id || undefined,
+        approver_user_ids: control.value.approver_user_ids?.length ? control.value.approver_user_ids : undefined,
+        is_payment_step: stepType === 'payment' || control.value.is_payment_step || undefined,
+      };
+      return step;
+    });
   }
 
-  private updateWorkflow(formValue: { name: string; description?: string; priority: number; is_active: boolean }, conditions: Record<string, unknown>, steps: CreateStepDto[]): void {
+  private updateWorkflow(formValue: { name: string; description?: string; priority: number; is_active: boolean; is_default?: boolean }, conditions: Record<string, unknown>, steps: CreateStepDto[]): void {
     this.approvalService.updateWorkflow(this.editingWorkflow!.id, {
       name: formValue.name,
       description: formValue.description,
       conditions,
       priority: formValue.priority,
       is_active: formValue.is_active,
+      is_default: formValue.is_default,
     }).pipe(
       switchMap(() => this.approvalService.updateWorkflowSteps(this.editingWorkflow!.id, steps))
     ).subscribe({
@@ -393,6 +528,13 @@ export class ApprovalSettings implements OnInit {
 
   formatConditions(workflow: ApprovalWorkflow): string {
     const parts: string[] = [];
+
+    // Default workflow badge
+    if (workflow.is_default) {
+      parts.push('⭐ Default');
+    }
+
+    // Amount range
     if (workflow.conditions?.amount_min !== undefined && workflow.conditions?.amount_max !== undefined) {
       parts.push(`$${workflow.conditions.amount_min} - $${workflow.conditions.amount_max}`);
     } else if (workflow.conditions?.amount_min !== undefined) {
@@ -400,9 +542,31 @@ export class ApprovalSettings implements OnInit {
     } else if (workflow.conditions?.amount_max !== undefined) {
       parts.push(`≤ $${workflow.conditions.amount_max}`);
     }
+
+    // Categories
     if (workflow.conditions?.categories?.length) {
-      parts.push(workflow.conditions.categories.length === 1 ? workflow.conditions.categories[0] : `${workflow.conditions.categories.length} categories`);
+      parts.push(workflow.conditions.categories.length === 1
+        ? workflow.conditions.categories[0]
+        : `${workflow.conditions.categories.length} categories`);
     }
+
+    // Departments
+    if (workflow.conditions?.departments?.length) {
+      parts.push(workflow.conditions.departments.length === 1
+        ? workflow.conditions.departments[0]
+        : `${workflow.conditions.departments.length} depts`);
+    }
+
+    // Project codes
+    if (workflow.conditions?.project_codes?.length) {
+      parts.push(`${workflow.conditions.project_codes.length} project(s)`);
+    }
+
+    // Tags
+    if (workflow.conditions?.tags?.length) {
+      parts.push(`${workflow.conditions.tags.length} tag(s)`);
+    }
+
     return parts.length > 0 ? parts.join(", ") : "All expenses";
   }
 
@@ -436,6 +600,7 @@ export class ApprovalSettings implements OnInit {
       const stepType = control.get("step_type")?.value;
       const approverRole = control.get("approver_role")?.value;
       const approverUserId = control.get("approver_user_id")?.value;
+      const approverUserIds = control.get("approver_user_ids")?.value || [];
 
       let approverName = "Unknown";
       let role = "";
@@ -460,6 +625,30 @@ export class ApprovalSettings implements OnInit {
             approverName = user?.user?.full_name || "⚠️ User not found";
             role = user ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Unknown";
           }
+          break;
+        case "specific_manager":
+          if (approverUserId) {
+            const manager = this.managersAndAbove().find((m) => m.user_id === approverUserId);
+            approverName = manager?.user?.full_name || "⚠️ Manager not found";
+            role = manager ? manager.role.charAt(0).toUpperCase() + manager.role.slice(1) : "Manager";
+          }
+          break;
+        case "multiple_users":
+          if (approverUserIds.length > 0) {
+            const names = approverUserIds.slice(0, 2).map((id: string) => {
+              const member = this.members().find((m) => m.user_id === id);
+              return member?.user?.full_name || "Unknown";
+            });
+            const suffix = approverUserIds.length > 2 ? ` +${approverUserIds.length - 2} more` : '';
+            approverName = `Any of: ${names.join(', ')}${suffix}`;
+            role = "Multiple";
+          } else {
+            approverName = "⚠️ No users selected";
+          }
+          break;
+        case "payment":
+          approverName = "Finance (Payment Processing)";
+          role = "Finance";
           break;
       }
 

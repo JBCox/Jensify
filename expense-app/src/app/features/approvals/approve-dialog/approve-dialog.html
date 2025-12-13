@@ -1,9 +1,9 @@
 <div class="jensify-dialog">
   <div class="jensify-dialog-header">
-    <div class="header-icon success">
-      <mat-icon>check_circle</mat-icon>
+    <div class="header-icon" [class.success]="!showPaymentNote" [class.payment]="showPaymentNote">
+      <mat-icon>{{showPaymentNote ? 'payments' : 'check_circle'}}</mat-icon>
     </div>
-    <h2 mat-dialog-title>Approve {{getApprovalType()}}</h2>
+    <h2 mat-dialog-title>{{dialogTitle}}</h2>
     <button mat-icon-button mat-dialog-close class="close-btn">
       <mat-icon>close</mat-icon>
     </button>
@@ -47,25 +47,33 @@
       </mat-form-field>
     </form>
 
-    <!-- Warning Message -->
-    <div class="info-message">
-      <mat-icon>info</mat-icon>
-      <span>This approval will move to the next step in the workflow.</span>
-    </div>
+    <!-- Info Message -->
+    @if (showPaymentNote) {
+      <div class="info-message payment">
+        <mat-icon>payments</mat-icon>
+        <span>This will complete the payment process and mark the expense/report as paid.</span>
+      </div>
+    } @else {
+      <div class="info-message">
+        <mat-icon>info</mat-icon>
+        <span>This approval will move to the next step in the workflow.</span>
+      </div>
+    }
   </mat-dialog-content>
 
   <mat-dialog-actions class="jensify-dialog-actions">
     <button mat-stroked-button (click)="onCancel()" type="button">
       Cancel
     </button>
-    <button 
-      mat-raised-button 
-      color="primary" 
-      (click)="onApprove()" 
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="onApprove()"
       type="button"
-      class="approve-btn">
-      <mat-icon>check_circle</mat-icon>
-      Approve
+      class="approve-btn"
+      [class.payment-btn]="showPaymentNote">
+      <mat-icon>{{showPaymentNote ? 'payments' : 'check_circle'}}</mat-icon>
+      {{confirmButtonText}}
     </button>
   </mat-dialog-actions>
 </div>

@@ -57,12 +57,21 @@
               <mat-hint>Higher priority workflows are evaluated first</mat-hint>
             </mat-form-field>
 
-            <div class="toggle-field">
+            <div class="toggle-field toggles-row">
               <mat-slide-toggle formControlName="is_active" color="primary">
                 Active
               </mat-slide-toggle>
+              <mat-slide-toggle formControlName="is_default" color="accent">
+                Default Workflow
+              </mat-slide-toggle>
             </div>
           </div>
+          @if (workflowForm.get('is_default')?.value) {
+            <div class="default-workflow-hint">
+              <mat-icon>info</mat-icon>
+              <span>This workflow will be used when no other workflow conditions match.</span>
+            </div>
+          }
         </div>
 
         <mat-divider></mat-divider>
@@ -88,7 +97,7 @@
             </mat-form-field>
           </div>
 
-          <div class="form-row">
+          <div class="form-row two-columns">
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Categories</mat-label>
               <mat-select formControlName="categories" multiple>
@@ -98,6 +107,63 @@
               </mat-select>
               <mat-icon matPrefix>category</mat-icon>
               <mat-hint>Leave empty to match all categories</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Departments</mat-label>
+              <mat-select formControlName="departments" multiple>
+                @for (dept of departments(); track dept) {
+                  <mat-option [value]="dept">{{dept}}</mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>business</mat-icon>
+              <mat-hint>Leave empty to match all departments</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Project Codes</mat-label>
+              <mat-chip-grid #projectCodeChipGrid>
+                @for (code of projectCodes(); track code) {
+                  <mat-chip-row (removed)="removeProjectCode(code)">
+                    {{code}}
+                    <button matChipRemove>
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  </mat-chip-row>
+                }
+              </mat-chip-grid>
+              <input matInput
+                     placeholder="Add project code..."
+                     [matChipInputFor]="projectCodeChipGrid"
+                     [matChipInputSeparatorKeyCodes]="separatorKeyCodes"
+                     (matChipInputTokenEnd)="addProjectCode($event)">
+              <mat-icon matPrefix>folder</mat-icon>
+              <mat-hint>Type a project code and press Enter or comma</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Tags</mat-label>
+              <mat-chip-grid #tagChipGrid>
+                @for (tag of tags(); track tag) {
+                  <mat-chip-row (removed)="removeTag(tag)">
+                    {{tag}}
+                    <button matChipRemove>
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  </mat-chip-row>
+                }
+              </mat-chip-grid>
+              <input matInput
+                     placeholder="Add tag..."
+                     [matChipInputFor]="tagChipGrid"
+                     [matChipInputSeparatorKeyCodes]="separatorKeyCodes"
+                     (matChipInputTokenEnd)="addTag($event)">
+              <mat-icon matPrefix>label</mat-icon>
+              <mat-hint>Type a tag and press Enter or comma</mat-hint>
             </mat-form-field>
           </div>
 
@@ -128,7 +194,7 @@
               Add Step
             </button>
           </div>
-          <p class="section-hint">Define the approval chain. Expenses will be routed through these steps in order.</p>
+          <p class="section-hint">Define the approval chain. Drag to reorder steps. Expenses will be routed through these steps in order.</p>
 
           @if (stepsFormArray.length === 0) {
             <div class="empty-steps">
@@ -137,22 +203,30 @@
             </div>
           }
 
-          @for (stepControl of stepsFormArray.controls; track stepControl; let i = $index) {
-            <app-workflow-step-editor
-              [stepForm]="asFormGroup(stepControl)"
-              [stepIndex]="i"
-              [isFirst]="i === 0"
-              [isLast]="i === stepsFormArray.length - 1"
-              [isOnlyStep]="stepsFormArray.length === 1"
-              [stepTypes]="stepTypes"
-              [approverRoles]="approverRoles"
-              [managersAndAbove]="managersAndAbove()"
-              [allMembers]="members()"
-              (moveUp)="moveStepUp(i)"
-              (moveDown)="moveStepDown(i)"
-              (remove)="removeStep(i)">
-            </app-workflow-step-editor>
-          }
+          <div cdkDropList class="steps-drop-list" (cdkDropListDropped)="dropStep($event)">
+            @for (stepControl of stepsFormArray.controls; track stepControl; let i = $index) {
+              <div cdkDrag class="step-drag-item" [cdkDragDisabled]="stepsFormArray.length === 1">
+                <div class="drag-handle" cdkDragHandle>
+                  <mat-icon>drag_indicator</mat-icon>
+                </div>
+                <app-workflow-step-editor
+                  [stepForm]="asFormGroup(stepControl)"
+                  [stepIndex]="i"
+                  [isFirst]="i === 0"
+                  [isLast]="i === stepsFormArray.length - 1"
+                  [isOnlyStep]="stepsFormArray.length === 1"
+                  [stepTypes]="stepTypes"
+                  [stepTypeMetadata]="stepTypeMetadata"
+                  [approverRoles]="approverRoles"
+                  [managersAndAbove]="managersAndAbove()"
+                  [allMembers]="members()"
+                  (moveUp)="moveStepUp(i)"
+                  (moveDown)="moveStepDown(i)"
+                  (remove)="removeStep(i)">
+                </app-workflow-step-editor>
+              </div>
+            }
+          </div>
         </div>
 
         <mat-divider></mat-divider>

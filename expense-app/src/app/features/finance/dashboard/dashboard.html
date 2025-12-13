@@ -5,12 +5,12 @@
       <p class="jensify-page-subtitle">Manage reimbursements and payouts</p>
     </div>
     <div class="jensify-header-actions">
-      @if (activeTab() === 2) {
+      @if (activeTab() === 4) {
         <button mat-stroked-button class="jensify-export-btn" (click)="exportAnalyticsData()" [disabled]="loadingAnalytics()">
           <mat-icon>download</mat-icon>
           Export Analytics
         </button>
-      } @else if (activeTab() === 1) {
+      } @else if (activeTab() === 2 || activeTab() === 3) {
         <button mat-stroked-button class="jensify-export-btn" (click)="exportPayoutsToCSV()">
           <mat-icon>download</mat-icon>
           Export Payouts
@@ -127,6 +127,97 @@
                         <mat-icon>paid</mat-icon>
                         Reimburse
                       </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </mat-card>
+          }
+        </div>
+      </ng-template>
+    </mat-tab>
+
+    <!-- Payment Queue Tab (Approval Workflow Based) -->
+    <mat-tab label="Payment Queue">
+      <ng-template matTabContent>
+        <div class="tab-content">
+          <div class="jensify-metrics-grid">
+            <app-metric-card
+              [value]="paymentQueueCount().toString()"
+              label="Awaiting Payment"
+              icon="pending_actions"
+              iconType="pending">
+            </app-metric-card>
+
+            <app-metric-card
+              [value]="formatCurrency(paymentQueueTotal())"
+              label="Total Amount"
+              icon="payments"
+              iconType="spend">
+            </app-metric-card>
+          </div>
+
+          @if (selectedPaymentCount() > 0) {
+            <div class="jensify-batch-action-bar">
+              <span class="jensify-selection-count">{{ selectedPaymentCount() }} selected</span>
+              <button mat-raised-button class="jensify-payment-btn" (click)="processAllPayments()">
+                <mat-icon>payments</mat-icon>
+                Process Selected Payments
+              </button>
+            </div>
+          }
+
+          @if (loadingPaymentQueue()) {
+            <app-loading-skeleton />
+          }
+
+          @if (!loadingPaymentQueue() && paymentQueueItems().length === 0) {
+            <app-empty-state
+              icon="payments"
+              title="No payments pending"
+              message="All approved items have been paid. New items will appear here when they reach the payment step.">
+            </app-empty-state>
+          }
+
+          @if (!loadingPaymentQueue() && paymentQueueItems().length > 0) {
+            <mat-card class="jensify-card">
+              <div class="payment-queue-list">
+                @for (item of paymentQueueItems(); track trackByApprovalId($index, item)) {
+                  <div class="payment-queue-row" (click)="togglePaymentSelection(item.id)" (keydown.enter)="togglePaymentSelection(item.id)" tabindex="0" role="button" [attr.aria-label]="'Select payment for ' + getSubmitterName(item)">
+                    <mat-checkbox
+                      [checked]="isPaymentSelected(item.id)"
+                      (click)="$event.stopPropagation()"
+                      (change)="togglePaymentSelection(item.id)">
+                    </mat-checkbox>
+
+                    <div class="payment-queue-main">
+                      <div class="payment-queue-title">
+                        <span class="submitter-name">{{ getSubmitterName(item) }}</span>
+                        <mat-chip class="type-chip" [class.expense]="item.expense_id" [class.report]="item.report_id">
+                          <mat-icon>{{ item.expense_id ? 'receipt' : 'description' }}</mat-icon>
+                          {{ getApprovalType(item) }}
+                        </mat-chip>
+                      </div>
+                      <div class="payment-queue-meta">
+                        <span class="merchant">{{ getPaymentMerchant(item) }}</span>
+                        <span class="workflow">{{ item.workflow?.name || 'Direct Approval' }}</span>
+                        <span class="submitted">Submitted {{ formatDate(item.submitted_at) }}</span>
+                      </div>
+                    </div>
+
+                    <div class="payment-queue-amount">
+                      {{ formatCurrency(getPaymentAmount(item)) }}
+                    </div>
+
+                    <div class="payment-queue-actions">
+                      @if (isProcessingPayment(item.id)) {
+                        <mat-spinner diameter="24"></mat-spinner>
+                      } @else {
+                        <button mat-raised-button class="payment-action-btn" (click)="processPayment(item); $event.stopPropagation();">
+                          <mat-icon>payments</mat-icon>
+                          Pay
+                        </button>
+                      }
                     </div>
                   </div>
                 }
